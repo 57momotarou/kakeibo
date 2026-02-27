@@ -200,3 +200,7 @@ calendarTab.addEventListener("click", () => {
   calendarTab.classList.add("active");
   homeTab.classList.remove("active");
 });
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("service-worker.js");
+}
