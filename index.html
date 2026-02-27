@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>自分用家計簿</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>📝家計簿📝</h1>
+
+<!-- ホーム画面 -->
+<div id="homeView" class="view active">
+  <!-- 月選択 -->
+  <div>
+    <input type="month" id="monthSelector">
+  </div>
+
+  <!-- 合計 -->
+  <div id="summary">
+    <p>収入：¥<span id="incomeTotal">0</span></p>
+    <p>支出<span id="expenseTotal">0</span></p>
+    <p><strong>差額：¥<span id="balance">0</span></strong></p>
+  </div>
+
+  <!-- 入力 -->
+  <div>
+    <input type="date" id="date">
+    <input type="number" id="amount" placeholder="金額">
+    <select id="type">
+      <option value="expense">支出</option>
+      <option value="income">収入</option>
+    </select>
+    <select id="category">
+  <option value="食費">食費</option>
+  <option value="日用品">日用品</option>
+  <option value="交通">交通</option>
+  <option value="家賃">家賃</option>
+  <option value="その他">その他</option>
+    </select>
+    <button id="addButton">追加</button>
+  </div>
+
+  <ul id="list"></ul>
+</div>
+
+  <!-- カレンダー画面 -->
+<div id="calendarView" class="view">
+  <h2>日別カレンダー</h2>
+
+    <div class="week-header">
+  <div>日</div><div>月</div><div>火</div><div>水</div>
+  <div>木</div><div>金</div><div>土</div>
+</div>
+
+  <div id="calendar"></div>
+
+  <div id="dayDetail"></div>
+
+</div>
+
+  <!-- 下部固定タブ -->
+  <nav class="tab-bar">
+  <button id="homeTab" class="tab active">ホーム</button>
+  <button id="calendarTab" class="tab">カレンダー</button>
+</nav>
+
+  <script src="script.js"></script>
+
+</body>
+</html>

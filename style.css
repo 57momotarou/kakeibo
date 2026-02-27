@@ -1,0 +1,131 @@
+body {
+  font-family: sans-serif;
+  padding: 16px;
+}
+
+input, select, button {
+  margin: 4px 0;
+  padding: 8px;
+  font-size: 16px;
+}
+
+li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.delete-btn {
+  margin-left: 8px;
+  background: #ff5c5c;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+#calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.day {
+  border: 1px solid #ccc;
+  padding: 4px;
+  min-height: 60px;
+  font-size: 12px;
+}
+
+.day .date {
+  font-weight: bold;
+}
+
+.expense {
+  color: red;
+}
+
+.income {
+  color: green;
+}
+
+.view {
+  display: none;
+}
+
+.view.active {
+  display: block;
+}
+
+/* 下部タブバー */
+.tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  display: flex;
+  border-top: 1px solid #ccc;
+  background: #fff;
+}
+
+.tab {
+  flex: 1;
+  border: none;
+  background: none;
+  font-size: 16px;
+}
+
+.tab.active {
+  background: #eee;
+  font-weight: bold;
+}
+
+/* 下に隠れないよう余白 */
+body {
+  padding-bottom: 60px;
+}
+
+.day {
+  border: 1px solid #ccc;
+  padding: 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.expense-day {
+  background: #ffe5e5;
+}
+
+.income-day {
+  background: #e6ffea;
+}
+
+.both {
+  background: #f0e6ff;
+}
+
+.week-header,
+#calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.week-header div {
+  text-align: center;
+  font-weight: bold;
+  padding: 4px 0;
+}
+
+.day {
+  border: 1px solid #ddd;
+  min-height: 60px;
+  padding: 4px;
+  font-size: 12px;
+}
+
+#dayDetail {
+  border-top: 1px solid #ccc;
+  padding: 8px;
+  font-size: 14px;
+}
