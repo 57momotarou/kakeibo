@@ -18,14 +18,15 @@ let records = JSON.parse(localStorage.getItem("records")) || [];
 render();
 
 addButton.addEventListener("click", () => {
+  dateInput.value ||= new Date().toISOString().slice(0, 10);
   const date = dateInput.value;
   const amount = Number(amountInput.value);
   const type = typeSelect.value;
 
-  if (!date || !amount) {
-    alert("日付と金額を入力してください");
-    return;
-  }
+if (!date || amountInput.value === "") {
+  alert("日付と金額を入力してください");
+  return;
+}
 
   records.push({ date, amount, type, category: categorySelect.value });
   save();
@@ -154,6 +155,12 @@ function renderCalendar(data) {
       <div class="expense">−¥${expense}</div>
     `;
 
+    // 今日の日付をハイライト
+const today = new Date().toISOString().slice(0, 10);
+if (dayStr === today) {
+  div.classList.add("today");
+}
+
     // 色分け
     if (expense > 0 && income > 0) div.classList.add("both");
     else if (expense > 0) div.classList.add("expense-day");
@@ -202,5 +209,5 @@ calendarTab.addEventListener("click", () => {
 });
 
 if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("service-worker.js");
+  navigator.serviceWorker.register("./service-worker.js");
 }

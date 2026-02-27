@@ -129,3 +129,58 @@ body {
   padding: 8px;
   font-size: 14px;
 }
+
+.day.today {
+  border: 2px solid #ff9800;
+  background: #fff3e0;
+}
+
+.day.today .date {
+  font-weight: bold;
+  color: #ff5722;
+}
+
+body {
+  max-width: 430px;   /* iPhone Pro Maxまで対応 */
+  margin: 0 auto;
+  padding: 12px;
+  padding-bottom: 70px; /* 下タブ分 */
+}
+
+input, select, button {
+  width: 100%;
+  height: 44px;        /* Apple推奨タップサイズ */
+  font-size: 16px;     /* iOSズーム防止 */
+  box-sizing: border-box;
+}
+
+#addButton {
+  background: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  margin-top: 8px;
+}
+
+.day {
+  min-height: 72px;
+  padding: 6px;
+  font-size: 11px;
+}
+
+.day .income,
+.day .expense {
+  font-size: 10px;
+  line-height: 1.2;
+}
+.tab-bar {
+  height: 60px;
+}
+
+.tab {
+  font-size: 14px;
+}
+
+.tab.active {
+  background: #f2f2f2;
+}
