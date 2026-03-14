@@ -395,25 +395,26 @@ function saveCategories() { localStorage.setItem("categories", JSON.stringify(ca
 let periodStartDay = Number(localStorage.getItem("periodStartDay")) || 1;
 
 // 選択中の「基準月」から実際の集計開始日・終了日を計算する
-// 例）基準月=2025-03、開始日=25 → 2025-02-25 〜 2025-03-24
+// 例）基準月=2025-02、開始日=21 → 2025-02-21 〜 2025-03-20
+// 例）基準月=2025-02、開始日=1  → 2025-02-01 〜 2025-02-28
 function getPeriodRange(yearMonth) {
   const [year, month] = yearMonth.split("-").map(Number);
 
   if (periodStartDay === 1) {
     // 開始日が1日の場合はそのまま
-    const start = `${yearMonth}-01`;
+    const start   = `${yearMonth}-01`;
     const lastDay = new Date(year, month, 0).getDate();
-    const end   = `${yearMonth}-${String(lastDay).padStart(2, "0")}`;
+    const end     = `${yearMonth}-${String(lastDay).padStart(2, "0")}`;
     return { start, end };
   }
 
-  // 開始日がN日の場合：前月N日〜当月(N-1)日
-  const startMonth = month === 1 ? 12 : month - 1;
-  const startYear  = month === 1 ? year - 1 : year;
-  const startStr   = `${startYear}-${String(startMonth).padStart(2,"0")}-${String(periodStartDay).padStart(2,"0")}`;
+  // 開始日がN日の場合：当月N日〜翌月(N-1)日
+  const startStr = `${year}-${String(month).padStart(2,"0")}-${String(periodStartDay).padStart(2,"0")}`;
 
+  const endMonth = month === 12 ? 1  : month + 1;
+  const endYear  = month === 12 ? year + 1 : year;
   const endDay   = periodStartDay - 1;
-  const endStr   = `${year}-${String(month).padStart(2,"0")}-${String(endDay).padStart(2,"0")}`;
+  const endStr   = `${endYear}-${String(endMonth).padStart(2,"0")}-${String(endDay).padStart(2,"0")}`;
 
   return { start: startStr, end: endStr };
 }
@@ -439,13 +440,14 @@ function renderPeriodView() {
 }
 
 function updatePeriodPreview() {
-  const ym      = monthSelector.value;
+  const ym = monthSelector.value;
   const { start, end } = getPeriodRange(ym);
   const s = new Date(start + "T00:00:00");
   const e = new Date(end   + "T00:00:00");
   const fmt = d => `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
+  const [y, mo] = ym.split("-").map(Number);
   document.getElementById("periodPreview").textContent =
-    `現在の設定：${fmt(s)} 〜 ${fmt(e)}`;
+    `${mo}月の集計期間：${fmt(s)} 〜 ${fmt(e)}`;
 }
 
 document.getElementById("periodStartDay").addEventListener("change", e => {
