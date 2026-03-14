@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
@@ -13,7 +12,6 @@
 <body>
 
   <!-- ========== 上部バー ========== -->
-
   <header class="top-bar">
     <button class="top-bar-btn" id="openAddBtn" aria-label="記録を追加">＋</button>
     <span class="top-bar-title">📝 家計簿</span>
@@ -21,7 +19,6 @@
   </header>
 
   <!-- ========== 収支入力ポップアップ ========== -->
-
   <div id="addOverlay" class="overlay hidden"></div>
   <div id="addModal" class="modal hidden">
     <div class="modal-header">
@@ -32,30 +29,26 @@
       <label class="field-label">日付</label>
       <input type="date" id="date">
 
-```
-  <label class="field-label">金額</label>
-  <input type="number" id="amount" placeholder="例：1500">
+      <label class="field-label">金額</label>
+      <input type="number" id="amount" placeholder="例：1500">
 
-  <label class="field-label">種別</label>
-  <select id="type">
-    <option value="expense">支出</option>
-    <option value="income">収入</option>
-  </select>
+      <label class="field-label">種別</label>
+      <select id="type">
+        <option value="expense">支出</option>
+        <option value="income">収入</option>
+      </select>
 
-  <label class="field-label">カテゴリ</label>
-  <select id="category"></select>
+      <label class="field-label">カテゴリ</label>
+      <select id="category"></select>
 
-  <label class="field-label">タイトル（任意）</label>
-  <input type="text" id="memo" placeholder="例：スーパーで買い物、月給など">
+      <label class="field-label">タイトル（任意）</label>
+      <input type="text" id="memo" placeholder="例：スーパーで買い物、月給など">
 
-  <button id="addButton" class="btn-primary">追加する</button>
-</div>
-```
-
+      <button id="addButton" class="btn-primary">追加する</button>
+    </div>
   </div>
 
   <!-- ========== 収支編集ポップアップ ========== -->
-
   <div id="editOverlay" class="overlay hidden"></div>
   <div id="editModal" class="modal hidden">
     <div class="modal-header">
@@ -66,30 +59,26 @@
       <label class="field-label">日付</label>
       <input type="date" id="editDate">
 
-```
-  <label class="field-label">金額</label>
-  <input type="number" id="editAmount" placeholder="例：1500">
+      <label class="field-label">金額</label>
+      <input type="number" id="editAmount" placeholder="例：1500">
 
-  <label class="field-label">種別</label>
-  <select id="editType">
-    <option value="expense">支出</option>
-    <option value="income">収入</option>
-  </select>
+      <label class="field-label">種別</label>
+      <select id="editType">
+        <option value="expense">支出</option>
+        <option value="income">収入</option>
+      </select>
 
-  <label class="field-label">カテゴリ</label>
-  <select id="editCategory"></select>
+      <label class="field-label">カテゴリ</label>
+      <select id="editCategory"></select>
 
-  <label class="field-label">タイトル（任意）</label>
-  <input type="text" id="editMemo" placeholder="例：スーパーで買い物、月給など">
+      <label class="field-label">タイトル（任意）</label>
+      <input type="text" id="editMemo" placeholder="例：スーパーで買い物、月給など">
 
-  <button id="saveEditButton" class="btn-primary">保存する</button>
-</div>
-```
-
+      <button id="saveEditButton" class="btn-primary">保存する</button>
+    </div>
   </div>
 
   <!-- ========== 設定ドロワー ========== -->
-
   <div id="settingsOverlay" class="overlay hidden"></div>
   <div id="settingsDrawer" class="drawer hidden">
     <div class="drawer-header">
@@ -97,84 +86,77 @@
       <button class="modal-close" id="closeSettingsBtn">✕</button>
     </div>
 
-```
-<!-- 設定内タブバー -->
-<div class="settings-tab-bar">
-  <button class="settings-tab active" data-target="settingsTabCategory">🏷️ カテゴリ</button>
-  <button class="settings-tab" data-target="settingsTabTheme">🎨 テーマ</button>
-</div>
+    <!-- 設定内タブバー -->
+    <div class="settings-tab-bar">
+      <button class="settings-tab active" data-target="settingsTabCategory">🏷️ カテゴリ</button>
+      <button class="settings-tab" data-target="settingsTabTheme">🎨 テーマ</button>
+    </div>
 
-<!-- カテゴリ変更タブ -->
-<div class="settings-tab-content active" id="settingsTabCategory">
-  <div class="category-add-form">
-    <input type="text" id="newCategoryName" placeholder="カテゴリ名を入力">
-    <select id="newCategoryType">
-      <option value="expense">支出</option>
-      <option value="income">収入</option>
-      <option value="both">両方</option>
-    </select>
-    <button id="addCategoryButton" class="btn-blue">追加</button>
-  </div>
-  <h4 class="category-section-label expense-label">💸 支出カテゴリ</h4>
-  <ul id="expenseCategoryList" class="category-list"></ul>
-  <h4 class="category-section-label income-label">💰 収入カテゴリ</h4>
-  <ul id="incomeCategoryList" class="category-list"></ul>
-</div>
+    <!-- カテゴリ変更タブ -->
+    <div class="settings-tab-content active" id="settingsTabCategory">
+      <div class="category-add-form">
+        <input type="text" id="newCategoryName" placeholder="カテゴリ名を入力">
+        <select id="newCategoryType">
+          <option value="expense">支出</option>
+          <option value="income">収入</option>
+          <option value="both">両方</option>
+        </select>
+        <button id="addCategoryButton" class="btn-blue">追加</button>
+      </div>
+      <h4 class="category-section-label expense-label">💸 支出カテゴリ</h4>
+      <ul id="expenseCategoryList" class="category-list"></ul>
+      <h4 class="category-section-label income-label">💰 収入カテゴリ</h4>
+      <ul id="incomeCategoryList" class="category-list"></ul>
+    </div>
 
-<!-- テーマカラータブ -->
-<div class="settings-tab-content" id="settingsTabTheme">
-  <p class="theme-desc">アプリのメインカラーを変更します</p>
+    <!-- テーマカラータブ -->
+    <div class="settings-tab-content" id="settingsTabTheme">
+      <p class="theme-desc">アプリのメインカラーを変更します</p>
 
-  <h4 class="theme-section-title">プリセット</h4>
-  <div class="color-presets" id="colorPresets"></div>
+      <h4 class="theme-section-title">プリセット</h4>
+      <div class="color-presets" id="colorPresets"></div>
 
-  <h4 class="theme-section-title">カスタムカラー</h4>
-  <div class="custom-color-row">
-    <input type="color" id="customColorPicker" value="#4caf50">
-    <button id="applyCustomColor" class="btn-blue">このカラーを適用</button>
-  </div>
+      <h4 class="theme-section-title">カスタムカラー</h4>
+      <div class="custom-color-row">
+        <input type="color" id="customColorPicker" value="#4caf50">
+        <button id="applyCustomColor" class="btn-blue">このカラーを適用</button>
+      </div>
 
-  <div class="theme-preview">
-    <p class="theme-preview-label">現在のカラー</p>
-    <div id="themePreviewBar"></div>
-  </div>
-</div>
-```
+      <div class="theme-preview">
+        <p class="theme-preview-label">現在のカラー</p>
+        <div id="themePreviewBar"></div>
+      </div>
+    </div>
 
   </div>
 
   <!-- ========== メイン ========== -->
 
   <!-- ホーム -->
-
   <div id="homeView" class="view active">
     <div class="month-row">
       <input type="month" id="monthSelector">
     </div>
 
-```
-<div id="summary">
-  <div class="summary-item income-item">
-    <span class="summary-label">収入</span>
-    <span class="summary-value">¥<span id="incomeTotal">0</span></span>
-  </div>
-  <div class="summary-item expense-item">
-    <span class="summary-label">支出</span>
-    <span class="summary-value">¥<span id="expenseTotal">0</span></span>
-  </div>
-  <div class="summary-item balance-item">
-    <span class="summary-label">差額</span>
-    <span class="summary-value">¥<span id="balance">0</span></span>
-  </div>
-</div>
+    <div id="summary">
+      <div class="summary-item income-item">
+        <span class="summary-label">収入</span>
+        <span class="summary-value">¥<span id="incomeTotal">0</span></span>
+      </div>
+      <div class="summary-item expense-item">
+        <span class="summary-label">支出</span>
+        <span class="summary-value">¥<span id="expenseTotal">0</span></span>
+      </div>
+      <div class="summary-item balance-item">
+        <span class="summary-label">差額</span>
+        <span class="summary-value">¥<span id="balance">0</span></span>
+      </div>
+    </div>
 
-<ul id="list"></ul>
-```
-
+    <ul id="list"></ul>
   </div>
 
   <!-- カレンダー -->
-
   <div id="calendarView" class="view">
     <div class="week-header">
       <div>日</div><div>月</div><div>火</div><div>水</div>
@@ -185,13 +167,11 @@
   </div>
 
   <!-- ========== 下部タブ ========== -->
-
   <nav class="tab-bar">
     <button id="homeTab" class="tab active">🏠<br><small>ホーム</small></button>
     <button id="calendarTab" class="tab">📅<br><small>カレンダー</small></button>
   </nav>
 
   <script src="script.js"></script>
-
 </body>
 </html>
