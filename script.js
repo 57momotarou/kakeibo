@@ -1,17 +1,25 @@
 // ===================================
 // 要素の取得
 // ===================================
-const list           = document.getElementById("list");
-const monthSelector  = document.getElementById("monthSelector");
+const list          = document.getElementById("list");
+const monthSelector = document.getElementById("monthSelector");
+
+// 上部バー
+const topBarNormal   = document.getElementById("topBarNormal");
+const topBarSettings = document.getElementById("topBarSettings");
+const settingsBarTitle = document.getElementById("settingsBarTitle");
+const openAddBtn     = document.getElementById("openAddBtn");
+const openSettingsBtn= document.getElementById("openSettingsBtn");
+const backBtn        = document.getElementById("backBtn");
 
 // 追加モーダル
-const openAddBtn     = document.getElementById("openAddBtn");
 const closeAddBtn    = document.getElementById("closeAddBtn");
 const addOverlay     = document.getElementById("addOverlay");
 const addModal       = document.getElementById("addModal");
 const dateInput      = document.getElementById("date");
 const amountInput    = document.getElementById("amount");
-const typeSelect     = document.getElementById("type");
+const addTypeToggle  = document.getElementById("addTypeToggle");
+const addTypeHidden  = document.getElementById("addTypeHidden");
 const categorySelect = document.getElementById("category");
 const memoInput      = document.getElementById("memo");
 const addButton      = document.getElementById("addButton");
@@ -22,30 +30,11 @@ const editOverlay     = document.getElementById("editOverlay");
 const editModal       = document.getElementById("editModal");
 const editDateInput   = document.getElementById("editDate");
 const editAmountInput = document.getElementById("editAmount");
-const editTypeInput   = document.getElementById("editType");   // hidden input
+const editTypeInput   = document.getElementById("editType");
 const editCatSelect   = document.getElementById("editCategory");
 const editMemoInput   = document.getElementById("editMemo");
 const saveEditButton  = document.getElementById("saveEditButton");
 const editTypeToggle  = document.getElementById("editTypeToggle");
-
-// トグルボタンの切り替え処理
-editTypeToggle.addEventListener("click", e => {
-  const btn = e.target.closest(".type-toggle-btn");
-  if (!btn) return;
-  const val = btn.dataset.value;
-  editTypeToggle.querySelectorAll(".type-toggle-btn").forEach(b => b.classList.remove("active"));
-  btn.classList.add("active");
-  editTypeInput.value = val;
-  // カテゴリも連動して更新
-  const fakeSelect = { value: val };
-  updateCategoryOptions(fakeSelect, editCatSelect, editCatSelect.value);
-});
-
-// 設定ドロワー
-const openSettingsBtn  = document.getElementById("openSettingsBtn");
-const closeSettingsBtn = document.getElementById("closeSettingsBtn");
-const settingsOverlay  = document.getElementById("settingsOverlay");
-const settingsDrawer   = document.getElementById("settingsDrawer");
 
 // ===================================
 // データの読み込み
@@ -63,17 +52,110 @@ const DEFAULT_CATEGORIES = [
 let categories = JSON.parse(localStorage.getItem("categories")) || DEFAULT_CATEGORIES;
 
 // ===================================
+// 画面スタック管理
+// ===================================
+// スタック例: ["home"] → ["home","settings"] → ["home","settings","category"]
+let viewStack = ["home"];
+
+const VIEW_CONFIG = {
+  home:     { el: document.getElementById("homeView"),     title: null,          showTabs: true  },
+  calendar: { el: document.getElementById("calendarView"), title: null,          showTabs: true  },
+  settings: { el: document.getElementById("settingsView"), title: "設定",        showTabs: false },
+  category: { el: document.getElementById("categoryView"), title: "カテゴリ変更", showTabs: false },
+  theme:    { el: document.getElementById("themeView"),    title: "テーマカラー", showTabs: false },
+};
+
+function navigate(viewName) {
+  // 現在の画面を非表示
+  const current = viewStack[viewStack.length - 1];
+  VIEW_CONFIG[current].el.classList.remove("active");
+
+  // 新しい画面をスタックに積む
+  viewStack.push(viewName);
+  showCurrentView();
+}
+
+function goBack() {
+  if (viewStack.length <= 1) return;
+  const current = viewStack[viewStack.length - 1];
+  VIEW_CONFIG[current].el.classList.remove("active");
+  viewStack.pop();
+  showCurrentView();
+}
+
+function showCurrentView() {
+  const name   = viewStack[viewStack.length - 1];
+  const config = VIEW_CONFIG[name];
+
+  config.el.classList.add("active");
+
+  // 上部バーの切り替え
+  const isMain = (name === "home" || name === "calendar");
+  topBarNormal.classList.toggle("hidden", !isMain);
+  topBarSettings.classList.toggle("hidden", isMain);
+  if (!isMain) settingsBarTitle.textContent = config.title;
+
+  // 下部タブの表示切り替え
+  const tabBar = document.getElementById("tabBar");
+  tabBar.classList.toggle("hidden", !config.showTabs);
+
+  // 画面ごとの初期化
+  if (name === "home")     render();
+  if (name === "category") renderCategoryView();
+  if (name === "theme")    renderColorPresets();
+
+  // ホームタブ・カレンダータブのactive同期
+  if (name === "home") {
+    document.getElementById("homeTab").classList.add("active");
+    document.getElementById("calendarTab").classList.remove("active");
+  } else if (name === "calendar") {
+    document.getElementById("calendarTab").classList.add("active");
+    document.getElementById("homeTab").classList.remove("active");
+  }
+}
+
+// 戻るボタン
+backBtn.addEventListener("click", goBack);
+
+// 設定ボタン
+openSettingsBtn.addEventListener("click", () => navigate("settings"));
+
+// 設定メニューの各項目
+document.getElementById("goCategory").addEventListener("click", () => navigate("category"));
+document.getElementById("goTheme").addEventListener("click", () => navigate("theme"));
+
+// 下部タブ
+document.getElementById("homeTab").addEventListener("click", () => {
+  // settingsにいる場合はスタックをリセットしてhomeへ
+  viewStack.forEach((_, i) => {
+    if (i > 0) VIEW_CONFIG[viewStack[i]].el.classList.remove("active");
+  });
+  VIEW_CONFIG[viewStack[0]].el.classList.remove("active");
+  viewStack = ["home"];
+  showCurrentView();
+});
+
+document.getElementById("calendarTab").addEventListener("click", () => {
+  viewStack.forEach((_, i) => {
+    if (i > 0) VIEW_CONFIG[viewStack[i]].el.classList.remove("active");
+  });
+  VIEW_CONFIG[viewStack[0]].el.classList.remove("active");
+  viewStack = ["calendar"];
+  showCurrentView();
+});
+
+// ===================================
 // テーマカラー
 // ===================================
 const PRESET_COLORS = [
-  { label: "グリーン",    color: "#4caf50" },
-  { label: "ブルー",      color: "#2196f3" },
-  { label: "パープル",    color: "#9c27b0" },
-  { label: "オレンジ",    color: "#ff9800" },
-  { label: "レッド",      color: "#f44336" },
-  { label: "ティール",    color: "#009688" },
-  { label: "インディゴ",  color: "#3f51b5" },
-  { label: "ブラウン",    color: "#795548" },
+  { label: "グリーン",   color: "#4caf50" },
+  { label: "ブルー",     color: "#2196f3" },
+  { label: "パープル",   color: "#9c27b0" },
+  { label: "オレンジ",   color: "#ff9800" },
+  { label: "レッド",     color: "#f44336" },
+  { label: "ティール",   color: "#009688" },
+  { label: "インディゴ", color: "#3f51b5" },
+  { label: "ブラウン",   color: "#795548" },
 ];
 
 let themeColor = localStorage.getItem("themeColor") || "#4caf50";
@@ -81,19 +163,15 @@ let themeColor = localStorage.getItem("themeColor") || "#4caf50";
 function applyThemeColor(color) {
   themeColor = color;
   document.documentElement.style.setProperty("--theme", color);
-  // 少し暗くしたダーク版を自動生成（ボタンhover等に使用）
   document.documentElement.style.setProperty("--theme-dark", darkenColor(color, 20));
   localStorage.setItem("themeColor", color);
-  // プレビューバーを更新
   const bar = document.getElementById("themePreviewBar");
   if (bar) bar.style.background = color;
-  // プリセットのチェックマーク更新
   document.querySelectorAll(".color-swatch").forEach(sw => {
     sw.classList.toggle("selected", sw.dataset.color === color);
   });
 }
 
-// 16進カラーをやや暗くするユーティリティ
 function darkenColor(hex, amount) {
   const num = parseInt(hex.replace("#", ""), 16);
   const r = Math.max(0, (num >> 16) - amount);
@@ -102,7 +180,6 @@ function darkenColor(hex, amount) {
   return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, "0")}`;
 }
 
-// プリセットスウォッチを描画
 function renderColorPresets() {
   const container = document.getElementById("colorPresets");
   container.innerHTML = "";
@@ -117,18 +194,14 @@ function renderColorPresets() {
     btn.addEventListener("click", () => applyThemeColor(color));
     container.appendChild(btn);
   });
-  // プレビューバー初期化
   const bar = document.getElementById("themePreviewBar");
   if (bar) bar.style.background = themeColor;
 }
 
-// カスタムカラー適用
 document.getElementById("applyCustomColor").addEventListener("click", () => {
-  const color = document.getElementById("customColorPicker").value;
-  applyThemeColor(color);
+  applyThemeColor(document.getElementById("customColorPicker").value);
 });
 
-// ページ読み込み時にテーマ適用
 applyThemeColor(themeColor);
 
 // ===================================
@@ -136,13 +209,12 @@ applyThemeColor(themeColor);
 // ===================================
 monthSelector.value = new Date().toISOString().slice(0, 7);
 monthSelector.addEventListener("change", render);
-typeSelect.addEventListener("change", () => updateCategoryOptions(typeSelect, categorySelect));
 
-updateCategoryOptions(typeSelect, categorySelect);
+updateCategoryOptions({ value: "expense" }, categorySelect);
 render();
 
 // ===================================
-// カテゴリプルダウン更新（追加・編集モーダル共用）
+// カテゴリプルダウン更新
 // ===================================
 function updateCategoryOptions(typeEl, catEl, currentValue) {
   const type = typeEl.value;
@@ -159,21 +231,45 @@ function updateCategoryOptions(typeEl, catEl, currentValue) {
 }
 
 // ===================================
+// 追加モーダルのトグル
+// ===================================
+addTypeToggle.addEventListener("click", e => {
+  const btn = e.target.closest(".type-toggle-btn");
+  if (!btn) return;
+  const val = btn.dataset.value;
+  addTypeToggle.querySelectorAll(".type-toggle-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  addTypeHidden.value = val;
+  updateCategoryOptions({ value: val }, categorySelect);
+});
+
+// 編集モーダルのトグル
+editTypeToggle.addEventListener("click", e => {
+  const btn = e.target.closest(".type-toggle-btn");
+  if (!btn) return;
+  const val = btn.dataset.value;
+  editTypeToggle.querySelectorAll(".type-toggle-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  editTypeInput.value = val;
+  updateCategoryOptions({ value: val }, editCatSelect, editCatSelect.value);
+});
+
+// ===================================
 // 追加モーダルの開閉
 // ===================================
 function openAddModal() {
   dateInput.value   = new Date().toISOString().slice(0, 10);
   amountInput.value = "";
   memoInput.value   = "";
-  typeSelect.value  = "expense";
-  updateCategoryOptions(typeSelect, categorySelect);
+  addTypeHidden.value = "expense";
+  addTypeToggle.querySelectorAll(".type-toggle-btn").forEach(b => {
+    b.classList.toggle("active", b.dataset.value === "expense");
+  });
+  updateCategoryOptions({ value: "expense" }, categorySelect);
   showModal(addModal, addOverlay);
-  setTimeout(() => amountInput.focus(), 300);
 }
 
-function closeAddModal() {
-  hideModal(addModal, addOverlay);
-}
+function closeAddModal() { hideModal(addModal, addOverlay); }
 
 openAddBtn.addEventListener("click", openAddModal);
 closeAddBtn.addEventListener("click", closeAddModal);
@@ -185,15 +281,14 @@ addOverlay.addEventListener("click", closeAddModal);
 let editingRecord = null;
 
 function openEditModal(record) {
-  editingRecord = record;
+  editingRecord         = record;
   editDateInput.value   = record.date;
   editAmountInput.value = record.amount;
   editTypeInput.value   = record.type;
-  // トグルボタンの初期状態をセット
   editTypeToggle.querySelectorAll(".type-toggle-btn").forEach(b => {
     b.classList.toggle("active", b.dataset.value === record.type);
   });
-  updateCategoryOptions(editTypeInput, editCatSelect, record.category);
+  updateCategoryOptions({ value: record.type }, editCatSelect, record.category);
   editMemoInput.value   = record.title || "";
   showModal(editModal, editOverlay);
 }
@@ -208,13 +303,12 @@ editOverlay.addEventListener("click", closeEditModal);
 
 saveEditButton.addEventListener("click", () => {
   if (!editingRecord) return;
-  const amount = Number(editAmountInput.value);
   if (!editDateInput.value || editAmountInput.value === "") {
     alert("日付と金額を入力してください");
     return;
   }
   editingRecord.date     = editDateInput.value;
-  editingRecord.amount   = amount;
+  editingRecord.amount   = Number(editAmountInput.value);
   editingRecord.type     = editTypeInput.value;
   editingRecord.category = editCatSelect.value;
   editingRecord.title    = editMemoInput.value.trim() || editCatSelect.value;
@@ -245,47 +339,10 @@ function hideModal(modal, overlay) {
 }
 
 // ===================================
-// 設定ドロワーの開閉
-// ===================================
-function openSettings() {
-  renderCategoryView();
-  renderColorPresets();
-  settingsDrawer.classList.remove("hidden");
-  settingsOverlay.classList.remove("hidden");
-  requestAnimationFrame(() => {
-    settingsDrawer.classList.add("show");
-    settingsOverlay.classList.add("show");
-  });
-}
-
-function closeSettings() {
-  settingsDrawer.classList.remove("show");
-  settingsOverlay.classList.remove("show");
-  setTimeout(() => {
-    settingsDrawer.classList.add("hidden");
-    settingsOverlay.classList.add("hidden");
-  }, 300);
-}
-
-openSettingsBtn.addEventListener("click", openSettings);
-closeSettingsBtn.addEventListener("click", closeSettings);
-settingsOverlay.addEventListener("click", closeSettings);
-
-// 設定ドロワー内タブ切り替え
-document.querySelectorAll(".settings-tab").forEach(tab => {
-  tab.addEventListener("click", () => {
-    document.querySelectorAll(".settings-tab").forEach(t => t.classList.remove("active"));
-    document.querySelectorAll(".settings-tab-content").forEach(c => c.classList.remove("active"));
-    tab.classList.add("active");
-    document.getElementById(tab.dataset.target).classList.add("active");
-  });
-});
-
-// ===================================
 // 記録の追加
 // ===================================
 addButton.addEventListener("click", () => {
-  const date   = dateInput.value;
+  const date = dateInput.value;
   if (!date || amountInput.value === "") {
     alert("日付と金額を入力してください");
     return;
@@ -293,7 +350,7 @@ addButton.addEventListener("click", () => {
   records.push({
     date,
     amount:   Number(amountInput.value),
-    type:     typeSelect.value,
+    type:     addTypeHidden.value,
     category: categorySelect.value,
     title:    memoInput.value.trim() || categorySelect.value,
   });
@@ -322,52 +379,41 @@ function render() {
   const groups = [];
   sorted.forEach(record => {
     const last = groups[groups.length - 1];
-    if (last && last.date === record.date) {
-      last.records.push(record);
-    } else {
-      groups.push({ date: record.date, records: [record] });
-    }
+    if (last && last.date === record.date) last.records.push(record);
+    else groups.push({ date: record.date, records: [record] });
   });
 
   groups.forEach(group => {
-    // ── 日付ヘッダー ──
+    // 日付ヘッダー
     const header = document.createElement("li");
     header.className = "date-header";
-
-    // 日付を「3月14日（土）」形式に変換
     const d = new Date(group.date + "T00:00:00");
     const weekDay = ["日","月","火","水","木","金","土"][d.getDay()];
-    const dateLabel = `${d.getMonth() + 1}月${d.getDate()}日（${weekDay}）`;
-
-    // その日の収支合計（不要になったため計算省略）
-
     header.innerHTML =
-      `<span class="date-header-label">${dateLabel}</span>`;
-
+      `<span class="date-header-label">${d.getMonth()+1}月${d.getDate()}日（${weekDay}）</span>`;
     list.appendChild(header);
 
-    // ── その日の記録 ──
+    // 各記録
     group.records.forEach(record => {
-      const li = document.createElement("li");
+      const li   = document.createElement("li");
       li.className = "record-li";
 
       const main = document.createElement("div");
       main.className = "record-main";
 
-      // タイトル左・金額右を1行に（常に同じ高さで揃える）
-      const mainRow = document.createElement("div");
-      mainRow.className = "record-main-row";
-      mainRow.innerHTML =
+      const row = document.createElement("div");
+      row.className = "record-main-row";
+      row.innerHTML =
         `<span class="record-title">${record.title || record.category}</span>` +
         `<span class="record-amount ${record.type === 'expense' ? 'amount-expense' : 'amount-income'}">¥${record.amount.toLocaleString()}</span>`;
 
-      main.appendChild(mainRow);
+      main.appendChild(row);
       main.addEventListener("click", () => openEditModal(record));
 
       const delBtn = document.createElement("button");
       delBtn.textContent = "削除";
       delBtn.className   = "delete-btn";
-      delBtn.addEventListener("click", (e) => {
+      delBtn.addEventListener("click", e => {
         e.stopPropagation();
         const i = records.indexOf(record);
         if (i !== -1) records.splice(i, 1);
@@ -383,10 +429,7 @@ function render() {
 
   // 合計
   let income = 0, expense = 0;
-  filtered.forEach(r => {
-    if (r.type === "income") income += r.amount;
-    else expense += r.amount;
-  });
+  filtered.forEach(r => r.type === "income" ? income += r.amount : expense += r.amount);
 
   document.getElementById("incomeTotal").textContent  = income.toLocaleString();
   document.getElementById("expenseTotal").textContent = expense.toLocaleString();
@@ -410,17 +453,13 @@ function renderCalendar(data) {
   const lastDay   = new Date(year, m, 0).getDate();
   const firstDay  = new Date(year, m - 1, 1).getDay();
 
-  for (let i = 0; i < firstDay; i++) {
-    calendar.appendChild(document.createElement("div"));
-  }
+  for (let i = 0; i < firstDay; i++) calendar.appendChild(document.createElement("div"));
 
   for (let day = 1; day <= lastDay; day++) {
     const dayStr = `${month}-${String(day).padStart(2, "0")}`;
     let income = 0, expense = 0;
     data.forEach(r => {
-      if (r.date === dayStr) {
-        r.type === "income" ? income += r.amount : expense += r.amount;
-      }
+      if (r.date === dayStr) r.type === "income" ? income += r.amount : expense += r.amount;
     });
 
     const div = document.createElement("div");
@@ -441,13 +480,11 @@ function renderCalendar(data) {
       const detailBox = document.getElementById("dayDetail");
       const details = data
         .filter(r => r.date === dayStr)
-        .map(r =>
-          `<div class="detail-row">
-            <span>${r.title || r.category}</span>
-            <span class="${r.type === 'expense' ? 'tag-expense' : 'tag-income'}">${r.type === "expense" ? "支出" : "収入"}</span>
-            <span>¥${r.amount.toLocaleString()}</span>
-          </div>`)
-        .join("");
+        .map(r => `<div class="detail-row">
+          <span>${r.title || r.category}</span>
+          <span class="${r.type === 'expense' ? 'tag-expense' : 'tag-income'}">${r.type === "expense" ? "支出" : "収入"}</span>
+          <span>¥${r.amount.toLocaleString()}</span>
+        </div>`).join("");
       detailBox.innerHTML = `<h3>${day}日の明細</h3>${details || "<p>記録なし</p>"}`;
     });
 
@@ -456,7 +493,7 @@ function renderCalendar(data) {
 }
 
 // ===================================
-// カテゴリ管理（設定ドロワー内）
+// カテゴリ管理
 // ===================================
 function renderCategoryView() {
   const expenseList = document.getElementById("expenseCategoryList");
@@ -484,7 +521,6 @@ function renderCategoryView() {
         cat.name = newName;
         saveRecords();
         saveCategories();
-        updateCategoryOptions(typeSelect, categorySelect);
         renderCategoryView();
       }
       input.addEventListener("blur", saveNameEdit);
@@ -505,7 +541,6 @@ function renderCategoryView() {
       if (used && !confirm(`「${cat.name}」は使用中です。削除しますか？`)) return;
       categories.splice(index, 1);
       saveCategories();
-      updateCategoryOptions(typeSelect, categorySelect);
       renderCategoryView();
     });
 
@@ -524,53 +559,20 @@ document.getElementById("addCategoryButton").addEventListener("click", () => {
   categories.push({ name, type });
   document.getElementById("newCategoryName").value = "";
   saveCategories();
-  updateCategoryOptions(typeSelect, categorySelect);
   renderCategoryView();
 });
 
 // ===================================
-// 下部タブ切り替え
-// ===================================
-const tabs = [
-  { tab: document.getElementById("homeTab"),     view: document.getElementById("homeView"),     onShow: render },
-  { tab: document.getElementById("calendarTab"), view: document.getElementById("calendarView"), onShow: null   },
-];
-
-tabs.forEach(({ tab, view, onShow }) => {
-  tab.addEventListener("click", () => {
-    tabs.forEach(t => {
-      t.tab.classList.remove("active");
-      t.view.classList.remove("active");
-    });
-    tab.classList.add("active");
-    view.classList.add("active");
-    if (onShow) onShow();
-  });
-});
-
-// ===================================
-// Service Worker登録 & 自動アップデート
+// Service Worker
 // ===================================
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("./service-worker.js").then(reg => {
-
-    // 新しいService Workerがインストールされたか監視
     reg.addEventListener("updatefound", () => {
       const newWorker = reg.installing;
-
       newWorker.addEventListener("statechange", () => {
-        // 新しいWorkerが有効化待ちになったらリロード
-        if (newWorker.state === "activated") {
-          // データを保持したままページをリロード
-          window.location.reload();
-        }
+        if (newWorker.state === "activated") window.location.reload();
       });
     });
-
   });
-
-  // 別タブでService Workerが更新されたときもリロード
-  navigator.serviceWorker.addEventListener("controllerchange", () => {
-    window.location.reload();
-  });
+  navigator.serviceWorker.addEventListener("controllerchange", () => window.location.reload());
 }
