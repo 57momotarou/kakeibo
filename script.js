@@ -426,6 +426,8 @@ function filterByPeriod(yearMonth) {
 }
 
 // 集計期間画面の描画
+let periodListenerAdded = false; // 二重登録防止フラグ
+
 function renderPeriodView() {
   const sel = document.getElementById("periodStartDay");
   sel.innerHTML = "";
@@ -436,6 +438,18 @@ function renderPeriodView() {
     if (d === periodStartDay) opt.selected = true;
     sel.appendChild(opt);
   }
+
+  // イベントリスナーは最初の1回だけ登録
+  if (!periodListenerAdded) {
+    sel.addEventListener("change", e => {
+      periodStartDay = Number(e.target.value);
+      localStorage.setItem("periodStartDay", periodStartDay);
+      updatePeriodPreview();
+      render();
+    });
+    periodListenerAdded = true;
+  }
+
   updatePeriodPreview();
 }
 
@@ -446,16 +460,9 @@ function updatePeriodPreview() {
   const e = new Date(end   + "T00:00:00");
   const fmt = d => `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
   const [y, mo] = ym.split("-").map(Number);
-  document.getElementById("periodPreview").textContent =
-    `${mo}月の集計期間：${fmt(s)} 〜 ${fmt(e)}`;
+  const el = document.getElementById("periodPreview");
+  if (el) el.textContent = `${mo}月の集計期間：${fmt(s)} 〜 ${fmt(e)}`;
 }
-
-document.getElementById("periodStartDay").addEventListener("change", e => {
-  periodStartDay = Number(e.target.value);
-  localStorage.setItem("periodStartDay", periodStartDay);
-  updatePeriodPreview();
-  render(); // ホーム画面の集計も即時反映
-});
 
 
 
