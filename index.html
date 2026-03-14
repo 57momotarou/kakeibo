@@ -222,6 +222,43 @@
   </div>
 
   <!-- ========== 浮遊＋ボタン ========== -->
+  <!-- 口座 -->
+  <div id="accountView" class="view">
+    <!-- 合計残高 -->
+    <div class="account-total-card">
+      <span class="account-total-label">合計残高</span>
+      <span class="account-total-value">¥<span id="accountTotal">0</span></span>
+    </div>
+
+    <!-- 口座リスト -->
+    <ul id="accountList"></ul>
+
+    <!-- 口座追加ボタン -->
+    <button class="btn-primary" id="openAddAccountBtn" style="margin-top:12px">＋ 口座を追加</button>
+  </div>
+
+  <!-- 口座追加・編集モーダル -->
+  <div id="accountOverlay" class="overlay hidden"></div>
+  <div id="accountModal" class="modal hidden">
+    <div class="modal-header edit-modal-header">
+      <button class="modal-delete-btn hidden" id="deleteAccountBtn">🗑️ 削除</button>
+      <span class="modal-title" id="accountModalTitle">口座を追加</span>
+      <button class="modal-close" id="closeAccountBtn">✕</button>
+    </div>
+    <div class="modal-body">
+      <label class="field-label">口座名</label>
+      <input type="text" id="accountName" placeholder="例：北見信用金庫">
+
+      <label class="field-label">残高</label>
+      <input type="number" id="accountBalance" placeholder="例：100000">
+
+      <label class="field-label">メモ（任意）</label>
+      <input type="text" id="accountMemo" placeholder="例：普通預金・給与口座">
+
+      <button class="btn-primary" id="saveAccountBtn">保存する</button>
+    </div>
+  </div>
+
   <button class="fab-add" id="openAddBtn">＋</button>
 
   <!-- ========== 下部タブ ========== -->
@@ -229,6 +266,7 @@
     <button id="homeTab" class="tab active">🏠<br><small>ホーム</small></button>
     <button id="calendarTab" class="tab">📅<br><small>カレンダー</small></button>
     <button id="graphTab" class="tab">📊<br><small>グラフ</small></button>
+    <button id="accountTab" class="tab">🏦<br><small>口座</small></button>
   </nav>
 
   <script src="script.js"></script>

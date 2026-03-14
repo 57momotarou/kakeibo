@@ -197,6 +197,7 @@ const VIEW_CONFIG = {
   home:     { el: document.getElementById("homeView"),     title: null,           showTabs: true  },
   calendar: { el: document.getElementById("calendarView"), title: null,           showTabs: true  },
   graph:    { el: document.getElementById("graphView"),    title: null,           showTabs: true  },
+  account:  { el: document.getElementById("accountView"),  title: null,           showTabs: true  },
   settings: { el: document.getElementById("settingsView"), title: "設定",         showTabs: false },
   category: { el: document.getElementById("categoryView"), title: "カテゴリ変更", showTabs: false },
   theme:    { el: document.getElementById("themeView"),    title: "テーマカラー", showTabs: false },
@@ -221,7 +222,7 @@ function showCurrentView() {
   const config = VIEW_CONFIG[name];
   config.el.classList.add("active");
 
-  const isMain = (name === "home" || name === "calendar" || name === "graph");
+  const isMain = (name === "home" || name === "calendar" || name === "graph" || name === "account");
   topBarNormal.classList.toggle("hidden", !isMain);
   topBarSettings.classList.toggle("hidden", isMain);
   if (!isMain) settingsBarTitle.textContent = config.title;
@@ -234,10 +235,12 @@ function showCurrentView() {
   if (name === "theme")    renderColorPresets();
   if (name === "graph")    renderGraph();
   if (name === "period")   renderPeriodView();
+  if (name === "account")  renderAccountView();
 
-  document.getElementById("homeTab").classList.toggle("active",     name === "home");
-  document.getElementById("calendarTab").classList.toggle("active", name === "calendar");
-  document.getElementById("graphTab").classList.toggle("active",    name === "graph");
+  document.getElementById("homeTab").classList.toggle("active",    name === "home");
+  document.getElementById("calendarTab").classList.toggle("active",name === "calendar");
+  document.getElementById("graphTab").classList.toggle("active",   name === "graph");
+  document.getElementById("accountTab").classList.toggle("active", name === "account");
 }
 
 backBtn.addEventListener("click", goBack);
@@ -254,6 +257,7 @@ function switchToTab(name) {
 document.getElementById("homeTab").addEventListener("click",     () => switchToTab("home"));
 document.getElementById("calendarTab").addEventListener("click", () => switchToTab("calendar"));
 document.getElementById("graphTab").addEventListener("click",    () => switchToTab("graph"));
+document.getElementById("accountTab").addEventListener("click",  () => switchToTab("account"));
 
 // ===================================
 // モーダル共通
@@ -669,7 +673,133 @@ function renderGraph() {
 document.getElementById("graphMonthSelector").addEventListener("change", renderGraph);
 
 // ===================================
-// 月ナビゲーション
+// 口座管理
+// ===================================
+let accounts = JSON.parse(localStorage.getItem("accounts")) || [
+  { id: 1, name: "北見信用金庫",    balance: 0, memo: "" },
+  { id: 2, name: "北海道労働金庫",  balance: 0, memo: "" },
+];
+let editingAccount  = null;
+let nextAccountId   = Math.max(0, ...accounts.map(a => a.id)) + 1;
+
+function saveAccounts() {
+  localStorage.setItem("accounts", JSON.stringify(accounts));
+}
+
+function renderAccountView() {
+  const ul    = document.getElementById("accountList");
+  const total = accounts.reduce((s, a) => s + a.balance, 0);
+  document.getElementById("accountTotal").textContent = total.toLocaleString();
+  ul.innerHTML = "";
+
+  accounts.forEach(account => {
+    const li = document.createElement("li");
+    li.className = "account-li";
+
+    // 左側：口座名・メモ
+    const info = document.createElement("div");
+    info.className = "account-info";
+    info.innerHTML =
+      `<span class="account-name">${account.name}</span>` +
+      (account.memo ? `<span class="account-memo">${account.memo}</span>` : "");
+
+    // 右側：残高（タップで即時編集）
+    const balWrap = document.createElement("div");
+    balWrap.className = "account-balance-wrap";
+
+    const balSpan = document.createElement("span");
+    balSpan.className = "account-balance";
+    balSpan.textContent = `¥${account.balance.toLocaleString()}`;
+
+    // 残高タップ → インライン編集
+    balSpan.addEventListener("click", e => {
+      e.stopPropagation();
+      const input = document.createElement("input");
+      input.type  = "number";
+      input.value = account.balance;
+      input.className = "account-balance-input";
+      const save = () => {
+        const v = Number(input.value);
+        if (!isNaN(v)) account.balance = v;
+        saveAccounts();
+        renderAccountView();
+      };
+      input.addEventListener("blur", save);
+      input.addEventListener("keydown", e => { if (e.key === "Enter") { input.blur(); } });
+      balWrap.replaceChild(input, balSpan);
+      input.focus();
+      input.select();
+    });
+
+    balWrap.appendChild(balSpan);
+
+    // 編集ボタン
+    const editBtn = document.createElement("button");
+    editBtn.textContent = "編集";
+    editBtn.className   = "account-edit-btn";
+    editBtn.addEventListener("click", () => openAccountModal(account));
+
+    li.appendChild(info);
+    li.appendChild(balWrap);
+    li.appendChild(editBtn);
+    ul.appendChild(li);
+  });
+}
+
+// 口座モーダルを開く（追加 or 編集）
+function openAccountModal(account) {
+  editingAccount = account || null;
+  const isEdit   = !!account;
+
+  document.getElementById("accountModalTitle").textContent = isEdit ? "口座を編集" : "口座を追加";
+  document.getElementById("accountName").value    = isEdit ? account.name    : "";
+  document.getElementById("accountBalance").value = isEdit ? account.balance : "";
+  document.getElementById("accountMemo").value    = isEdit ? account.memo    : "";
+
+  const delBtn = document.getElementById("deleteAccountBtn");
+  delBtn.classList.toggle("hidden", !isEdit);
+
+  showModal(document.getElementById("accountModal"), document.getElementById("accountOverlay"));
+}
+
+function closeAccountModal() {
+  hideModal(document.getElementById("accountModal"), document.getElementById("accountOverlay"));
+  editingAccount = null;
+}
+
+document.getElementById("openAddAccountBtn").addEventListener("click", () => openAccountModal(null));
+document.getElementById("closeAccountBtn").addEventListener("click",   closeAccountModal);
+document.getElementById("accountOverlay").addEventListener("click",    closeAccountModal);
+
+document.getElementById("saveAccountBtn").addEventListener("click", () => {
+  const name    = document.getElementById("accountName").value.trim();
+  const balance = Number(document.getElementById("accountBalance").value);
+  const memo    = document.getElementById("accountMemo").value.trim();
+
+  if (!name) { alert("口座名を入力してください"); return; }
+
+  if (editingAccount) {
+    editingAccount.name    = name;
+    editingAccount.balance = balance;
+    editingAccount.memo    = memo;
+  } else {
+    accounts.push({ id: nextAccountId++, name, balance, memo });
+  }
+  saveAccounts();
+  renderAccountView();
+  closeAccountModal();
+});
+
+document.getElementById("deleteAccountBtn").addEventListener("click", () => {
+  if (!editingAccount) return;
+  if (!confirm(`「${editingAccount.name}」を削除しますか？`)) return;
+  accounts = accounts.filter(a => a.id !== editingAccount.id);
+  saveAccounts();
+  renderAccountView();
+  closeAccountModal();
+});
+
+
 // ===================================
 function updateMonthLabel() {
   const [year, month] = monthSelector.value.split("-").map(Number);
