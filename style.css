@@ -335,15 +335,27 @@ ul { list-style: none; padding: 0; margin: 0; }
 }
 .record-main:active { background: #f9f9f9; }
 
-.record-top-row {
+.record-title-row {
+  margin-bottom: 4px;
+}
+
+.record-title {
+  font-size: 14px;
+  font-weight: bold;
+  color: #222;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.record-bottom-row {
   display: flex;
   align-items: center;
   gap: 6px;
-  flex-wrap: wrap;
 }
 
 .record-date   { font-size: 11px; color: #999; white-space: nowrap; }
-.record-cat    { font-size: 13px; color: #333; flex: 1; min-width: 40px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .record-amount { font-size: 14px; font-weight: bold; white-space: nowrap; margin-left: auto; }
 .amount-expense { color: #c62828; }
 .amount-income  { color: var(--theme); }

@@ -309,15 +309,21 @@ function render() {
     const main = document.createElement("div");
     main.className = "record-main";
 
-    const topRow = document.createElement("div");
-    topRow.className = "record-top-row";
-    topRow.innerHTML =
+    // 上段：タイトル
+    const titleRow = document.createElement("div");
+    titleRow.className = "record-title-row";
+    titleRow.innerHTML = `<span class="record-title">${record.title || record.category}</span>`;
+
+    // 下段：日付・種別バッジ・金額
+    const bottomRow = document.createElement("div");
+    bottomRow.className = "record-bottom-row";
+    bottomRow.innerHTML =
       `<span class="record-date">${record.date}</span>` +
-      `<span class="record-cat">${record.title || record.category}</span>` +
       `<span class="record-badge ${record.type === 'expense' ? 'tag-expense' : 'tag-income'}">${record.type === "expense" ? "支出" : "収入"}</span>` +
       `<span class="record-amount ${record.type === 'expense' ? 'amount-expense' : 'amount-income'}">¥${record.amount.toLocaleString()}</span>`;
 
-    main.appendChild(topRow);
+    main.appendChild(titleRow);
+    main.appendChild(bottomRow);
 
     // メインエリアタップ → 編集モーダル
     main.addEventListener("click", () => openEditModal(record));
