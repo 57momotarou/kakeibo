@@ -301,48 +301,82 @@ function render() {
   const filtered = records.filter(r => r.date.startsWith(selectedMonth));
   const sorted   = [...filtered].sort((a, b) => new Date(b.date) - new Date(a.date));
 
+  // 日付ごとにグループ化
+  const groups = [];
   sorted.forEach(record => {
-    const li = document.createElement("li");
-    li.className = "record-li";
+    const last = groups[groups.length - 1];
+    if (last && last.date === record.date) {
+      last.records.push(record);
+    } else {
+      groups.push({ date: record.date, records: [record] });
+    }
+  });
 
-    // ── メインエリア（タップで編集モーダル） ──
-    const main = document.createElement("div");
-    main.className = "record-main";
+  groups.forEach(group => {
+    // ── 日付ヘッダー ──
+    const header = document.createElement("li");
+    header.className = "date-header";
 
-    // 上段：タイトル
-    const titleRow = document.createElement("div");
-    titleRow.className = "record-title-row";
-    titleRow.innerHTML = `<span class="record-title">${record.title || record.category}</span>`;
+    // 日付を「3月14日（土）」形式に変換
+    const d = new Date(group.date + "T00:00:00");
+    const weekDay = ["日","月","火","水","木","金","土"][d.getDay()];
+    const dateLabel = `${d.getMonth() + 1}月${d.getDate()}日（${weekDay}）`;
 
-    // 下段：日付・種別バッジ・金額
-    const bottomRow = document.createElement("div");
-    bottomRow.className = "record-bottom-row";
-    bottomRow.innerHTML =
-      `<span class="record-date">${record.date}</span>` +
-      `<span class="record-badge ${record.type === 'expense' ? 'tag-expense' : 'tag-income'}">${record.type === "expense" ? "支出" : "収入"}</span>` +
-      `<span class="record-amount ${record.type === 'expense' ? 'amount-expense' : 'amount-income'}">¥${record.amount.toLocaleString()}</span>`;
-
-    main.appendChild(titleRow);
-    main.appendChild(bottomRow);
-
-    // メインエリアタップ → 編集モーダル
-    main.addEventListener("click", () => openEditModal(record));
-
-    // ── 削除ボタン ──
-    const delBtn = document.createElement("button");
-    delBtn.textContent = "削除";
-    delBtn.className   = "delete-btn";
-    delBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const i = records.indexOf(record);
-      if (i !== -1) records.splice(i, 1);
-      saveRecords();
-      render();
+    // その日の収支合計
+    let dayIncome = 0, dayExpense = 0;
+    group.records.forEach(r => {
+      r.type === "income" ? dayIncome += r.amount : dayExpense += r.amount;
     });
+    const dayNet   = dayIncome - dayExpense;
+    const netClass = dayNet >= 0 ? "day-net-income" : "day-net-expense";
+    const netSign  = dayNet >= 0 ? "+" : "";
 
-    li.appendChild(main);
-    li.appendChild(delBtn);
-    list.appendChild(li);
+    header.innerHTML =
+      `<span class="date-header-label">${dateLabel}</span>` +
+      `<span class="date-header-net ${netClass}">${netSign}¥${dayNet.toLocaleString()}</span>`;
+
+    list.appendChild(header);
+
+    // ── その日の記録 ──
+    group.records.forEach(record => {
+      const li = document.createElement("li");
+      li.className = "record-li";
+
+      const main = document.createElement("div");
+      main.className = "record-main";
+
+      // 上段：タイトル
+      const titleRow = document.createElement("div");
+      titleRow.className = "record-title-row";
+      titleRow.innerHTML = `<span class="record-title">${record.title || record.category}</span>`;
+
+      // 下段：カテゴリ・種別バッジ・金額（日付はヘッダーに表示済みなので省略）
+      const bottomRow = document.createElement("div");
+      bottomRow.className = "record-bottom-row";
+      bottomRow.innerHTML =
+        `<span class="record-cat-small">${record.category}</span>` +
+        `<span class="record-badge ${record.type === 'expense' ? 'tag-expense' : 'tag-income'}">${record.type === "expense" ? "支出" : "収入"}</span>` +
+        `<span class="record-amount ${record.type === 'expense' ? 'amount-expense' : 'amount-income'}">¥${record.amount.toLocaleString()}</span>`;
+
+      main.appendChild(titleRow);
+      main.appendChild(bottomRow);
+      main.addEventListener("click", () => openEditModal(record));
+
+      const delBtn = document.createElement("button");
+      delBtn.textContent = "削除";
+      delBtn.className   = "delete-btn";
+      delBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const i = records.indexOf(record);
+        if (i !== -1) records.splice(i, 1);
+        saveRecords();
+        render();
+      });
+
+      li.appendChild(main);
+      li.appendChild(delBtn);
+      list.appendChild(li);
+    });
   });
 
   // 合計

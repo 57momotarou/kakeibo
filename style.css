@@ -312,6 +312,35 @@ input:focus, select:focus {
 .expense-item .summary-value { color: #c62828; }
 .balance-item .summary-value { color: #333; }
 
+/* 日付グループヘッダー */
+.date-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 4px 6px;
+  margin-top: 4px;
+  border-bottom: 2px solid var(--theme);
+  list-style: none;
+}
+
+.date-header-label {
+  font-size: 13px;
+  font-weight: bold;
+  color: #444;
+}
+
+.day-net-income  { font-size: 13px; font-weight: bold; color: var(--theme); }
+.day-net-expense { font-size: 13px; font-weight: bold; color: #c62828; }
+
+/* カテゴリ小表示（記録行の下段） */
+.record-cat-small {
+  font-size: 11px;
+  color: #aaa;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* ===================================
    記録リスト
 =================================== */
