@@ -22,10 +22,24 @@ const editOverlay     = document.getElementById("editOverlay");
 const editModal       = document.getElementById("editModal");
 const editDateInput   = document.getElementById("editDate");
 const editAmountInput = document.getElementById("editAmount");
-const editTypeSelect  = document.getElementById("editType");
+const editTypeInput   = document.getElementById("editType");   // hidden input
 const editCatSelect   = document.getElementById("editCategory");
 const editMemoInput   = document.getElementById("editMemo");
 const saveEditButton  = document.getElementById("saveEditButton");
+const editTypeToggle  = document.getElementById("editTypeToggle");
+
+// トグルボタンの切り替え処理
+editTypeToggle.addEventListener("click", e => {
+  const btn = e.target.closest(".type-toggle-btn");
+  if (!btn) return;
+  const val = btn.dataset.value;
+  editTypeToggle.querySelectorAll(".type-toggle-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  editTypeInput.value = val;
+  // カテゴリも連動して更新
+  const fakeSelect = { value: val };
+  updateCategoryOptions(fakeSelect, editCatSelect, editCatSelect.value);
+});
 
 // 設定ドロワー
 const openSettingsBtn  = document.getElementById("openSettingsBtn");
@@ -123,7 +137,6 @@ applyThemeColor(themeColor);
 monthSelector.value = new Date().toISOString().slice(0, 7);
 monthSelector.addEventListener("change", render);
 typeSelect.addEventListener("change", () => updateCategoryOptions(typeSelect, categorySelect));
-editTypeSelect.addEventListener("change", () => updateCategoryOptions(editTypeSelect, editCatSelect));
 
 updateCategoryOptions(typeSelect, categorySelect);
 render();
@@ -175,8 +188,12 @@ function openEditModal(record) {
   editingRecord = record;
   editDateInput.value   = record.date;
   editAmountInput.value = record.amount;
-  editTypeSelect.value  = record.type;
-  updateCategoryOptions(editTypeSelect, editCatSelect, record.category);
+  editTypeInput.value   = record.type;
+  // トグルボタンの初期状態をセット
+  editTypeToggle.querySelectorAll(".type-toggle-btn").forEach(b => {
+    b.classList.toggle("active", b.dataset.value === record.type);
+  });
+  updateCategoryOptions(editTypeInput, editCatSelect, record.category);
   editMemoInput.value   = record.title || "";
   showModal(editModal, editOverlay);
 }
@@ -198,7 +215,7 @@ saveEditButton.addEventListener("click", () => {
   }
   editingRecord.date     = editDateInput.value;
   editingRecord.amount   = amount;
-  editingRecord.type     = editTypeSelect.value;
+  editingRecord.type     = editTypeInput.value;
   editingRecord.category = editCatSelect.value;
   editingRecord.title    = editMemoInput.value.trim() || editCatSelect.value;
   saveRecords();
@@ -337,19 +354,14 @@ function render() {
       const main = document.createElement("div");
       main.className = "record-main";
 
-      // 上段：タイトル
-      const titleRow = document.createElement("div");
-      titleRow.className = "record-title-row";
-      titleRow.innerHTML = `<span class="record-title">${record.title || record.category}</span>`;
-
-      // 下段：金額のみ
-      const bottomRow = document.createElement("div");
-      bottomRow.className = "record-bottom-row";
-      bottomRow.innerHTML =
+      // タイトル左・金額右を1行に（常に同じ高さで揃える）
+      const mainRow = document.createElement("div");
+      mainRow.className = "record-main-row";
+      mainRow.innerHTML =
+        `<span class="record-title">${record.title || record.category}</span>` +
         `<span class="record-amount ${record.type === 'expense' ? 'amount-expense' : 'amount-income'}">¥${record.amount.toLocaleString()}</span>`;
 
-      main.appendChild(titleRow);
-      main.appendChild(bottomRow);
+      main.appendChild(mainRow);
       main.addEventListener("click", () => openEditModal(record));
 
       const delBtn = document.createElement("button");

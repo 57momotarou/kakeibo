@@ -137,6 +137,75 @@ body {
   overflow-y: auto;
 }
 
+/* 種別トグル（支出／収入の切り替え） */
+.type-toggle {
+  display: flex;
+  gap: 0;
+  margin-bottom: 4px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 2px solid var(--theme);
+}
+
+.type-toggle-btn {
+  flex: 1;
+  height: 44px !important;
+  width: auto !important;
+  border: none;
+  background: #fff;
+  font-size: 15px;
+  font-weight: bold;
+  color: var(--theme);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  padding: 0;
+  margin: 0;
+}
+
+.type-toggle-btn.active {
+  background: var(--theme);
+  color: #fff;
+}
+
+.type-toggle-btn:not(.active):active {
+  background: #f0f0f0;
+}
+
+/* 種別トグルボタン（編集モーダル） */
+.type-toggle {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.type-toggle-btn {
+  flex: 1;
+  height: 44px !important;
+  width: auto !important;
+  border: 2px solid #ddd;
+  border-radius: 10px;
+  background: #fafafa;
+  font-size: 15px;
+  font-weight: bold;
+  color: #aaa;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin: 0;
+  padding: 0;
+}
+
+.type-toggle-btn.active[data-value="expense"] {
+  background: #ffe5e5;
+  border-color: #c62828;
+  color: #c62828;
+}
+
+.type-toggle-btn.active[data-value="income"] {
+  background: #e8f5e9;
+  border-color: var(--theme);
+  color: var(--theme);
+}
+
 .field-label {
   display: block;
   font-size: 13px;
@@ -262,20 +331,6 @@ input:focus, select:focus {
 }
 .btn-blue:active { opacity: 0.8; }
 
-.delete-btn {
-  flex-shrink: 0;
-  background: #ff5c5c;
-  color: #fff;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 12px;
-  cursor: pointer;
-  height: auto !important;
-  width: auto !important;
-  margin: 0;
-}
-.delete-btn:active { opacity: 0.7; }
 
 /* ===================================
    月選択
@@ -336,7 +391,7 @@ ul { list-style: none; padding: 0; margin: 0; }
 
 .record-li {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   background: #fff;
   border-radius: 10px;
   margin-bottom: 6px;
@@ -346,36 +401,67 @@ ul { list-style: none; padding: 0; margin: 0; }
 
 .record-main {
   flex: 1;
-  padding: 10px 12px;
+  padding: 12px 12px;
   cursor: pointer;
   min-width: 0;
+  display: flex;
+  align-items: center;
 }
 .record-main:active { background: #f9f9f9; }
 
-.record-title-row {
-  margin-bottom: 4px;
+/* タイトル左・金額右の1行レイアウト */
+.record-main-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
 }
 
 .record-title {
   font-size: 14px;
   font-weight: bold;
   color: #222;
-  display: block;
+  flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
 }
 
-.record-bottom-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+.record-amount {
+  font-size: 14px;
+  font-weight: bold;
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-align: right;
+  min-width: 80px;  /* 金額列の幅を固定して縦揃え */
 }
-
-.record-date   { font-size: 11px; color: #999; white-space: nowrap; }
-.record-amount { font-size: 14px; font-weight: bold; white-space: nowrap; margin-left: auto; }
 .amount-expense { color: #c62828; }
 .amount-income  { color: var(--theme); }
+
+/* 削除ボタンを幅固定にして右端を揃える */
+.delete-btn {
+  flex-shrink: 0;
+  background: #ff5c5c;
+  color: #fff;
+  border: none;
+  width: 52px !important;
+  height: auto !important;
+  font-size: 12px;
+  cursor: pointer;
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.delete-btn:active { opacity: 0.7; }
+
+/* 編集ヒント › は削除ボタンがあるので非表示 */
+.record-li::after { content: none; }
 
 .record-badge {
   font-size: 10px;
