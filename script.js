@@ -1,20 +1,33 @@
 // ===================================
 // 要素の取得
 // ===================================
+const list           = document.getElementById("list");
+const monthSelector  = document.getElementById("monthSelector");
+
+// 追加モーダル
+const openAddBtn     = document.getElementById("openAddBtn");
+const closeAddBtn    = document.getElementById("closeAddBtn");
+const addOverlay     = document.getElementById("addOverlay");
+const addModal       = document.getElementById("addModal");
 const dateInput      = document.getElementById("date");
 const amountInput    = document.getElementById("amount");
 const typeSelect     = document.getElementById("type");
-const addButton      = document.getElementById("addButton");
-const list           = document.getElementById("list");
-const monthSelector  = document.getElementById("monthSelector");
 const categorySelect = document.getElementById("category");
+const memoInput      = document.getElementById("memo");
+const addButton      = document.getElementById("addButton");
 
-// モーダル・ドロワー関連
-const openAddBtn       = document.getElementById("openAddBtn");
-const closeAddBtn      = document.getElementById("closeAddBtn");
-const addOverlay       = document.getElementById("addOverlay");
-const addModal         = document.getElementById("addModal");
+// 編集モーダル
+const closeEditBtn    = document.getElementById("closeEditBtn");
+const editOverlay     = document.getElementById("editOverlay");
+const editModal       = document.getElementById("editModal");
+const editDateInput   = document.getElementById("editDate");
+const editAmountInput = document.getElementById("editAmount");
+const editTypeSelect  = document.getElementById("editType");
+const editCatSelect   = document.getElementById("editCategory");
+const editMemoInput   = document.getElementById("editMemo");
+const saveEditButton  = document.getElementById("saveEditButton");
 
+// 設定ドロワー
 const openSettingsBtn  = document.getElementById("openSettingsBtn");
 const closeSettingsBtn = document.getElementById("closeSettingsBtn");
 const settingsOverlay  = document.getElementById("settingsOverlay");
@@ -36,56 +49,117 @@ const DEFAULT_CATEGORIES = [
 let categories = JSON.parse(localStorage.getItem("categories")) || DEFAULT_CATEGORIES;
 
 // ===================================
+// テーマカラー
+// ===================================
+const PRESET_COLORS = [
+  { label: "グリーン",    color: "#4caf50" },
+  { label: "ブルー",      color: "#2196f3" },
+  { label: "パープル",    color: "#9c27b0" },
+  { label: "オレンジ",    color: "#ff9800" },
+  { label: "レッド",      color: "#f44336" },
+  { label: "ティール",    color: "#009688" },
+  { label: "インディゴ",  color: "#3f51b5" },
+  { label: "ブラウン",    color: "#795548" },
+];
+
+let themeColor = localStorage.getItem("themeColor") || "#4caf50";
+
+function applyThemeColor(color) {
+  themeColor = color;
+  document.documentElement.style.setProperty("--theme", color);
+  // 少し暗くしたダーク版を自動生成（ボタンhover等に使用）
+  document.documentElement.style.setProperty("--theme-dark", darkenColor(color, 20));
+  localStorage.setItem("themeColor", color);
+  // プレビューバーを更新
+  const bar = document.getElementById("themePreviewBar");
+  if (bar) bar.style.background = color;
+  // プリセットのチェックマーク更新
+  document.querySelectorAll(".color-swatch").forEach(sw => {
+    sw.classList.toggle("selected", sw.dataset.color === color);
+  });
+}
+
+// 16進カラーをやや暗くするユーティリティ
+function darkenColor(hex, amount) {
+  const num = parseInt(hex.replace("#", ""), 16);
+  const r = Math.max(0, (num >> 16) - amount);
+  const g = Math.max(0, ((num >> 8) & 0xff) - amount);
+  const b = Math.max(0, (num & 0xff) - amount);
+  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, "0")}`;
+}
+
+// プリセットスウォッチを描画
+function renderColorPresets() {
+  const container = document.getElementById("colorPresets");
+  container.innerHTML = "";
+  PRESET_COLORS.forEach(({ label, color }) => {
+    const btn = document.createElement("button");
+    btn.className = "color-swatch";
+    btn.dataset.color = color;
+    btn.style.background = color;
+    btn.title = label;
+    btn.innerHTML = `<span class="swatch-check">✓</span><span class="swatch-label">${label}</span>`;
+    if (color === themeColor) btn.classList.add("selected");
+    btn.addEventListener("click", () => applyThemeColor(color));
+    container.appendChild(btn);
+  });
+  // プレビューバー初期化
+  const bar = document.getElementById("themePreviewBar");
+  if (bar) bar.style.background = themeColor;
+}
+
+// カスタムカラー適用
+document.getElementById("applyCustomColor").addEventListener("click", () => {
+  const color = document.getElementById("customColorPicker").value;
+  applyThemeColor(color);
+});
+
+// ページ読み込み時にテーマ適用
+applyThemeColor(themeColor);
+
+// ===================================
 // 初期化
 // ===================================
 monthSelector.value = new Date().toISOString().slice(0, 7);
 monthSelector.addEventListener("change", render);
-typeSelect.addEventListener("change", updateCategoryOptions);
+typeSelect.addEventListener("change", () => updateCategoryOptions(typeSelect, categorySelect));
+editTypeSelect.addEventListener("change", () => updateCategoryOptions(editTypeSelect, editCatSelect));
 
-updateCategoryOptions();
+updateCategoryOptions(typeSelect, categorySelect);
 render();
 
 // ===================================
-// カテゴリプルダウン更新
+// カテゴリプルダウン更新（追加・編集モーダル共用）
 // ===================================
-function updateCategoryOptions() {
-  const type = typeSelect.value;
-  categorySelect.innerHTML = "";
+function updateCategoryOptions(typeEl, catEl, currentValue) {
+  const type = typeEl.value;
+  catEl.innerHTML = "";
   categories
     .filter(c => c.type === type || c.type === "both")
     .forEach(c => {
       const opt = document.createElement("option");
       opt.value = c.name;
       opt.textContent = c.name;
-      categorySelect.appendChild(opt);
+      if (currentValue && c.name === currentValue) opt.selected = true;
+      catEl.appendChild(opt);
     });
 }
 
 // ===================================
-// ポップアップ（収支入力）の開閉
+// 追加モーダルの開閉
 // ===================================
 function openAddModal() {
-  // 日付の初期値を今日に
-  dateInput.value = new Date().toISOString().slice(0, 10);
+  dateInput.value   = new Date().toISOString().slice(0, 10);
   amountInput.value = "";
-  updateCategoryOptions();
-  addModal.classList.remove("hidden");
-  addOverlay.classList.remove("hidden");
-  // 少し待ってからアニメーション開始
-  requestAnimationFrame(() => {
-    addModal.classList.add("show");
-    addOverlay.classList.add("show");
-  });
-  amountInput.focus();
+  memoInput.value   = "";
+  typeSelect.value  = "expense";
+  updateCategoryOptions(typeSelect, categorySelect);
+  showModal(addModal, addOverlay);
+  setTimeout(() => amountInput.focus(), 300);
 }
 
 function closeAddModal() {
-  addModal.classList.remove("show");
-  addOverlay.classList.remove("show");
-  setTimeout(() => {
-    addModal.classList.add("hidden");
-    addOverlay.classList.add("hidden");
-  }, 250);
+  hideModal(addModal, addOverlay);
 }
 
 openAddBtn.addEventListener("click", openAddModal);
@@ -93,10 +167,72 @@ closeAddBtn.addEventListener("click", closeAddModal);
 addOverlay.addEventListener("click", closeAddModal);
 
 // ===================================
+// 編集モーダルの開閉
+// ===================================
+let editingRecord = null;
+
+function openEditModal(record) {
+  editingRecord = record;
+  editDateInput.value   = record.date;
+  editAmountInput.value = record.amount;
+  editTypeSelect.value  = record.type;
+  updateCategoryOptions(editTypeSelect, editCatSelect, record.category);
+  editMemoInput.value   = record.memo || "";
+  showModal(editModal, editOverlay);
+}
+
+function closeEditModal() {
+  hideModal(editModal, editOverlay);
+  editingRecord = null;
+}
+
+closeEditBtn.addEventListener("click", closeEditModal);
+editOverlay.addEventListener("click", closeEditModal);
+
+saveEditButton.addEventListener("click", () => {
+  if (!editingRecord) return;
+  const amount = Number(editAmountInput.value);
+  if (!editDateInput.value || editAmountInput.value === "") {
+    alert("日付と金額を入力してください");
+    return;
+  }
+  editingRecord.date     = editDateInput.value;
+  editingRecord.amount   = amount;
+  editingRecord.type     = editTypeSelect.value;
+  editingRecord.category = editCatSelect.value;
+  editingRecord.memo     = editMemoInput.value.trim();
+  saveRecords();
+  render();
+  closeEditModal();
+});
+
+// ===================================
+// モーダル共通アニメーション
+// ===================================
+function showModal(modal, overlay) {
+  modal.classList.remove("hidden");
+  overlay.classList.remove("hidden");
+  requestAnimationFrame(() => {
+    modal.classList.add("show");
+    overlay.classList.add("show");
+  });
+}
+
+function hideModal(modal, overlay) {
+  modal.classList.remove("show");
+  overlay.classList.remove("show");
+  setTimeout(() => {
+    modal.classList.add("hidden");
+    overlay.classList.add("hidden");
+  }, 250);
+}
+
+// ===================================
 // 設定ドロワーの開閉
 // ===================================
 function openSettings() {
   renderCategoryView();
+  renderColorPresets();
   settingsDrawer.classList.remove("hidden");
   settingsOverlay.classList.remove("hidden");
   requestAnimationFrame(() => {
@@ -104,16 +240,6 @@ function openSettings() {
     settingsOverlay.classList.add("show");
   });
 }
-
-// 設定ドロワー内タブ切り替え
-document.querySelectorAll(".settings-tab").forEach(tab => {
-  tab.addEventListener("click", () => {
-    document.querySelectorAll(".settings-tab").forEach(t => t.classList.remove("active"));
-    document.querySelectorAll(".settings-tab-content").forEach(c => c.classList.remove("active"));
-    tab.classList.add("active");
-    document.getElementById(tab.dataset.target).classList.add("active");
-  });
-});
 
 function closeSettings() {
   settingsDrawer.classList.remove("show");
@@ -128,19 +254,32 @@ openSettingsBtn.addEventListener("click", openSettings);
 closeSettingsBtn.addEventListener("click", closeSettings);
 settingsOverlay.addEventListener("click", closeSettings);
 
+// 設定ドロワー内タブ切り替え
+document.querySelectorAll(".settings-tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".settings-tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".settings-tab-content").forEach(c => c.classList.remove("active"));
+    tab.classList.add("active");
+    document.getElementById(tab.dataset.target).classList.add("active");
+  });
+});
+
 // ===================================
 // 記録の追加
 // ===================================
 addButton.addEventListener("click", () => {
   const date   = dateInput.value;
-  const amount = Number(amountInput.value);
-
   if (!date || amountInput.value === "") {
     alert("日付と金額を入力してください");
     return;
   }
-
-  records.push({ date, amount, type: typeSelect.value, category: categorySelect.value });
+  records.push({
+    date,
+    amount:   Number(amountInput.value),
+    type:     typeSelect.value,
+    category: categorySelect.value,
+    memo:     memoInput.value.trim(),
+  });
   saveRecords();
   render();
   closeAddModal();
@@ -149,12 +288,8 @@ addButton.addEventListener("click", () => {
 // ===================================
 // 保存
 // ===================================
-function saveRecords() {
-  localStorage.setItem("records", JSON.stringify(records));
-}
-function saveCategories() {
-  localStorage.setItem("categories", JSON.stringify(categories));
-}
+function saveRecords()    { localStorage.setItem("records",    JSON.stringify(records));    }
+function saveCategories() { localStorage.setItem("categories", JSON.stringify(categories)); }
 
 // ===================================
 // ホーム画面の描画
@@ -168,44 +303,46 @@ function render() {
 
   sorted.forEach(record => {
     const li = document.createElement("li");
+    li.className = "record-li";
 
-    const text = document.createElement("span");
-    text.className = "record-text";
-    text.innerHTML =
+    // ── メインエリア（タップで編集モーダル） ──
+    const main = document.createElement("div");
+    main.className = "record-main";
+
+    const topRow = document.createElement("div");
+    topRow.className = "record-top-row";
+    topRow.innerHTML =
       `<span class="record-date">${record.date}</span>` +
       `<span class="record-cat">${record.category}</span>` +
-      `<span class="record-type ${record.type === 'expense' ? 'tag-expense' : 'tag-income'}">${record.type === "expense" ? "支出" : "収入"}</span>` +
-      `<span class="record-amount">¥${record.amount.toLocaleString()}</span>`;
+      `<span class="record-badge ${record.type === 'expense' ? 'tag-expense' : 'tag-income'}">${record.type === "expense" ? "支出" : "収入"}</span>` +
+      `<span class="record-amount ${record.type === 'expense' ? 'amount-expense' : 'amount-income'}">¥${record.amount.toLocaleString()}</span>`;
 
-    // タップで金額編集
-    text.addEventListener("click", () => {
-      const input = document.createElement("input");
-      input.type  = "number";
-      input.value = record.amount;
-      input.style.cssText = "width:90px;font-size:16px;border:1px solid #ccc;border-radius:4px;padding:4px;";
-      function saveEdit() {
-        const v = Number(input.value);
-        if (!isNaN(v) && v >= 0) record.amount = v;
-        saveRecords();
-        render();
-      }
-      input.addEventListener("blur", saveEdit);
-      input.addEventListener("keydown", e => { if (e.key === "Enter") saveEdit(); });
-      li.replaceChild(input, text);
-      input.focus();
-    });
+    main.appendChild(topRow);
 
+    // メモ行（あれば表示）
+    if (record.memo) {
+      const memoRow = document.createElement("div");
+      memoRow.className = "record-memo";
+      memoRow.textContent = `📝 ${record.memo}`;
+      main.appendChild(memoRow);
+    }
+
+    // メインエリアタップ → 編集モーダル
+    main.addEventListener("click", () => openEditModal(record));
+
+    // ── 削除ボタン ──
     const delBtn = document.createElement("button");
     delBtn.textContent = "削除";
     delBtn.className   = "delete-btn";
-    delBtn.addEventListener("click", () => {
+    delBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
       const i = records.indexOf(record);
       if (i !== -1) records.splice(i, 1);
       saveRecords();
       render();
     });
 
-    li.appendChild(text);
+    li.appendChild(main);
     li.appendChild(delBtn);
     list.appendChild(li);
   });
@@ -219,10 +356,10 @@ function render() {
 
   document.getElementById("incomeTotal").textContent  = income.toLocaleString();
   document.getElementById("expenseTotal").textContent = expense.toLocaleString();
-  const bal = income - expense;
+  const bal   = income - expense;
   const balEl = document.getElementById("balance");
   balEl.textContent = bal.toLocaleString();
-  balEl.style.color = bal >= 0 ? "#2e7d32" : "#c62828";
+  balEl.style.color = bal >= 0 ? "var(--theme)" : "#c62828";
 
   renderCalendar(filtered);
 }
@@ -270,7 +407,13 @@ function renderCalendar(data) {
       const detailBox = document.getElementById("dayDetail");
       const details = data
         .filter(r => r.date === dayStr)
-        .map(r => `<div class="detail-row"><span>${r.category}</span><span class="${r.type === 'expense' ? 'tag-expense' : 'tag-income'}">${r.type === "expense" ? "支出" : "収入"}</span><span>¥${r.amount.toLocaleString()}</span></div>`)
+        .map(r =>
+          `<div class="detail-row">
+            <span>${r.category}</span>
+            <span class="${r.type === 'expense' ? 'tag-expense' : 'tag-income'}">${r.type === "expense" ? "支出" : "収入"}</span>
+            <span>¥${r.amount.toLocaleString()}</span>
+            ${r.memo ? `<span class="detail-memo">📝${r.memo}</span>` : ""}
+          </div>`)
         .join("");
       detailBox.innerHTML = `<h3>${day}日の明細</h3>${details || "<p>記録なし</p>"}`;
     });
@@ -300,7 +443,7 @@ function renderCategoryView() {
       const input = document.createElement("input");
       input.type  = "text";
       input.value = cat.name;
-      input.style.cssText = "font-size:16px;width:120px;border:1px solid #ccc;border-radius:4px;padding:4px;";
+      input.style.cssText = "font-size:16px;width:120px;border:1px solid #ccc;border-radius:4px;padding:4px;height:36px;";
       function saveNameEdit() {
         const newName = input.value.trim();
         if (!newName) { renderCategoryView(); return; }
@@ -308,7 +451,7 @@ function renderCategoryView() {
         cat.name = newName;
         saveRecords();
         saveCategories();
-        updateCategoryOptions();
+        updateCategoryOptions(typeSelect, categorySelect);
         renderCategoryView();
       }
       input.addEventListener("blur", saveNameEdit);
@@ -329,14 +472,13 @@ function renderCategoryView() {
       if (used && !confirm(`「${cat.name}」は使用中です。削除しますか？`)) return;
       categories.splice(index, 1);
       saveCategories();
-      updateCategoryOptions();
+      updateCategoryOptions(typeSelect, categorySelect);
       renderCategoryView();
     });
 
     li.appendChild(nameSpan);
     li.appendChild(typeBadge);
     li.appendChild(delBtn);
-
     (cat.type === "income" ? incomeList : expenseList).appendChild(li);
   });
 }
@@ -349,7 +491,7 @@ document.getElementById("addCategoryButton").addEventListener("click", () => {
   categories.push({ name, type });
   document.getElementById("newCategoryName").value = "";
   saveCategories();
-  updateCategoryOptions();
+  updateCategoryOptions(typeSelect, categorySelect);
   renderCategoryView();
 });
 

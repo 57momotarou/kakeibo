@@ -1,4 +1,12 @@
 /* ===================================
+   CSS変数（テーマカラー）
+=================================== */
+:root {
+  --theme:      #4caf50;
+  --theme-dark: #388e3c;
+}
+
+/* ===================================
    リセット・ベース
 =================================== */
 * { box-sizing: border-box; }
@@ -7,7 +15,7 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif;
   max-width: 430px;
   margin: 0 auto;
-  padding-top: 56px;   /* 上部バー分 */
+  padding-top: 56px;
   padding-bottom: 70px;
   padding-left: 12px;
   padding-right: 12px;
@@ -25,25 +33,25 @@ body {
   height: 52px;
   max-width: 430px;
   margin: 0 auto;
-  background: #4caf50;
+  background: var(--theme);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 8px;
   z-index: 100;
   box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  transition: background 0.3s;
 }
 
 .top-bar-title {
   color: #fff;
   font-size: 17px;
   font-weight: bold;
-  letter-spacing: 0.5px;
 }
 
 .top-bar-btn {
-  width: 40px;
-  height: 40px;
+  width: 40px !important;
+  height: 40px !important;
   background: rgba(255,255,255,0.2);
   border: none;
   border-radius: 50%;
@@ -53,19 +61,15 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s;
   padding: 0;
-  /* グローバルのinput/button上書き防止 */
-  width: 40px !important;
-  height: 40px !important;
+  margin: 0;
+  transition: background 0.15s;
 }
 
-.top-bar-btn:active {
-  background: rgba(255,255,255,0.4);
-}
+.top-bar-btn:active { background: rgba(255,255,255,0.4); }
 
 /* ===================================
-   オーバーレイ（モーダル・ドロワー背景）
+   オーバーレイ
 =================================== */
 .overlay {
   position: fixed;
@@ -75,12 +79,11 @@ body {
   opacity: 0;
   transition: opacity 0.25s;
 }
-
 .overlay.show   { opacity: 1; }
 .overlay.hidden { display: none; }
 
 /* ===================================
-   収支入力ポップアップ（モーダル）
+   モーダル共通（下からスライド）
 =================================== */
 .modal {
   position: fixed;
@@ -96,7 +99,6 @@ body {
   transform: translateY(100%);
   transition: transform 0.25s ease;
 }
-
 .modal.show   { transform: translateY(0); }
 .modal.hidden { display: none; }
 
@@ -130,7 +132,9 @@ body {
 }
 
 .modal-body {
-  padding: 16px 20px;
+  padding: 12px 20px;
+  max-height: 75vh;
+  overflow-y: auto;
 }
 
 .field-label {
@@ -156,7 +160,6 @@ body {
   display: flex;
   flex-direction: column;
 }
-
 .drawer.show   { transform: translateX(0); }
 .drawer.hidden { display: none; }
 
@@ -165,28 +168,13 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  background: #4caf50;
-  color: #fff;
+  background: var(--theme);
   flex-shrink: 0;
+  transition: background 0.3s;
 }
 
-.drawer-title {
-  font-size: 16px;
-  font-weight: bold;
-  color: #fff;
-}
-
-.drawer-header .modal-close {
-  background: rgba(255,255,255,0.25);
-  color: #fff;
-}
-
-.drawer-body {
-  flex: 1;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-}
+.drawer-title { font-size: 16px; font-weight: bold; color: #fff; }
+.drawer-header .modal-close { background: rgba(255,255,255,0.25); color: #fff; }
 
 /* 設定ドロワー内タブバー */
 .settings-tab-bar {
@@ -199,57 +187,34 @@ body {
 .settings-tab {
   flex: 1;
   height: 44px !important;
+  width: auto !important;
   border: none;
   background: none;
-  font-size: 14px;
+  font-size: 13px;
   color: #888;
   cursor: pointer;
   border-bottom: 3px solid transparent;
   margin-bottom: -2px;
+  padding: 0 4px;
   transition: color 0.15s, border-color 0.15s;
-  padding: 0 8px;
-  width: auto !important;
 }
 
 .settings-tab.active {
-  color: #4caf50;
+  color: var(--theme);
   font-weight: bold;
-  border-bottom-color: #4caf50;
+  border-bottom-color: var(--theme);
 }
 
-/* 設定タブのコンテンツ */
 .settings-tab-content {
   display: none;
   flex: 1;
   overflow-y: auto;
   padding: 16px 20px 40px;
 }
-
-.settings-tab-content.active {
-  display: block;
-}
-
-.settings-section-title {
-  font-size: 15px;
-  font-weight: bold;
-  margin: 0 0 12px;
-  color: #333;
-}
-
-.category-section-label {
-  font-size: 13px;
-  font-weight: bold;
-  margin: 16px 0 6px;
-  padding: 4px 10px;
-  border-radius: 12px;
-  display: inline-block;
-}
-
-.expense-label { background: #ffe5e5; color: #c62828; }
-.income-label  { background: #e6ffea; color: #2e7d32; }
+.settings-tab-content.active { display: block; }
 
 /* ===================================
-   共通ボタン
+   共通入力・ボタン
 =================================== */
 input, select {
   width: 100%;
@@ -260,21 +225,19 @@ input, select {
   border-radius: 8px;
   background: #fafafa;
   margin: 2px 0;
-  box-sizing: border-box;
   -webkit-appearance: none;
   appearance: none;
 }
-
 input:focus, select:focus {
   outline: none;
-  border-color: #4caf50;
+  border-color: var(--theme);
   background: #fff;
 }
 
 .btn-primary {
   width: 100%;
   height: 48px;
-  background: #4caf50;
+  background: var(--theme);
   color: #fff;
   border: none;
   border-radius: 10px;
@@ -284,8 +247,7 @@ input:focus, select:focus {
   margin-top: 16px;
   transition: background 0.15s;
 }
-
-.btn-primary:active { background: #388e3c; }
+.btn-primary:active { background: var(--theme-dark); }
 
 .btn-blue {
   width: 100%;
@@ -298,7 +260,6 @@ input:focus, select:focus {
   cursor: pointer;
   margin-top: 6px;
 }
-
 .btn-blue:active { opacity: 0.8; }
 
 .delete-btn {
@@ -306,7 +267,7 @@ input:focus, select:focus {
   background: #ff5c5c;
   color: #fff;
   border: none;
-  padding: 4px 10px;
+  padding: 6px 12px;
   border-radius: 6px;
   font-size: 12px;
   cursor: pointer;
@@ -314,15 +275,12 @@ input:focus, select:focus {
   width: auto !important;
   margin: 0;
 }
-
 .delete-btn:active { opacity: 0.7; }
 
 /* ===================================
    月選択
 =================================== */
-.month-row {
-  margin-bottom: 10px;
-}
+.month-row { margin-bottom: 10px; }
 
 /* ===================================
    サマリーカード
@@ -349,51 +307,74 @@ input:focus, select:focus {
   margin-bottom: 4px;
 }
 
-.summary-value {
-  font-size: 15px;
-  font-weight: bold;
-}
-
-.income-item  .summary-value { color: #2e7d32; }
+.summary-value { font-size: 15px; font-weight: bold; }
+.income-item  .summary-value { color: var(--theme); }
 .expense-item .summary-value { color: #c62828; }
 .balance-item .summary-value { color: #333; }
 
 /* ===================================
    記録リスト
 =================================== */
-ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
+ul { list-style: none; padding: 0; margin: 0; }
 
-li {
+.record-li {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 10px 12px;
   background: #fff;
-  border-radius: 8px;
+  border-radius: 10px;
   margin-bottom: 6px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
-  font-size: 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+  overflow: hidden;
 }
 
-.record-text {
+.record-main {
+  flex: 1;
+  padding: 10px 12px;
+  cursor: pointer;
+  min-width: 0;
+}
+.record-main:active { background: #f9f9f9; }
+
+.record-top-row {
   display: flex;
   align-items: center;
   gap: 6px;
-  flex: 1;
-  min-width: 0;
-  cursor: pointer;
+  flex-wrap: wrap;
 }
 
-.record-date   { font-size: 12px; color: #999; white-space: nowrap; }
-.record-cat    { font-size: 13px; color: #333; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.record-amount { font-size: 14px; font-weight: bold; white-space: nowrap; }
+.record-date   { font-size: 11px; color: #999; white-space: nowrap; }
+.record-cat    { font-size: 13px; color: #333; flex: 1; min-width: 40px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.record-amount { font-size: 14px; font-weight: bold; white-space: nowrap; margin-left: auto; }
+.amount-expense { color: #c62828; }
+.amount-income  { color: var(--theme); }
 
-.tag-expense { font-size: 11px; padding: 2px 6px; border-radius: 10px; background: #ffe5e5; color: #c62828; white-space: nowrap; }
-.tag-income  { font-size: 11px; padding: 2px 6px; border-radius: 10px; background: #e6ffea; color: #2e7d32; white-space: nowrap; }
+.record-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.record-memo {
+  font-size: 12px;
+  color: #888;
+  margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 編集ヒント（右端に薄く表示） */
+.record-li::after {
+  content: "›";
+  color: #ccc;
+  font-size: 18px;
+  padding-right: 4px;
+  flex-shrink: 0;
+}
+
+.tag-expense { background: #ffe5e5; color: #c62828; }
+.tag-income  { background: #e8f5e9; color: #2e7d32; }
 
 /* ===================================
    タブ切り替え
@@ -427,11 +408,11 @@ li {
   height: 60px !important;
   cursor: pointer;
   padding: 6px 0;
-  color: #999;
+  color: #aaa;
+  width: auto !important;
 }
-
 .tab small { font-size: 10px; display: block; }
-.tab.active { color: #4caf50; font-weight: bold; }
+.tab.active { color: var(--theme); font-weight: bold; }
 
 /* ===================================
    カレンダー
@@ -458,18 +439,17 @@ li {
   cursor: pointer;
   background: #fff;
 }
-
-.day:active { opacity: 0.7; }
-.day .date  { font-weight: bold; font-size: 12px; margin-bottom: 2px; }
-.day .income  { color: #2e7d32; font-size: 10px; line-height: 1.3; }
-.day .expense { color: #c62828; font-size: 10px; line-height: 1.3; }
+.day:active    { opacity: 0.7; }
+.day .date     { font-weight: bold; font-size: 12px; margin-bottom: 2px; }
+.day .income   { color: var(--theme); font-size: 10px; line-height: 1.3; }
+.day .expense  { color: #c62828; font-size: 10px; line-height: 1.3; }
 
 .expense-day { background: #fff5f5; }
 .income-day  { background: #f0fff3; }
 .both        { background: #f3f0ff; }
 
-.day.today { border: 2px solid #ff9800; background: #fff8e1; }
-.day.today .date { color: #e65100; }
+.day.today { border: 2px solid var(--theme); background: #f9fbe7; }
+.day.today .date { color: var(--theme-dark); font-weight: bold; }
 
 #dayDetail {
   border-top: 2px solid #eee;
@@ -482,12 +462,15 @@ li {
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-wrap: wrap;
   padding: 6px 0;
   border-bottom: 1px solid #f0f0f0;
 }
 
+.detail-memo { font-size: 12px; color: #888; width: 100%; }
+
 /* ===================================
-   カテゴリ管理（ドロワー内）
+   カテゴリ管理
 =================================== */
 .category-add-form {
   background: #f9f9f9;
@@ -495,6 +478,17 @@ li {
   padding: 12px;
   margin-bottom: 8px;
 }
+
+.category-section-label {
+  font-size: 13px;
+  font-weight: bold;
+  margin: 16px 0 6px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  display: inline-block;
+}
+.expense-label { background: #ffe5e5; color: #c62828; }
+.income-label  { background: #e6ffea; color: #2e7d32; }
 
 .category-list { margin-bottom: 4px; }
 
@@ -513,7 +507,6 @@ li {
   padding: 4px 6px;
   border-radius: 6px;
 }
-
 .category-name:active { background: #f0f0f0; }
 
 .type-badge {
@@ -522,7 +515,108 @@ li {
   border-radius: 12px;
   flex-shrink: 0;
 }
-
 .type-expense { background: #ffe5e5; color: #c62828; }
 .type-income  { background: #e6ffea; color: #2e7d32; }
 .type-both    { background: #f0e6ff; color: #6a1b9a; }
+
+/* ===================================
+   テーマカラー設定
+=================================== */
+.theme-desc {
+  font-size: 13px;
+  color: #666;
+  margin: 0 0 16px;
+}
+
+.theme-section-title {
+  font-size: 13px;
+  font-weight: bold;
+  color: #444;
+  margin: 0 0 10px;
+}
+
+/* カラースウォッチグリッド */
+.color-presets {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.color-swatch {
+  width: 100% !important;
+  height: 60px !important;
+  border: 3px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  transition: border-color 0.15s, transform 0.1s;
+  margin: 0;
+  padding: 0;
+}
+.color-swatch:active { transform: scale(0.95); }
+.color-swatch.selected { border-color: #fff; box-shadow: 0 0 0 3px #333; }
+
+.swatch-check {
+  color: #fff;
+  font-size: 16px;
+  font-weight: bold;
+  opacity: 0;
+  line-height: 1;
+}
+.color-swatch.selected .swatch-check { opacity: 1; }
+
+.swatch-label {
+  color: #fff;
+  font-size: 10px;
+  font-weight: bold;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+  line-height: 1;
+}
+
+/* カスタムカラー行 */
+.custom-color-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.custom-color-row input[type="color"] {
+  width: 56px !important;
+  height: 44px !important;
+  padding: 2px;
+  border-radius: 8px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.custom-color-row .btn-blue {
+  flex: 1;
+  margin: 0;
+}
+
+/* プレビューバー */
+.theme-preview {
+  border: 1px solid #eee;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.theme-preview-label {
+  font-size: 12px;
+  color: #888;
+  padding: 8px 12px 4px;
+  margin: 0;
+}
+
+#themePreviewBar {
+  height: 40px;
+  transition: background 0.3s;
+  margin: 4px 12px 12px;
+  border-radius: 8px;
+}
