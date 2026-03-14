@@ -105,6 +105,16 @@ function openSettings() {
   });
 }
 
+// 設定ドロワー内タブ切り替え
+document.querySelectorAll(".settings-tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".settings-tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".settings-tab-content").forEach(c => c.classList.remove("active"));
+    tab.classList.add("active");
+    document.getElementById(tab.dataset.target).classList.add("active");
+  });
+});
+
 function closeSettings() {
   settingsDrawer.classList.remove("show");
   settingsOverlay.classList.remove("show");

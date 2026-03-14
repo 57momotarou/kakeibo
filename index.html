@@ -52,10 +52,13 @@
       <span class="drawer-title">⚙️ 設定</span>
       <button class="modal-close" id="closeSettingsBtn">✕</button>
     </div>
-    <div class="drawer-body">
+    <!-- 設定内タブバー -->
+    <div class="settings-tab-bar">
+      <button class="settings-tab active" data-target="settingsTabCategory">🏷️ カテゴリ変更</button>
+    </div>
 
-      <h3 class="settings-section-title">カテゴリ管理</h3>
-
+    <!-- カテゴリ変更タブ -->
+    <div class="settings-tab-content active" id="settingsTabCategory">
       <div class="category-add-form">
         <input type="text" id="newCategoryName" placeholder="カテゴリ名を入力">
         <select id="newCategoryType">
@@ -71,7 +74,6 @@
 
       <h4 class="category-section-label income-label">💰 収入カテゴリ</h4>
       <ul id="incomeCategoryList" class="category-list"></ul>
-
     </div>
   </div>
 
