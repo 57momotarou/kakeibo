@@ -1,6 +1,41 @@
 document.addEventListener("DOMContentLoaded", () => {
 
 // ===================================
+// スプラッシュ画面
+// ===================================
+(function initSplash() {
+  const splash   = document.getElementById("splashScreen");
+  const splashText = document.getElementById("splashText");
+
+  // 保存済みテーマカラーを取得してスプラッシュに即時反映
+  const savedColor = localStorage.getItem("themeColor") || "#4caf50";
+  splash.style.background = savedColor;
+
+  // 背景が白系かどうか判定（輝度が高い＝白に近い）
+  function isLightColor(hex) {
+    const c = hex.replace("#", "");
+    const r = parseInt(c.length === 3 ? c[0]+c[0] : c.slice(0,2), 16);
+    const g = parseInt(c.length === 3 ? c[1]+c[1] : c.slice(2,4), 16);
+    const b = parseInt(c.length === 3 ? c[2]+c[2] : c.slice(4,6), 16);
+    // 輝度計算（0〜255）
+    const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+    return luminance > 200; // 200以上は白系と判定
+  }
+
+  if (isLightColor(savedColor)) {
+    splash.classList.add("dark-text");
+  }
+
+  // 0.8秒後にフェードアウト → 完了後に非表示
+  setTimeout(() => {
+    splash.classList.add("fade-out");
+    splash.addEventListener("transitionend", () => {
+      splash.classList.add("hidden");
+    }, { once: true });
+  }, 800);
+})();
+
+// ===================================
 // データの読み込み（最初に全部定義）
 // ===================================
 let records    = JSON.parse(localStorage.getItem("records"))    || [];

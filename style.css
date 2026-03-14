@@ -7,6 +7,42 @@
 }
 
 /* ===================================
+   スプラッシュ画面
+=================================== */
+#splashScreen {
+  position: fixed;
+  inset: 0;
+  background: var(--theme);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+#splashScreen.fade-out {
+  opacity: 0;
+  visibility: hidden;
+}
+
+#splashScreen.hidden {
+  display: none;
+}
+
+#splashText {
+  font-size: 36px;
+  font-weight: bold;
+  color: #fff;
+  letter-spacing: 0.12em;
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif;
+}
+
+/* 背景が白系の時は文字を黒に */
+#splashScreen.dark-text #splashText {
+  color: #222;
+}
+
+/* ===================================
    リセット・ベース
 =================================== */
 * { box-sizing: border-box; }
