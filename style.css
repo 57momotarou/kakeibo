@@ -329,18 +329,6 @@ input:focus, select:focus {
   color: #444;
 }
 
-.day-net-income  { font-size: 13px; font-weight: bold; color: var(--theme); }
-.day-net-expense { font-size: 13px; font-weight: bold; color: #c62828; }
-
-/* カテゴリ小表示（記録行の下段） */
-.record-cat-small {
-  font-size: 11px;
-  color: #aaa;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 /* ===================================
    記録リスト
 =================================== */

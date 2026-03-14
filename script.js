@@ -322,18 +322,10 @@ function render() {
     const weekDay = ["日","月","火","水","木","金","土"][d.getDay()];
     const dateLabel = `${d.getMonth() + 1}月${d.getDate()}日（${weekDay}）`;
 
-    // その日の収支合計
-    let dayIncome = 0, dayExpense = 0;
-    group.records.forEach(r => {
-      r.type === "income" ? dayIncome += r.amount : dayExpense += r.amount;
-    });
-    const dayNet   = dayIncome - dayExpense;
-    const netClass = dayNet >= 0 ? "day-net-income" : "day-net-expense";
-    const netSign  = dayNet >= 0 ? "+" : "";
+    // その日の収支合計（不要になったため計算省略）
 
     header.innerHTML =
-      `<span class="date-header-label">${dateLabel}</span>` +
-      `<span class="date-header-net ${netClass}">${netSign}¥${dayNet.toLocaleString()}</span>`;
+      `<span class="date-header-label">${dateLabel}</span>`;
 
     list.appendChild(header);
 
@@ -350,12 +342,10 @@ function render() {
       titleRow.className = "record-title-row";
       titleRow.innerHTML = `<span class="record-title">${record.title || record.category}</span>`;
 
-      // 下段：カテゴリ・種別バッジ・金額（日付はヘッダーに表示済みなので省略）
+      // 下段：金額のみ
       const bottomRow = document.createElement("div");
       bottomRow.className = "record-bottom-row";
       bottomRow.innerHTML =
-        `<span class="record-cat-small">${record.category}</span>` +
-        `<span class="record-badge ${record.type === 'expense' ? 'tag-expense' : 'tag-income'}">${record.type === "expense" ? "支出" : "収入"}</span>` +
         `<span class="record-amount ${record.type === 'expense' ? 'amount-expense' : 'amount-income'}">¥${record.amount.toLocaleString()}</span>`;
 
       main.appendChild(titleRow);
