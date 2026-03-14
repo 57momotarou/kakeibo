@@ -171,10 +171,38 @@
     </div>
   </div>
 
+  <!-- グラフ -->
+  <div id="graphView" class="view">
+    <div class="month-row">
+      <input type="month" id="graphMonthSelector">
+    </div>
+
+    <!-- 支出円グラフ -->
+    <div class="chart-section">
+      <h3 class="chart-title">💸 支出の内訳</h3>
+      <div class="chart-wrap">
+        <canvas id="expenseChart" width="220" height="220"></canvas>
+        <div class="chart-total" id="expenseChartTotal"></div>
+      </div>
+      <ul class="chart-legend" id="expenseLegend"></ul>
+    </div>
+
+    <!-- 収入円グラフ -->
+    <div class="chart-section">
+      <h3 class="chart-title">💰 収入の内訳</h3>
+      <div class="chart-wrap">
+        <canvas id="incomeChart" width="220" height="220"></canvas>
+        <div class="chart-total" id="incomeChartTotal"></div>
+      </div>
+      <ul class="chart-legend" id="incomeLegend"></ul>
+    </div>
+  </div>
+
   <!-- ========== 下部タブ ========== -->
   <nav class="tab-bar" id="tabBar">
     <button id="homeTab" class="tab active">🏠<br><small>ホーム</small></button>
     <button id="calendarTab" class="tab">📅<br><small>カレンダー</small></button>
+    <button id="graphTab" class="tab">📊<br><small>グラフ</small></button>
   </nav>
 
   <script src="script.js"></script>

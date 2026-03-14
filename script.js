@@ -58,9 +58,10 @@ let categories = JSON.parse(localStorage.getItem("categories")) || DEFAULT_CATEG
 let viewStack = ["home"];
 
 const VIEW_CONFIG = {
-  home:     { el: document.getElementById("homeView"),     title: null,          showTabs: true  },
-  calendar: { el: document.getElementById("calendarView"), title: null,          showTabs: true  },
-  settings: { el: document.getElementById("settingsView"), title: "設定",        showTabs: false },
+  home:     { el: document.getElementById("homeView"),     title: null,           showTabs: true  },
+  calendar: { el: document.getElementById("calendarView"), title: null,           showTabs: true  },
+  graph:    { el: document.getElementById("graphView"),    title: null,           showTabs: true  },
+  settings: { el: document.getElementById("settingsView"), title: "設定",         showTabs: false },
   category: { el: document.getElementById("categoryView"), title: "カテゴリ変更", showTabs: false },
   theme:    { el: document.getElementById("themeView"),    title: "テーマカラー", showTabs: false },
 };
@@ -90,7 +91,7 @@ function showCurrentView() {
   config.el.classList.add("active");
 
   // 上部バーの切り替え
-  const isMain = (name === "home" || name === "calendar");
+  const isMain = (name === "home" || name === "calendar" || name === "graph");
   topBarNormal.classList.toggle("hidden", !isMain);
   topBarSettings.classList.toggle("hidden", isMain);
   if (!isMain) settingsBarTitle.textContent = config.title;
@@ -103,15 +104,12 @@ function showCurrentView() {
   if (name === "home")     render();
   if (name === "category") renderCategoryView();
   if (name === "theme")    renderColorPresets();
+  if (name === "graph")    renderGraph();
 
-  // ホームタブ・カレンダータブのactive同期
-  if (name === "home") {
-    document.getElementById("homeTab").classList.add("active");
-    document.getElementById("calendarTab").classList.remove("active");
-  } else if (name === "calendar") {
-    document.getElementById("calendarTab").classList.add("active");
-    document.getElementById("homeTab").classList.remove("active");
-  }
+  // タブのactive同期
+  document.getElementById("homeTab").classList.toggle("active",     name === "home");
+  document.getElementById("calendarTab").classList.toggle("active", name === "calendar");
+  document.getElementById("graphTab").classList.toggle("active",    name === "graph");
 }
 
 // 戻るボタン
@@ -141,6 +139,15 @@ document.getElementById("calendarTab").addEventListener("click", () => {
   });
   VIEW_CONFIG[viewStack[0]].el.classList.remove("active");
   viewStack = ["calendar"];
+  showCurrentView();
+});
+
+document.getElementById("graphTab").addEventListener("click", () => {
+  viewStack.forEach((_, i) => {
+    if (i > 0) VIEW_CONFIG[viewStack[i]].el.classList.remove("active");
+  });
+  VIEW_CONFIG[viewStack[0]].el.classList.remove("active");
+  viewStack = ["graph"];
   showCurrentView();
 });
 
@@ -554,6 +561,122 @@ document.getElementById("addCategoryButton").addEventListener("click", () => {
   saveCategories();
   renderCategoryView();
 });
+
+// ===================================
+// グラフ描画
+// ===================================
+
+// カテゴリ別に集計してデータを返す
+function aggregateByCategory(type) {
+  const month = document.getElementById("graphMonthSelector").value;
+  const filtered = records.filter(r => r.date.startsWith(month) && r.type === type);
+  const map = {};
+  filtered.forEach(r => {
+    map[r.category] = (map[r.category] || 0) + r.amount;
+  });
+  // 金額の多い順に並び替え
+  return Object.entries(map)
+    .sort((a, b) => b[1] - a[1])
+    .map(([name, amount]) => ({ name, amount }));
+}
+
+// グラフ用カラーパレット（10色）
+const CHART_COLORS = [
+  "#4caf50","#2196f3","#ff9800","#e91e63","#9c27b0",
+  "#00bcd4","#ff5722","#607d8b","#795548","#8bc34a",
+];
+
+function drawPieChart(canvasId, data, totalElId) {
+  const canvas = document.getElementById(canvasId);
+  const ctx    = canvas.getContext("2d");
+  const W = canvas.width, H = canvas.height;
+  const cx = W / 2, cy = H / 2;
+  const R  = Math.min(W, H) / 2 - 8;   // 外径
+  const r  = R * 0.52;                   // 内径（ドーナツ型）
+
+  ctx.clearRect(0, 0, W, H);
+
+  const total = data.reduce((s, d) => s + d.amount, 0);
+
+  // 合計金額を中央に表示
+  const totalEl = document.getElementById(totalElId);
+  if (totalEl) totalEl.textContent = total > 0 ? `¥${total.toLocaleString()}` : "";
+
+  if (total === 0) {
+    // データなし
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.fillStyle = "#eee";
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = "#fff";
+    ctx.fill();
+    ctx.fillStyle = "#aaa";
+    ctx.font = "13px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("データなし", cx, cy + 5);
+    return;
+  }
+
+  let startAngle = -Math.PI / 2;
+
+  data.forEach((d, i) => {
+    const slice = (d.amount / total) * Math.PI * 2;
+    const color = CHART_COLORS[i % CHART_COLORS.length];
+
+    // 扇形
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, R, startAngle, startAngle + slice);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+
+    startAngle += slice;
+  });
+
+  // ドーナツの穴（白抜き）
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fillStyle = "#fff";
+  ctx.fill();
+}
+
+function renderLegend(legendId, data) {
+  const el = document.getElementById(legendId);
+  el.innerHTML = "";
+  const total = data.reduce((s, d) => s + d.amount, 0);
+
+  data.forEach((d, i) => {
+    const pct  = total > 0 ? Math.round(d.amount / total * 100) : 0;
+    const color = CHART_COLORS[i % CHART_COLORS.length];
+    const li   = document.createElement("li");
+    li.className = "legend-item";
+    li.innerHTML =
+      `<span class="legend-dot" style="background:${color}"></span>` +
+      `<span class="legend-name">${d.name}</span>` +
+      `<span class="legend-pct">${pct}%</span>` +
+      `<span class="legend-amount">¥${d.amount.toLocaleString()}</span>`;
+    el.appendChild(li);
+  });
+}
+
+function renderGraph() {
+  // グラフ月をホームの月と同期
+  document.getElementById("graphMonthSelector").value = monthSelector.value;
+
+  const expenseData = aggregateByCategory("expense");
+  const incomeData  = aggregateByCategory("income");
+
+  drawPieChart("expenseChart", expenseData, "expenseChartTotal");
+  renderLegend("expenseLegend", expenseData);
+
+  drawPieChart("incomeChart", incomeData, "incomeChartTotal");
+  renderLegend("incomeLegend", incomeData);
+}
+
+document.getElementById("graphMonthSelector").addEventListener("change", renderGraph);
 
 // ===================================
 // Service Worker
