@@ -301,6 +301,16 @@ function closeEditModal() {
 closeEditBtn.addEventListener("click", closeEditModal);
 editOverlay.addEventListener("click", closeEditModal);
 
+document.getElementById("deleteRecordBtn").addEventListener("click", () => {
+  if (!editingRecord) return;
+  if (!confirm("この記録を削除しますか？")) return;
+  const i = records.indexOf(editingRecord);
+  if (i !== -1) records.splice(i, 1);
+  saveRecords();
+  render();
+  closeEditModal();
+});
+
 saveEditButton.addEventListener("click", () => {
   if (!editingRecord) return;
   if (!editDateInput.value || editAmountInput.value === "") {
@@ -410,19 +420,7 @@ function render() {
       main.appendChild(row);
       main.addEventListener("click", () => openEditModal(record));
 
-      const delBtn = document.createElement("button");
-      delBtn.textContent = "削除";
-      delBtn.className   = "delete-btn";
-      delBtn.addEventListener("click", e => {
-        e.stopPropagation();
-        const i = records.indexOf(record);
-        if (i !== -1) records.splice(i, 1);
-        saveRecords();
-        render();
-      });
-
       li.appendChild(main);
-      li.appendChild(delBtn);
       list.appendChild(li);
     });
   });
@@ -529,10 +527,6 @@ function renderCategoryView() {
       input.focus();
     });
 
-    const typeBadge = document.createElement("span");
-    typeBadge.className   = `type-badge type-${cat.type}`;
-    typeBadge.textContent = cat.type === "expense" ? "支出" : cat.type === "income" ? "収入" : "両方";
-
     const delBtn = document.createElement("button");
     delBtn.textContent = "削除";
     delBtn.className   = "delete-btn";
@@ -545,7 +539,6 @@ function renderCategoryView() {
     });
 
     li.appendChild(nameSpan);
-    li.appendChild(typeBadge);
     li.appendChild(delBtn);
     (cat.type === "income" ? incomeList : expenseList).appendChild(li);
   });
