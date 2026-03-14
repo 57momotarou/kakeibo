@@ -526,6 +526,29 @@ ul { list-style: none; padding: 0; margin: 0; }
 .view { display: none; }
 .view.active { display: block; }
 
+/* 月スワイプアニメーション */
+@keyframes slideOutLeft {
+  from { transform: translateX(0);     opacity: 1; }
+  to   { transform: translateX(-30%);  opacity: 0; }
+}
+@keyframes slideOutRight {
+  from { transform: translateX(0);    opacity: 1; }
+  to   { transform: translateX(30%);  opacity: 0; }
+}
+@keyframes slideInFromRight {
+  from { transform: translateX(30%);  opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+@keyframes slideInFromLeft {
+  from { transform: translateX(-30%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+.view.slide-out-left  { animation: slideOutLeft   0.16s ease forwards; }
+.view.slide-out-right { animation: slideOutRight  0.16s ease forwards; }
+.view.slide-in-right  { animation: slideInFromRight 0.2s ease forwards; }
+.view.slide-in-left   { animation: slideInFromLeft  0.2s ease forwards; }
+
 /* ===================================
    浮遊＋ボタン（FAB）
 =================================== */
