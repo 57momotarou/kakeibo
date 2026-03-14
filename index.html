@@ -135,7 +135,26 @@
         <span class="settings-menu-label">テーマカラー</span>
         <span class="settings-menu-arrow">›</span>
       </li>
+      <li class="settings-menu-item" id="goPeriod">
+        <span class="settings-menu-icon">📆</span>
+        <span class="settings-menu-label">集計期間</span>
+        <span class="settings-menu-arrow">›</span>
+      </li>
     </ul>
+  </div>
+
+  <!-- 集計期間設定 -->
+  <div id="periodView" class="view">
+
+    <div class="period-card">
+      <p class="period-desc">毎月の集計を開始する日を設定します。<br>例）25日に設定すると「2/25〜3/24」が3月分として集計されます。</p>
+
+      <label class="field-label">集計開始日</label>
+      <select id="periodStartDay"></select>
+
+      <div class="period-preview" id="periodPreview"></div>
+    </div>
+
   </div>
 
   <!-- カテゴリ設定 -->

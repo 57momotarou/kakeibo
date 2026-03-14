@@ -64,6 +64,7 @@ const VIEW_CONFIG = {
   settings: { el: document.getElementById("settingsView"), title: "設定",         showTabs: false },
   category: { el: document.getElementById("categoryView"), title: "カテゴリ変更", showTabs: false },
   theme:    { el: document.getElementById("themeView"),    title: "テーマカラー", showTabs: false },
+  period:   { el: document.getElementById("periodView"),   title: "集計期間",     showTabs: false },
 };
 
 function navigate(viewName) {
@@ -108,6 +109,7 @@ function showCurrentView() {
   if (name === "category") renderCategoryView();
   if (name === "theme")    renderColorPresets();
   if (name === "graph")    renderGraph();
+  if (name === "period")   renderPeriodView();
 
   // タブのactive同期
   document.getElementById("homeTab").classList.toggle("active",     name === "home");
@@ -124,6 +126,7 @@ openSettingsBtn.addEventListener("click", () => navigate("settings"));
 // 設定メニューの各項目
 document.getElementById("goCategory").addEventListener("click", () => navigate("category"));
 document.getElementById("goTheme").addEventListener("click", () => navigate("theme"));
+document.getElementById("goPeriod").addEventListener("click", () => navigate("period"));
 
 // 下部タブ
 document.getElementById("homeTab").addEventListener("click", () => {
@@ -386,13 +389,82 @@ function saveRecords()    { localStorage.setItem("records",    JSON.stringify(re
 function saveCategories() { localStorage.setItem("categories", JSON.stringify(categories)); }
 
 // ===================================
+// 集計期間
+// ===================================
+// 集計開始日（1〜28、デフォルト1）
+let periodStartDay = Number(localStorage.getItem("periodStartDay")) || 1;
+
+// 選択中の「基準月」から実際の集計開始日・終了日を計算する
+// 例）基準月=2025-03、開始日=25 → 2025-02-25 〜 2025-03-24
+function getPeriodRange(yearMonth) {
+  const [year, month] = yearMonth.split("-").map(Number);
+
+  if (periodStartDay === 1) {
+    // 開始日が1日の場合はそのまま
+    const start = `${yearMonth}-01`;
+    const lastDay = new Date(year, month, 0).getDate();
+    const end   = `${yearMonth}-${String(lastDay).padStart(2, "0")}`;
+    return { start, end };
+  }
+
+  // 開始日がN日の場合：前月N日〜当月(N-1)日
+  const startMonth = month === 1 ? 12 : month - 1;
+  const startYear  = month === 1 ? year - 1 : year;
+  const startStr   = `${startYear}-${String(startMonth).padStart(2,"0")}-${String(periodStartDay).padStart(2,"0")}`;
+
+  const endDay   = periodStartDay - 1;
+  const endStr   = `${year}-${String(month).padStart(2,"0")}-${String(endDay).padStart(2,"0")}`;
+
+  return { start: startStr, end: endStr };
+}
+
+// 指定期間内のレコードを返す
+function filterByPeriod(yearMonth) {
+  const { start, end } = getPeriodRange(yearMonth);
+  return records.filter(r => r.date >= start && r.date <= end);
+}
+
+// 集計期間画面の描画
+function renderPeriodView() {
+  const sel = document.getElementById("periodStartDay");
+  sel.innerHTML = "";
+  for (let d = 1; d <= 28; d++) {
+    const opt = document.createElement("option");
+    opt.value = d;
+    opt.textContent = `${d}日`;
+    if (d === periodStartDay) opt.selected = true;
+    sel.appendChild(opt);
+  }
+  updatePeriodPreview();
+}
+
+function updatePeriodPreview() {
+  const ym      = monthSelector.value;
+  const { start, end } = getPeriodRange(ym);
+  const s = new Date(start + "T00:00:00");
+  const e = new Date(end   + "T00:00:00");
+  const fmt = d => `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
+  document.getElementById("periodPreview").textContent =
+    `現在の設定：${fmt(s)} 〜 ${fmt(e)}`;
+}
+
+document.getElementById("periodStartDay").addEventListener("change", e => {
+  periodStartDay = Number(e.target.value);
+  localStorage.setItem("periodStartDay", periodStartDay);
+  updatePeriodPreview();
+  render(); // ホーム画面の集計も即時反映
+});
+
+
+
+// ===================================
 // ホーム画面の描画
 // ===================================
 function render() {
   const selectedMonth = monthSelector.value;
   list.innerHTML = "";
 
-  const filtered = records.filter(r => r.date.startsWith(selectedMonth));
+  const filtered = filterByPeriod(selectedMonth);
   const sorted   = [...filtered].sort((a, b) => new Date(b.date) - new Date(a.date));
 
   // 日付ごとにグループ化
@@ -572,7 +644,7 @@ document.getElementById("addCategoryButton").addEventListener("click", () => {
 // カテゴリ別に集計してデータを返す
 function aggregateByCategory(type) {
   const month = document.getElementById("graphMonthSelector").value;
-  const filtered = records.filter(r => r.date.startsWith(month) && r.type === type);
+  const filtered = filterByPeriod(month).filter(r => r.type === type);
   const map = {};
   filtered.forEach(r => {
     map[r.category] = (map[r.category] || 0) + r.amount;
