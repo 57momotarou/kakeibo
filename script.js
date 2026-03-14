@@ -1,20 +1,30 @@
 // ===================================
 // 要素の取得
 // ===================================
-const dateInput       = document.getElementById("date");
-const amountInput     = document.getElementById("amount");
-const typeSelect      = document.getElementById("type");
-const addButton       = document.getElementById("addButton");
-const list            = document.getElementById("list");
-const monthSelector   = document.getElementById("monthSelector");
-const categorySelect  = document.getElementById("category");
+const dateInput      = document.getElementById("date");
+const amountInput    = document.getElementById("amount");
+const typeSelect     = document.getElementById("type");
+const addButton      = document.getElementById("addButton");
+const list           = document.getElementById("list");
+const monthSelector  = document.getElementById("monthSelector");
+const categorySelect = document.getElementById("category");
+
+// モーダル・ドロワー関連
+const openAddBtn       = document.getElementById("openAddBtn");
+const closeAddBtn      = document.getElementById("closeAddBtn");
+const addOverlay       = document.getElementById("addOverlay");
+const addModal         = document.getElementById("addModal");
+
+const openSettingsBtn  = document.getElementById("openSettingsBtn");
+const closeSettingsBtn = document.getElementById("closeSettingsBtn");
+const settingsOverlay  = document.getElementById("settingsOverlay");
+const settingsDrawer   = document.getElementById("settingsDrawer");
 
 // ===================================
-// データの読み込み（localStorage）
+// データの読み込み
 // ===================================
 let records = JSON.parse(localStorage.getItem("records")) || [];
 
-// デフォルトカテゴリ
 const DEFAULT_CATEGORIES = [
   { name: "食費",   type: "expense" },
   { name: "日用品", type: "expense" },
@@ -23,52 +33,107 @@ const DEFAULT_CATEGORIES = [
   { name: "その他", type: "both"    },
   { name: "給与",   type: "income"  },
 ];
-
 let categories = JSON.parse(localStorage.getItem("categories")) || DEFAULT_CATEGORIES;
 
 // ===================================
 // 初期化
 // ===================================
 monthSelector.value = new Date().toISOString().slice(0, 7);
-
 monthSelector.addEventListener("change", render);
 typeSelect.addEventListener("change", updateCategoryOptions);
-
-// カテゴリのプルダウンを種別に応じて更新する
-function updateCategoryOptions() {
-  const type = typeSelect.value;
-  categorySelect.innerHTML = "";
-
-  const filtered = categories.filter(c => c.type === type || c.type === "both");
-  filtered.forEach(c => {
-    const opt = document.createElement("option");
-    opt.value = c.name;
-    opt.textContent = c.name;
-    categorySelect.appendChild(opt);
-  });
-}
 
 updateCategoryOptions();
 render();
 
 // ===================================
+// カテゴリプルダウン更新
+// ===================================
+function updateCategoryOptions() {
+  const type = typeSelect.value;
+  categorySelect.innerHTML = "";
+  categories
+    .filter(c => c.type === type || c.type === "both")
+    .forEach(c => {
+      const opt = document.createElement("option");
+      opt.value = c.name;
+      opt.textContent = c.name;
+      categorySelect.appendChild(opt);
+    });
+}
+
+// ===================================
+// ポップアップ（収支入力）の開閉
+// ===================================
+function openAddModal() {
+  // 日付の初期値を今日に
+  dateInput.value = new Date().toISOString().slice(0, 10);
+  amountInput.value = "";
+  updateCategoryOptions();
+  addModal.classList.remove("hidden");
+  addOverlay.classList.remove("hidden");
+  // 少し待ってからアニメーション開始
+  requestAnimationFrame(() => {
+    addModal.classList.add("show");
+    addOverlay.classList.add("show");
+  });
+  amountInput.focus();
+}
+
+function closeAddModal() {
+  addModal.classList.remove("show");
+  addOverlay.classList.remove("show");
+  setTimeout(() => {
+    addModal.classList.add("hidden");
+    addOverlay.classList.add("hidden");
+  }, 250);
+}
+
+openAddBtn.addEventListener("click", openAddModal);
+closeAddBtn.addEventListener("click", closeAddModal);
+addOverlay.addEventListener("click", closeAddModal);
+
+// ===================================
+// 設定ドロワーの開閉
+// ===================================
+function openSettings() {
+  renderCategoryView();
+  settingsDrawer.classList.remove("hidden");
+  settingsOverlay.classList.remove("hidden");
+  requestAnimationFrame(() => {
+    settingsDrawer.classList.add("show");
+    settingsOverlay.classList.add("show");
+  });
+}
+
+function closeSettings() {
+  settingsDrawer.classList.remove("show");
+  settingsOverlay.classList.remove("show");
+  setTimeout(() => {
+    settingsDrawer.classList.add("hidden");
+    settingsOverlay.classList.add("hidden");
+  }, 300);
+}
+
+openSettingsBtn.addEventListener("click", openSettings);
+closeSettingsBtn.addEventListener("click", closeSettings);
+settingsOverlay.addEventListener("click", closeSettings);
+
+// ===================================
 // 記録の追加
 // ===================================
 addButton.addEventListener("click", () => {
-  dateInput.value ||= new Date().toISOString().slice(0, 10);
   const date   = dateInput.value;
   const amount = Number(amountInput.value);
-  const type   = typeSelect.value;
 
   if (!date || amountInput.value === "") {
     alert("日付と金額を入力してください");
     return;
   }
 
-  records.push({ date, amount, type, category: categorySelect.value });
+  records.push({ date, amount, type: typeSelect.value, category: categorySelect.value });
   saveRecords();
   render();
-  amountInput.value = "";
+  closeAddModal();
 });
 
 // ===================================
@@ -77,7 +142,6 @@ addButton.addEventListener("click", () => {
 function saveRecords() {
   localStorage.setItem("records", JSON.stringify(records));
 }
-
 function saveCategories() {
   localStorage.setItem("categories", JSON.stringify(categories));
 }
@@ -95,37 +159,36 @@ function render() {
   sorted.forEach(record => {
     const li = document.createElement("li");
 
-    // ── テキスト部分 ──
     const text = document.createElement("span");
-    text.textContent =
-      `${record.date}：${record.category} ${record.type === "expense" ? "支出" : "収入"} ¥${record.amount}`;
+    text.className = "record-text";
+    text.innerHTML =
+      `<span class="record-date">${record.date}</span>` +
+      `<span class="record-cat">${record.category}</span>` +
+      `<span class="record-type ${record.type === 'expense' ? 'tag-expense' : 'tag-income'}">${record.type === "expense" ? "支出" : "収入"}</span>` +
+      `<span class="record-amount">¥${record.amount.toLocaleString()}</span>`;
 
     // タップで金額編集
     text.addEventListener("click", () => {
       const input = document.createElement("input");
       input.type  = "number";
       input.value = record.amount;
-      input.style.cssText = "width:100px;font-size:16px;";
-
+      input.style.cssText = "width:90px;font-size:16px;border:1px solid #ccc;border-radius:4px;padding:4px;";
       function saveEdit() {
-        record.amount = Number(input.value);
+        const v = Number(input.value);
+        if (!isNaN(v) && v >= 0) record.amount = v;
         saveRecords();
         render();
       }
       input.addEventListener("blur", saveEdit);
       input.addEventListener("keydown", e => { if (e.key === "Enter") saveEdit(); });
-
       li.replaceChild(input, text);
       input.focus();
     });
 
-    // ── 削除ボタン ──
     const delBtn = document.createElement("button");
     delBtn.textContent = "削除";
     delBtn.className   = "delete-btn";
-
     delBtn.addEventListener("click", () => {
-      // ★バグ修正：recordオブジェクトを直接参照して削除
       const i = records.indexOf(record);
       if (i !== -1) records.splice(i, 1);
       saveRecords();
@@ -137,7 +200,7 @@ function render() {
     list.appendChild(li);
   });
 
-  // 合計計算
+  // 合計
   let income = 0, expense = 0;
   filtered.forEach(r => {
     if (r.type === "income") income += r.amount;
@@ -146,7 +209,10 @@ function render() {
 
   document.getElementById("incomeTotal").textContent  = income.toLocaleString();
   document.getElementById("expenseTotal").textContent = expense.toLocaleString();
-  document.getElementById("balance").textContent      = (income - expense).toLocaleString();
+  const bal = income - expense;
+  const balEl = document.getElementById("balance");
+  balEl.textContent = bal.toLocaleString();
+  balEl.style.color = bal >= 0 ? "#2e7d32" : "#c62828";
 
   renderCalendar(filtered);
 }
@@ -158,10 +224,10 @@ function renderCalendar(data) {
   const calendar = document.getElementById("calendar");
   calendar.innerHTML = "";
 
-  const month    = monthSelector.value;
+  const month     = monthSelector.value;
   const [year, m] = month.split("-").map(Number);
-  const lastDay  = new Date(year, m, 0).getDate();
-  const firstDay = new Date(year, m - 1, 1).getDay();
+  const lastDay   = new Date(year, m, 0).getDate();
+  const firstDay  = new Date(year, m - 1, 1).getDay();
 
   for (let i = 0; i < firstDay; i++) {
     calendar.appendChild(document.createElement("div"));
@@ -169,7 +235,6 @@ function renderCalendar(data) {
 
   for (let day = 1; day <= lastDay; day++) {
     const dayStr = `${month}-${String(day).padStart(2, "0")}`;
-
     let income = 0, expense = 0;
     data.forEach(r => {
       if (r.date === dayStr) {
@@ -187,7 +252,6 @@ function renderCalendar(data) {
 
     const today = new Date().toISOString().slice(0, 10);
     if (dayStr === today) div.classList.add("today");
-
     if      (expense > 0 && income > 0) div.classList.add("both");
     else if (expense > 0)               div.classList.add("expense-day");
     else if (income > 0)                div.classList.add("income-day");
@@ -196,7 +260,7 @@ function renderCalendar(data) {
       const detailBox = document.getElementById("dayDetail");
       const details = data
         .filter(r => r.date === dayStr)
-        .map(r => `<div>${r.category}：${r.type === "expense" ? "支出" : "収入"} ¥${r.amount.toLocaleString()}</div>`)
+        .map(r => `<div class="detail-row"><span>${r.category}</span><span class="${r.type === 'expense' ? 'tag-expense' : 'tag-income'}">${r.type === "expense" ? "支出" : "収入"}</span><span>¥${r.amount.toLocaleString()}</span></div>`)
         .join("");
       detailBox.innerHTML = `<h3>${day}日の明細</h3>${details || "<p>記録なし</p>"}`;
     });
@@ -206,7 +270,7 @@ function renderCalendar(data) {
 }
 
 // ===================================
-// カテゴリ管理画面の描画
+// カテゴリ管理（設定ドロワー内）
 // ===================================
 function renderCategoryView() {
   const expenseList = document.getElementById("expenseCategoryList");
@@ -218,7 +282,6 @@ function renderCategoryView() {
     const li = document.createElement("li");
     li.className = "category-item";
 
-    // カテゴリ名の表示（タップで編集）
     const nameSpan = document.createElement("span");
     nameSpan.className   = "category-name";
     nameSpan.textContent = cat.name;
@@ -227,44 +290,33 @@ function renderCategoryView() {
       const input = document.createElement("input");
       input.type  = "text";
       input.value = cat.name;
-      input.style.cssText = "font-size:16px;width:120px;";
-
+      input.style.cssText = "font-size:16px;width:120px;border:1px solid #ccc;border-radius:4px;padding:4px;";
       function saveNameEdit() {
         const newName = input.value.trim();
-        if (!newName) { render(); renderCategoryView(); return; }
-
-        // 既存レコードのカテゴリ名も更新
+        if (!newName) { renderCategoryView(); return; }
         records.forEach(r => { if (r.category === cat.name) r.category = newName; });
         cat.name = newName;
-
         saveRecords();
         saveCategories();
         updateCategoryOptions();
         renderCategoryView();
       }
-
       input.addEventListener("blur", saveNameEdit);
       input.addEventListener("keydown", e => { if (e.key === "Enter") saveNameEdit(); });
       li.replaceChild(input, nameSpan);
       input.focus();
     });
 
-    // 種別バッジ
     const typeBadge = document.createElement("span");
-    typeBadge.className = `type-badge type-${cat.type}`;
+    typeBadge.className   = `type-badge type-${cat.type}`;
     typeBadge.textContent = cat.type === "expense" ? "支出" : cat.type === "income" ? "収入" : "両方";
 
-    // 削除ボタン
     const delBtn = document.createElement("button");
     delBtn.textContent = "削除";
     delBtn.className   = "delete-btn";
-
     delBtn.addEventListener("click", () => {
-      // そのカテゴリを使っているレコードがあれば警告
       const used = records.some(r => r.category === cat.name);
-      if (used) {
-        if (!confirm(`「${cat.name}」は記録で使用中です。削除しますか？`)) return;
-      }
+      if (used && !confirm(`「${cat.name}」は使用中です。削除しますか？`)) return;
       categories.splice(index, 1);
       saveCategories();
       updateCategoryOptions();
@@ -275,39 +327,28 @@ function renderCategoryView() {
     li.appendChild(typeBadge);
     li.appendChild(delBtn);
 
-    if (cat.type === "income") {
-      incomeList.appendChild(li);
-    } else {
-      expenseList.appendChild(li);
-    }
+    (cat.type === "income" ? incomeList : expenseList).appendChild(li);
   });
 }
 
-// カテゴリ追加ボタン
 document.getElementById("addCategoryButton").addEventListener("click", () => {
   const name = document.getElementById("newCategoryName").value.trim();
   const type = document.getElementById("newCategoryType").value;
-
   if (!name) { alert("カテゴリ名を入力してください"); return; }
-
-  const exists = categories.some(c => c.name === name);
-  if (exists) { alert("同じ名前のカテゴリが既にあります"); return; }
-
+  if (categories.some(c => c.name === name)) { alert("同じ名前のカテゴリが既にあります"); return; }
   categories.push({ name, type });
   document.getElementById("newCategoryName").value = "";
-
   saveCategories();
   updateCategoryOptions();
   renderCategoryView();
 });
 
 // ===================================
-// タブ切り替え
+// 下部タブ切り替え
 // ===================================
 const tabs = [
   { tab: document.getElementById("homeTab"),     view: document.getElementById("homeView"),     onShow: render },
   { tab: document.getElementById("calendarTab"), view: document.getElementById("calendarView"), onShow: null   },
-  { tab: document.getElementById("categoryTab"), view: document.getElementById("categoryView"), onShow: renderCategoryView },
 ];
 
 tabs.forEach(({ tab, view, onShow }) => {
