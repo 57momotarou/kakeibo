@@ -454,15 +454,13 @@ function renderCalendar() {
   const [year, m] = month.split("-").map(Number);
   const lastDay  = new Date(year, m, 0).getDate();
   const firstDay = new Date(year, m - 1, 1).getDay();
-  const { start, end } = getPeriodRange(month);
 
   for (let i = 0; i < firstDay; i++) {
     calendar.appendChild(document.createElement("div"));
   }
 
   for (let day = 1; day <= lastDay; day++) {
-    const dayStr   = `${month}-${String(day).padStart(2, "0")}`;
-    const inPeriod = dayStr >= start && dayStr <= end;
+    const dayStr = `${month}-${String(day).padStart(2, "0")}`;
 
     let income = 0, expense = 0;
     records.forEach(r => {
@@ -470,7 +468,7 @@ function renderCalendar() {
     });
 
     const div = document.createElement("div");
-    div.className = "day" + (inPeriod ? "" : " out-of-period");
+    div.className = "day";
     div.innerHTML = `
       <div class="date">${day}</div>
       <div class="income">＋¥${income > 0 ? income.toLocaleString() : 0}</div>
@@ -478,11 +476,9 @@ function renderCalendar() {
     `;
 
     if (new Date().toISOString().slice(0,10) === dayStr) div.classList.add("today");
-    if (inPeriod) {
-      if      (expense > 0 && income > 0) div.classList.add("both");
-      else if (expense > 0)               div.classList.add("expense-day");
-      else if (income > 0)                div.classList.add("income-day");
-    }
+    if      (expense > 0 && income > 0) div.classList.add("both");
+    else if (expense > 0)               div.classList.add("expense-day");
+    else if (income > 0)                div.classList.add("income-day");
 
     div.addEventListener("click", () => {
       const detailBox = document.getElementById("dayDetail");
