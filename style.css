@@ -1,54 +1,113 @@
-body {
-  font-family: sans-serif;
-  padding: 16px;
+/* ===================================
+   ベース
+=================================== */
+* {
+  box-sizing: border-box;
 }
 
+body {
+  font-family: sans-serif;
+  max-width: 430px;
+  margin: 0 auto;
+  padding: 12px;
+  padding-bottom: 70px;
+}
+
+h1 {
+  font-size: 20px;
+  margin-bottom: 12px;
+}
+
+h2 {
+  font-size: 17px;
+  margin: 12px 0 8px;
+}
+
+h3 {
+  font-size: 15px;
+  margin: 12px 0 6px;
+  color: #555;
+}
+
+/* ===================================
+   入力フォーム
+=================================== */
 input, select, button {
+  width: 100%;
+  height: 44px;
+  font-size: 16px; /* iOSズーム防止 */
   margin: 4px 0;
   padding: 8px;
-  font-size: 16px;
+  box-sizing: border-box;
+}
+
+#addButton {
+  background: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  margin-top: 8px;
+  cursor: pointer;
+}
+
+#addButton:active {
+  opacity: 0.8;
+}
+
+/* ===================================
+   合計表示
+=================================== */
+#summary {
+  background: #f9f9f9;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+}
+
+#summary p {
+  margin: 4px 0;
+  font-size: 15px;
+}
+
+/* ===================================
+   記録リスト
+=================================== */
+ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
 li {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 8px 4px;
+  border-bottom: 1px solid #eee;
+  font-size: 14px;
 }
 
 .delete-btn {
+  flex-shrink: 0;
   margin-left: 8px;
   background: #ff5c5c;
   color: white;
   border: none;
-  padding: 4px 8px;
+  padding: 4px 10px;
   border-radius: 4px;
+  height: auto;
+  width: auto;
+  font-size: 13px;
+  cursor: pointer;
 }
 
-#calendar {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
+.delete-btn:active {
+  opacity: 0.8;
 }
 
-.day {
-  border: 1px solid #ccc;
-  padding: 4px;
-  min-height: 60px;
-  font-size: 12px;
-}
-
-.day .date {
-  font-weight: bold;
-}
-
-.expense {
-  color: red;
-}
-
-.income {
-  color: green;
-}
-
+/* ===================================
+   タブ切り替え
+=================================== */
 .view {
   display: none;
 }
@@ -57,40 +116,77 @@ li {
   display: block;
 }
 
-/* 下部タブバー */
+/* ===================================
+   下部タブバー
+=================================== */
 .tab-bar {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  height: 56px;
+  height: 60px;
   display: flex;
   border-top: 1px solid #ccc;
   background: #fff;
+  max-width: 430px;
+  margin: 0 auto;
 }
 
 .tab {
   flex: 1;
   border: none;
   background: none;
-  font-size: 16px;
+  font-size: 13px;
+  height: 60px;
+  cursor: pointer;
+  padding: 0;
 }
 
 .tab.active {
-  background: #eee;
+  background: #f2f2f2;
   font-weight: bold;
+  color: #4caf50;
 }
 
-/* 下に隠れないよう余白 */
-body {
-  padding-bottom: 60px;
+/* ===================================
+   カレンダー
+=================================== */
+.week-header,
+#calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.week-header div {
+  text-align: center;
+  font-weight: bold;
+  padding: 4px 0;
+  font-size: 12px;
 }
 
 .day {
-  border: 1px solid #ccc;
-  padding: 6px;
-  font-size: 12px;
+  border: 1px solid #ddd;
+  min-height: 60px;
+  padding: 4px;
+  font-size: 11px;
   cursor: pointer;
+}
+
+.day .date {
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.day .income {
+  color: green;
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+.day .expense {
+  color: red;
+  font-size: 10px;
+  line-height: 1.2;
 }
 
 .expense-day {
@@ -105,31 +201,6 @@ body {
   background: #f0e6ff;
 }
 
-.week-header,
-#calendar {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-}
-
-.week-header div {
-  text-align: center;
-  font-weight: bold;
-  padding: 4px 0;
-}
-
-.day {
-  border: 1px solid #ddd;
-  min-height: 60px;
-  padding: 4px;
-  font-size: 12px;
-}
-
-#dayDetail {
-  border-top: 1px solid #ccc;
-  padding: 8px;
-  font-size: 14px;
-}
-
 .day.today {
   border: 2px solid #ff9800;
   background: #fff3e0;
@@ -140,47 +211,84 @@ body {
   color: #ff5722;
 }
 
-body {
-  max-width: 430px;   /* iPhone Pro Maxまで対応 */
-  margin: 0 auto;
-  padding: 12px;
-  padding-bottom: 70px; /* 下タブ分 */
-}
-
-input, select, button {
-  width: 100%;
-  height: 44px;        /* Apple推奨タップサイズ */
-  font-size: 16px;     /* iOSズーム防止 */
-  box-sizing: border-box;
-}
-
-#addButton {
-  background: #4caf50;
-  color: white;
-  border: none;
-  border-radius: 8px;
+#dayDetail {
+  border-top: 1px solid #ccc;
+  padding: 8px;
+  font-size: 14px;
   margin-top: 8px;
 }
 
-.day {
-  min-height: 72px;
-  padding: 6px;
+/* ===================================
+   カテゴリ管理
+=================================== */
+.category-add-form {
+  background: #f9f9f9;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 12px;
+}
+
+.category-add-form input,
+.category-add-form select {
+  margin: 4px 0;
+}
+
+#addCategoryButton {
+  background: #2196f3;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  margin-top: 6px;
+  cursor: pointer;
+}
+
+#addCategoryButton:active {
+  opacity: 0.8;
+}
+
+.category-list {
+  margin-bottom: 8px;
+}
+
+.category-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 4px;
+  border-bottom: 1px solid #eee;
+}
+
+.category-name {
+  flex: 1;
+  font-size: 15px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.category-name:active {
+  background: #f0f0f0;
+}
+
+/* 種別バッジ */
+.type-badge {
   font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  flex-shrink: 0;
 }
 
-.day .income,
-.day .expense {
-  font-size: 10px;
-  line-height: 1.2;
-}
-.tab-bar {
-  height: 60px;
+.type-expense {
+  background: #ffe5e5;
+  color: #c62828;
 }
 
-.tab {
-  font-size: 14px;
+.type-income {
+  background: #e6ffea;
+  color: #2e7d32;
 }
 
-.tab.active {
-  background: #f2f2f2;
+.type-both {
+  background: #f0e6ff;
+  color: #6a1b9a;
 }
