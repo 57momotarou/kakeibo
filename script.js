@@ -518,103 +518,70 @@ function render() {
   balEl.textContent = bal.toLocaleString();
   balEl.style.color = bal >= 0 ? "var(--theme)" : "#c62828";
 
-  renderCalendar(filtered);
+  renderCalendar();
 }
 
 // ===================================
 // カレンダーの描画
 // ===================================
-function renderCalendar(data) {
+function renderCalendar() {
   const calendar = document.getElementById("calendar");
   calendar.innerHTML = "";
 
   const month     = monthSelector.value;
   const [year, m] = month.split("-").map(Number);
+  const lastDay   = new Date(year, m, 0).getDate();
+  const firstDay  = new Date(year, m - 1, 1).getDay();
 
-  // 集計期間の開始月〜終了月を描画（開始日が1以外なら前月も含む）
+  // 集計期間（グレーアウト判定用）
   const { start, end } = getPeriodRange(month);
-  const startDate = new Date(start + "T00:00:00");
-  const endDate   = new Date(end   + "T00:00:00");
 
-  // 描画する月のリストを作成（最大2ヶ月分）
-  const months = [];
-  let cur = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
-  const endMonth = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
-  while (cur <= endMonth) {
-    months.push(`${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, "0")}`);
-    cur.setMonth(cur.getMonth() + 1);
+  // 空白マス
+  for (let i = 0; i < firstDay; i++) {
+    calendar.appendChild(document.createElement("div"));
   }
 
-  months.forEach((ym, mi) => {
-    const [y, mo] = ym.split("-").map(Number);
-    const lastDay  = new Date(y, mo, 0).getDate();
-    const firstDay = new Date(y, mo - 1, 1).getDay();
+  for (let day = 1; day <= lastDay; day++) {
+    const dayStr = `${month}-${String(day).padStart(2, "0")}`;
 
-    // 月の区切りラベル（2ヶ月にまたがる場合のみ表示）
-    if (months.length > 1) {
-      const label = document.createElement("div");
-      label.className = "calendar-month-label";
-      label.textContent = `${mo}月`;
-      calendar.appendChild(label);
+    // その日の全レコードを取得（期間フィルタなし）
+    let income = 0, expense = 0;
+    records.forEach(r => {
+      if (r.date === dayStr) r.type === "income" ? income += r.amount : expense += r.amount;
+    });
+
+    const inPeriod = dayStr >= start && dayStr <= end;
+
+    const div = document.createElement("div");
+    div.className = "day" + (inPeriod ? "" : " out-of-period");
+    div.innerHTML = `
+      <div class="date">${day}</div>
+      <div class="income">＋¥${income > 0 ? income.toLocaleString() : 0}</div>
+      <div class="expense">−¥${expense > 0 ? expense.toLocaleString() : 0}</div>
+    `;
+
+    const today = new Date().toISOString().slice(0, 10);
+    if (dayStr === today) div.classList.add("today");
+    if (inPeriod) {
+      if      (expense > 0 && income > 0) div.classList.add("both");
+      else if (expense > 0)               div.classList.add("expense-day");
+      else if (income > 0)                div.classList.add("income-day");
     }
 
-    // 曜日ヘッダー（最初の月だけ）は week-header が既にHTMLにあるので
-    // 2ヶ月目以降だけ空白ヘッダーを追加
-    if (mi > 0) {
-      const subHeader = document.createElement("div");
-      subHeader.className = "week-sub-header";
-      subHeader.innerHTML = "<div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div>";
-      calendar.appendChild(subHeader);
-    }
+    div.addEventListener("click", () => {
+      const detailBox = document.getElementById("dayDetail");
+      const dayRecords = records.filter(r => r.date === dayStr);
+      const details = dayRecords
+        .map(r => `<div class="detail-row">
+          <span>${r.title || r.category}</span>
+          <span class="${r.type === 'expense' ? 'tag-expense' : 'tag-income'}">${r.type === "expense" ? "支出" : "収入"}</span>
+          <span>¥${r.amount.toLocaleString()}</span>
+        </div>`).join("");
+      detailBox.innerHTML = `<h3>${m}月${day}日の明細</h3>${details || "<p>記録なし</p>"}`;
+    });
 
-    // 月初の空白マス
-    const grid = document.createElement("div");
-    grid.className = "calendar-grid";
-    for (let i = 0; i < firstDay; i++) grid.appendChild(document.createElement("div"));
-
-    for (let day = 1; day <= lastDay; day++) {
-      const dayStr = `${ym}-${String(day).padStart(2, "0")}`;
-
-      // 集計期間外はグレーアウト
-      const inPeriod = dayStr >= start && dayStr <= end;
-
-      let income = 0, expense = 0;
-      data.forEach(r => {
-        if (r.date === dayStr) r.type === "income" ? income += r.amount : expense += r.amount;
-      });
-
-      const div = document.createElement("div");
-      div.className = "day" + (inPeriod ? "" : " out-of-period");
-      div.innerHTML = `
-        <div class="date">${day}</div>
-        <div class="income">＋¥${income > 0 ? income.toLocaleString() : 0}</div>
-        <div class="expense">−¥${expense > 0 ? expense.toLocaleString() : 0}</div>
-      `;
-
-      const today = new Date().toISOString().slice(0, 10);
-      if (dayStr === today) div.classList.add("today");
-      if (inPeriod) {
-        if      (expense > 0 && income > 0) div.classList.add("both");
-        else if (expense > 0)               div.classList.add("expense-day");
-        else if (income > 0)                div.classList.add("income-day");
-      }
-
-      div.addEventListener("click", () => {
-        const detailBox = document.getElementById("dayDetail");
-        const details = data
-          .filter(r => r.date === dayStr)
-          .map(r => `<div class="detail-row">
-            <span>${r.title || r.category}</span>
-            <span class="${r.type === 'expense' ? 'tag-expense' : 'tag-income'}">${r.type === "expense" ? "支出" : "収入"}</span>
-            <span>¥${r.amount.toLocaleString()}</span>
-          </div>`).join("");
-        detailBox.innerHTML = `<h3>${mo}月${day}日の明細</h3>${details || "<p>記録なし</p>"}`;
-      });
-
-      grid.appendChild(div);
-    }
-    calendar.appendChild(grid);
-  });
+    calendar.appendChild(div);
+  }
 }
 
 // ===================================

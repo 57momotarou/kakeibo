@@ -585,40 +585,10 @@ ul { list-style: none; padding: 0; margin: 0; }
 /* ===================================
    カレンダー
 =================================== */
-.week-header {
+.week-header,
+#calendar {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-}
-
-/* calendar内のグリッドはcalendar-gridクラスで管理 */
-.calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  margin-bottom: 4px;
-}
-
-/* 月ラベル（2ヶ月またぎのとき） */
-.calendar-month-label {
-  font-size: 13px;
-  font-weight: bold;
-  color: var(--theme);
-  padding: 8px 4px 4px;
-  border-top: 1px solid #eee;
-  margin-top: 4px;
-}
-
-/* 2ヶ月目の曜日ヘッダー */
-.week-sub-header {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  margin-bottom: 0;
-}
-.week-sub-header div {
-  text-align: center;
-  font-weight: bold;
-  padding: 4px 0;
-  font-size: 11px;
-  color: #999;
 }
 
 .week-header div {
@@ -642,10 +612,10 @@ ul { list-style: none; padding: 0; margin: 0; }
 .day .income   { color: var(--theme); font-size: 10px; line-height: 1.3; }
 .day .expense  { color: #c62828; font-size: 10px; line-height: 1.3; }
 
-/* 集計期間外の日 */
+/* 集計期間外の日はグレーアウト */
 .day.out-of-period {
-  background: #f8f8f8;
-  opacity: 0.45;
+  background: #f2f2f2;
+  opacity: 0.5;
   cursor: default;
 }
 .day.out-of-period .income,
