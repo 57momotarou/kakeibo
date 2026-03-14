@@ -100,6 +100,9 @@ function showCurrentView() {
   const tabBar = document.getElementById("tabBar");
   tabBar.classList.toggle("hidden", !config.showTabs);
 
+  // FABの表示切り替え（タブがある画面のみ表示）
+  document.getElementById("openAddBtn").classList.toggle("hidden", !config.showTabs);
+
   // 画面ごとの初期化
   if (name === "home")     render();
   if (name === "category") renderCategoryView();

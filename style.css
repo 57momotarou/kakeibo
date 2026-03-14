@@ -515,6 +515,41 @@ ul { list-style: none; padding: 0; margin: 0; }
 .view.active { display: block; }
 
 /* ===================================
+   浮遊＋ボタン（FAB）
+=================================== */
+.fab-add {
+  position: fixed;
+  /* タブバー(60px)の上、少し浮かせた位置 */
+  bottom: 72px;
+  right: 16px;
+  width: 52px !important;
+  height: 52px !important;
+  background: var(--theme);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99;
+  padding: 0;
+  margin: 0;
+  transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+}
+.fab-add:active {
+  background: var(--theme-dark);
+  transform: scale(0.93);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+/* タブバーが非表示（設定画面）の時はFABも隠す */
+.tab-bar.hidden ~ .fab-add,
+.fab-add.hidden { display: none; }
+
+/* ===================================
    下部タブバー
 =================================== */
 .tab-bar {
