@@ -177,7 +177,7 @@ editDateInput.value   = record.date;
 editAmountInput.value = record.amount;
 editTypeSelect.value  = record.type;
 updateCategoryOptions(editTypeSelect, editCatSelect, record.category);
-editMemoInput.value   = record.memo || “”;
+editMemoInput.value   = record.title || “”;
 showModal(editModal, editOverlay);
 }
 
@@ -200,7 +200,7 @@ editingRecord.date     = editDateInput.value;
 editingRecord.amount   = amount;
 editingRecord.type     = editTypeSelect.value;
 editingRecord.category = editCatSelect.value;
-editingRecord.memo     = editMemoInput.value.trim();
+editingRecord.title    = editMemoInput.value.trim() || editCatSelect.value;
 saveRecords();
 render();
 closeEditModal();
@@ -278,7 +278,7 @@ date,
 amount:   Number(amountInput.value),
 type:     typeSelect.value,
 category: categorySelect.value,
-memo:     memoInput.value.trim(),
+title:    memoInput.value.trim() || categorySelect.value,
 });
 saveRecords();
 render();
@@ -314,19 +314,11 @@ const topRow = document.createElement("div");
 topRow.className = "record-top-row";
 topRow.innerHTML =
   `<span class="record-date">${record.date}</span>` +
-  `<span class="record-cat">${record.category}</span>` +
+  `<span class="record-cat">${record.title || record.category}</span>` +
   `<span class="record-badge ${record.type === 'expense' ? 'tag-expense' : 'tag-income'}">${record.type === "expense" ? "支出" : "収入"}</span>` +
   `<span class="record-amount ${record.type === 'expense' ? 'amount-expense' : 'amount-income'}">¥${record.amount.toLocaleString()}</span>`;
 
 main.appendChild(topRow);
-
-// メモ行（あれば表示）
-if (record.memo) {
-  const memoRow = document.createElement("div");
-  memoRow.className = "record-memo";
-  memoRow.textContent = `📝 ${record.memo}`;
-  main.appendChild(memoRow);
-}
 
 // メインエリアタップ → 編集モーダル
 main.addEventListener("click", () => openEditModal(record));
@@ -413,10 +405,9 @@ div.addEventListener("click", () => {
     .filter(r => r.date === dayStr)
     .map(r =>
       `<div class="detail-row">
-        <span>${r.category}</span>
+        <span>${r.title || r.category}</span>
         <span class="${r.type === 'expense' ? 'tag-expense' : 'tag-income'}">${r.type === "expense" ? "支出" : "収入"}</span>
         <span>¥${r.amount.toLocaleString()}</span>
-        ${r.memo ? `<span class="detail-memo">📝${r.memo}</span>` : ""}
       </div>`)
     .join("");
   detailBox.innerHTML = `<h3>${day}日の明細</h3>${details || "<p>記録なし</p>"}`;
