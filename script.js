@@ -387,7 +387,11 @@ function render() {
   list.innerHTML = "";
 
   const filtered = filterByPeriod(selectedMonth);
-  const sorted   = [...filtered].sort((a, b) => new Date(b.date) - new Date(a.date));
+  // 日付降順、同日内は追加順の新しいものが上（配列インデックス降順）
+  const sorted = [...filtered].sort((a, b) => {
+    if (b.date !== a.date) return b.date.localeCompare(a.date);
+    return filtered.indexOf(b) - filtered.indexOf(a);
+  });
 
   const groups = [];
   sorted.forEach(record => {
@@ -397,15 +401,19 @@ function render() {
   });
 
   groups.forEach(group => {
-    const header = document.createElement("li");
+    // グループ全体をカードdivでラップ
+    const card = document.createElement("div");
+    card.className = "date-group-card";
+
+    const header = document.createElement("div");
     header.className = "date-header";
     const d = new Date(group.date + "T00:00:00");
     const weekDay = ["日","月","火","水","木","金","土"][d.getDay()];
     header.innerHTML = `<span class="date-header-label">${d.getMonth()+1}月${d.getDate()}日（${weekDay}）</span>`;
-    list.appendChild(header);
+    card.appendChild(header);
 
     group.records.forEach(record => {
-      const li   = document.createElement("li");
+      const li   = document.createElement("div");
       li.className = "record-li";
       const main = document.createElement("div");
       main.className = "record-main";
@@ -417,8 +425,10 @@ function render() {
       main.appendChild(row);
       main.addEventListener("click", () => openEditModal(record));
       li.appendChild(main);
-      list.appendChild(li);
+      card.appendChild(li);
     });
+
+    list.appendChild(card);
   });
 
   let income = 0, expense = 0;
