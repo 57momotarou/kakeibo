@@ -18,11 +18,14 @@
 
   <!-- ========== 上部バー ========== -->
   <header class="top-bar" id="topBar">
-    <!-- 通常時：空白 / タイトル / ⚙️ -->
+    <!-- 通常時：◀ / 年月 / ▶ + ⚙️ -->
     <div class="top-bar-normal" id="topBarNormal">
-      <div style="width:40px"></div>
-      <span class="top-bar-title">📝 家計簿</span>
-      <button class="top-bar-btn" id="openSettingsBtn">⚙️</button>
+      <button class="top-bar-btn month-nav-btn" id="prevMonthBtn">◀</button>
+      <span class="top-bar-title" id="monthLabel">2025年3月</span>
+      <div class="top-bar-right">
+        <button class="top-bar-btn month-nav-btn" id="nextMonthBtn">▶</button>
+        <button class="top-bar-btn" id="openSettingsBtn">⚙️</button>
+      </div>
     </div>
     <!-- 設定時：← / タイトル / 空 -->
     <div class="top-bar-settings hidden" id="topBarSettings">
@@ -97,9 +100,7 @@
 
   <!-- ホーム -->
   <div id="homeView" class="view active">
-    <div class="month-row">
-      <input type="month" id="monthSelector">
-    </div>
+    <input type="month" id="monthSelector" style="display:none">
     <div id="summary">
       <div class="summary-item income-item">
         <span class="summary-label">収入</span>

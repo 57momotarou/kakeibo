@@ -673,11 +673,53 @@ function renderGraph() {
 document.getElementById("graphMonthSelector").addEventListener("change", renderGraph);
 
 // ===================================
+// 月ナビゲーション
+// ===================================
+function updateMonthLabel() {
+  const [year, month] = monthSelector.value.split("-").map(Number);
+  document.getElementById("monthLabel").textContent = `${year}年${month}月`;
+}
+
+function changeMonth(delta) {
+  const [year, month] = monthSelector.value.split("-").map(Number);
+  const d = new Date(year, month - 1 + delta, 1);
+  const newVal = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  monthSelector.value = newVal;
+  updateMonthLabel();
+  render();
+}
+
+document.getElementById("prevMonthBtn").addEventListener("click", () => changeMonth(-1));
+document.getElementById("nextMonthBtn").addEventListener("click", () => changeMonth(1));
+
+// スワイプで月変更（ホーム・カレンダー・グラフ画面のみ）
+(function setupSwipe() {
+  let startX = 0;
+  const THRESHOLD = 50; // px
+
+  document.addEventListener("touchstart", e => {
+    startX = e.touches[0].clientX;
+  }, { passive: true });
+
+  document.addEventListener("touchend", e => {
+    // 設定画面・モーダルが開いているときはスワイプ無効
+    const currentView = viewStack[viewStack.length - 1];
+    if (!["home", "calendar", "graph"].includes(currentView)) return;
+    if (!addModal.classList.contains("hidden")) return;
+    if (!editModal.classList.contains("hidden")) return;
+
+    const diff = startX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) < THRESHOLD) return;
+    changeMonth(diff > 0 ? 1 : -1); // 左スワイプ→次月、右スワイプ→前月
+  }, { passive: true });
+})();
+
+// ===================================
 // 初期化（全関数定義後に実行）
 // ===================================
 applyThemeColor(themeColor);
 monthSelector.value = new Date().toISOString().slice(0, 7);
-monthSelector.addEventListener("change", render);
+updateMonthLabel();
 updateCategoryOptions("expense", categorySelect);
 render();
 
