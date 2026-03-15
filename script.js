@@ -403,6 +403,11 @@ receiptInput.addEventListener("change", async e => {
     // テキストから商品一覧を抽出
     const parsed = parseReceipt(result);
 
+    // ★デバッグ：APIが返したテキストと検出商品数を表示
+    console.log("=== Vision API raw text ===\n" + result);
+    console.log("=== 検出商品数:", parsed.items.length);
+    alert(`APIテキスト冒頭:\n${result.slice(0,200)}\n\n検出商品数: ${parsed.items.length}`);
+
     scanOverlay.classList.add("hidden");
 
     if (!parsed.items || parsed.items.length === 0) {
