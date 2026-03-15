@@ -399,7 +399,8 @@ receiptInput.addEventListener("change", async e => {
 
     // Vision APIを呼び出し
     const result = await callVisionAPI(base64);
-    alert("【APIテキスト】\n" + result);
+
+    // テキストから商品一覧を抽出
     const parsed = parseReceipt(result);
 
     scanOverlay.classList.add("hidden");
@@ -456,13 +457,24 @@ function parseReceipt(text) {
 
   const skipPattern = /合計|小計|税|お釣|おつり|預り|お預|ポイント|値引|割引|total|subtotal|change|TEL|電話|登録|QUICPay|paypay|交通系|クレジット|お支払|レジ|No\.|領収|公式|検索|通販|オンライン|^\*|^-|登録番号|だいぞう|ハッピー|LINE|パラダイス|スタンプ|楽曲/i;
 
-  // ¥金額 の行かどうか判定
-  const isAmountLine = l => /^[¥￥]\s*\d[\d,]*\s*(?:外|込|税抜|税込)?\s*$/.test(l);
-  // 商品名行かどうか判定（数字だけ・記号始まりを除外）
-  const isNameLine   = l => !skipPattern.test(l) && l.length >= 2 && !/^\d/.test(l) && !/^[¥￥*＊<>]/.test(l) && !isAmountLine(l);
+  // ¥金額・\金額 の行かどうか判定（内・外・括弧付きも対応）
+  const isAmountLine = l =>
+    /^[¥￥\\]\s*[\d,]+\s*(?:内|外|込|税抜|税込)?\)?\s*$/.test(l) ||
+    /^[¥￥\\]\s*\d[\d,\s]*\)?\s*$/.test(l);
+
+  // 商品名行かどうか判定
+  const isNameLine = l =>
+    !skipPattern.test(l) &&
+    l.length >= 2 &&
+    !/^\d/.test(l) &&                    // 数字始まりを除外
+    !/^[¥￥\\*＊<>(（▼\-]/.test(l) &&    // 記号・値引き始まりを除外
+    !/^\(/.test(l) &&                    // 括弧始まりを除外
+    !/\\?\d+\)/.test(l) &&              // \162) のようなパターンを除外
+    !isAmountLine(l);
 
   // --- パターンA: 商品名グループ → 金額グループが連続するレイアウト ---
   // skipPatternの行を先に除外してから処理（「小計」などがブロックを分断しないよう）
+  // ※値引き行（▼・-始まり）は除外せず残しておく
   const filtered = lines.filter(l => !skipPattern.test(l));
   const items = [];
 
@@ -480,8 +492,24 @@ function parseReceipt(text) {
       i++;
     }
 
+    // 値引きブロック（▼〇〇引き → -198 のペア）を検出して合算
+    let discountTotal = 0;
+    while (i < filtered.length) {
+      const l = filtered[i];
+      // 値引き名行（▼始まり）
+      if (/^▼/.test(l)) { i++; continue; }
+      // 値引き額行（-数字 または ¥-数字）
+      const discountMatch = l.match(/^[-－]\s*(\d[\d,]*)\s*$/) ||
+                            l.match(/^[¥￥]\s*[-－]\s*(\d[\d,]*)\s*$/);
+      if (discountMatch) {
+        discountTotal += parseInt(discountMatch[1].replace(/,/g, ""), 10);
+        i++;
+        continue;
+      }
+      break;
+    }
+
     if (nameBlock.length > 0 && amountBlock.length > 0) {
-      // 名前が金額より多い場合（店名・ヘッダーが混入）→ 末尾から金額数分だけ使う
       const useNames = nameBlock.length >= amountBlock.length
         ? nameBlock.slice(nameBlock.length - amountBlock.length)
         : nameBlock;
@@ -489,7 +517,11 @@ function parseReceipt(text) {
 
       useNames.forEach((name, idx) => {
         const cleanName = name.replace(/\s+\d+\s*$/, "").trim();
-        const val = useAmounts[idx];
+        let val = useAmounts[idx];
+        // 最後の商品に値引き分を適用
+        if (idx === useNames.length - 1 && discountTotal > 0) {
+          val = Math.max(0, val - discountTotal);
+        }
         if (cleanName.length >= 2 && val >= 10 && val <= 100000) {
           items.push({ title: cleanName, amount: val });
         }
@@ -550,30 +582,20 @@ function parseReceipt(text) {
   }
 
   // ---- 外税の集計 ----
-  // 「10%税額」「8%税額」など税額行の金額を合算して「外税」として追加
-  // 例: 「10%税額　¥70」「8%税額　¥8」→ 外税 ¥78
   let taxTotal = 0;
   for (let j = 0; j < lines.length; j++) {
     const line = lines[j];
-    // 「〇%税額」「消費税」などの行を対象
     if (/\d+%税額|消費税額|外税額/.test(line)) {
       // 同じ行の金額
-      const mInline = line.match(/[¥￥]\s*(\d[\d,]*)/);
-      if (mInline) {
-        taxTotal += parseInt(mInline[1].replace(/,/g, ""), 10);
-        continue;
-      }
-      // 次の行が金額のみの場合
+      const mInline = line.match(/[¥￥\\]\s*(\d[\d,]*)/);
+      if (mInline) { taxTotal += parseInt(mInline[1].replace(/,/g, ""), 10); continue; }
+      // 次の行が「¥金額」または「\金額)」
       const nextLine = lines[j + 1] || "";
-      const mNext = nextLine.match(/^[¥￥]\s*(\d[\d,]*)\s*$/);
-      if (mNext) {
-        taxTotal += parseInt(mNext[1].replace(/,/g, ""), 10);
-      }
+      const mNext = nextLine.match(/^[¥￥\\]\s*(\d[\d,\s]*)\)?\s*$/);
+      if (mNext) taxTotal += parseInt(mNext[1].replace(/[,\s]/g, ""), 10);
     }
   }
-  if (taxTotal > 0) {
-    items.push({ title: "外税", amount: taxTotal });
-  }
+  if (taxTotal > 0) items.push({ title: "外税", amount: taxTotal });
 
   return { items, date, category };
 }
