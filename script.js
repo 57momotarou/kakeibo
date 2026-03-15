@@ -400,6 +400,9 @@ receiptInput.addEventListener("change", async e => {
     // Vision APIを呼び出し
     const result = await callVisionAPI(base64);
 
+    // デバッグ：APIの生テキストをアラートで表示
+    alert("【APIテキスト】\n" + result);
+
     // テキストから商品一覧を抽出
     const parsed = parseReceipt(result);
 
