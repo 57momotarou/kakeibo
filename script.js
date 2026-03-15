@@ -662,7 +662,7 @@ function showItemSelector(items, date, category) {
     const toggleBtn = document.getElementById("toggleAllCheck");
     if (toggleBtn) toggleBtn.textContent = allChecked ? "全解除" : "全選択";
   }
-  updateTotal();
+  // updateTotalはDOM追加後（下部）で呼ぶ
 
   // 保存ボタン
   const saveBtn = document.createElement("button");
@@ -706,6 +706,9 @@ function showItemSelector(items, date, category) {
 
   overlay.appendChild(sheet);
   document.body.appendChild(overlay);
+
+  // DOM追加後に合計を初期化
+  updateTotal();
 }
 
 // トースト通知
