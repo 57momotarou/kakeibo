@@ -1484,11 +1484,13 @@ function changeMonth(delta, direction) {
 document.getElementById("prevMonthBtn").addEventListener("click", () => changeMonth(-1, "right"));
 document.getElementById("nextMonthBtn").addEventListener("click", () => changeMonth( 1, "left"));
 
-// タッチスワイプで月変更
+// タッチスワイプで月変更 ＋ バックジェスチャー
 (function setupSwipe() {
   let startX = 0;
   let startY = 0;
-  const THRESHOLD = 50;
+  const THRESHOLD      = 50;  // 月切り替えの最低スワイプ距離
+  const BACK_THRESHOLD = 40;  // バックジェスチャーの最低スワイプ距離
+  const BACK_EDGE      = 40;  // 左端何px以内から始まればバックジェスチャーとみなすか
 
   document.addEventListener("touchstart", e => {
     startX = e.touches[0].clientX;
@@ -1496,16 +1498,35 @@ document.getElementById("nextMonthBtn").addEventListener("click", () => changeMo
   }, { passive: true });
 
   document.addEventListener("touchend", e => {
-    const currentView = viewStack[viewStack.length - 1];
-    // ホームはスワイプ無効
-    if (!["calendar", "graph", "transaction"].includes(currentView)) return;
+    // モーダルが開いているときは何もしない
     if (!addModal.classList.contains("hidden")) return;
     if (!editModal.classList.contains("hidden")) return;
 
-    const diffX = startX - e.changedTouches[0].clientX;
-    const diffY = startY - e.changedTouches[0].clientY;
-    // 縦スクロール優先（縦の動きが大きい場合は無視）
+    const endX  = e.changedTouches[0].clientX;
+    const endY  = e.changedTouches[0].clientY;
+    const diffX = startX - endX;  // 正 = 左スワイプ、負 = 右スワイプ
+    const diffY = startY - endY;
+
+    // 縦の動きが大きい場合は無視
     if (Math.abs(diffY) > Math.abs(diffX)) return;
+
+    // ── バックジェスチャー ──
+    // 左端BACK_EDGEpx以内から始まり、右方向にBACK_THRESHOLD以上スワイプ
+    if (startX <= BACK_EDGE && diffX < -BACK_THRESHOLD) {
+      const currentView = viewStack[viewStack.length - 1];
+      // viewStackが2以上（前の画面がある）場合のみ戻る
+      if (viewStack.length > 1) {
+        goBack();
+        return;
+      }
+      // stackが1（メイン画面）の場合はカレンダー→出入金など特定画面を戻す
+      if (currentView === "calendar") { switchToTab("transaction"); return; }
+      return;
+    }
+
+    // ── 月切り替えスワイプ ──
+    const currentView = viewStack[viewStack.length - 1];
+    if (!["calendar", "graph", "transaction"].includes(currentView)) return;
     if (Math.abs(diffX) < THRESHOLD) return;
 
     if (diffX > 0) changeMonth( 1, "left");  // 左スワイプ → 次月
