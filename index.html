@@ -99,8 +99,12 @@
 
   <!-- ========== メイン画面群 ========== -->
 
-  <!-- ホーム -->
+  <!-- ホーム（空：今後コンテンツを追加予定） -->
   <div id="homeView" class="view active">
+  </div>
+
+  <!-- 出入金 -->
+  <div id="transactionView" class="view">
     <input type="month" id="monthSelector" style="display:none">
     <ul id="list"></ul>
   </div>
@@ -138,11 +142,6 @@
         <span class="settings-menu-label">表示 / 非表示</span>
         <span class="settings-menu-arrow">›</span>
       </li>
-      <li class="settings-menu-item" id="goBudget">
-        <span class="settings-menu-icon">💰</span>
-        <span class="settings-menu-label">予算設定</span>
-        <span class="settings-menu-arrow">›</span>
-      </li>
     </ul>
   </div>
 
@@ -166,15 +165,6 @@
         </label>
       </li>
     </ul>
-  </div>
-
-  <!-- 予算設定 -->
-  <div id="budgetView" class="view">
-    <p style="font-size:13px;color:#666;margin:4px 0 12px;line-height:1.7;">
-      カテゴリごとに月の支出予算を設定します。<br>
-      80%を超えるとオレンジ、予算を超えると赤で表示されます。
-    </p>
-    <ul id="budgetList" class="budget-list"></ul>
   </div>
 
   <!-- 集計期間設定 -->
@@ -329,6 +319,7 @@
   <!-- ========== 下部タブ ========== -->
   <nav class="tab-bar" id="tabBar">
     <button id="homeTab" class="tab active">🏠<br><small>ホーム</small></button>
+    <button id="transactionTab" class="tab">💴<br><small>出入金</small></button>
     <button id="calendarTab" class="tab">📅<br><small>カレンダー</small></button>
     <button id="graphTab" class="tab">📊<br><small>グラフ</small></button>
     <button id="accountTab" class="tab">🏦<br><small>口座</small></button>
