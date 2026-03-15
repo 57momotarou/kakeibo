@@ -280,7 +280,34 @@
     </div>
   </div>
 
+  <!-- ========== FABメニュー ========== -->
+  <div id="fabOverlay" class="fab-overlay hidden"></div>
+
+  <!-- サブボタン（展開時に表示） -->
+  <div class="fab-menu" id="fabMenu">
+    <div class="fab-sub-item" id="fabCameraItem">
+      <span class="fab-sub-label">レシートを読み取る</span>
+      <button class="fab-sub-btn fab-camera" id="fabCameraBtn">📷</button>
+    </div>
+    <div class="fab-sub-item" id="fabManualItem">
+      <span class="fab-sub-label">手動で入力</span>
+      <button class="fab-sub-btn fab-manual" id="fabManualBtn">✏️</button>
+    </div>
+  </div>
+
+  <!-- メインFABボタン -->
   <button class="fab-add" id="openAddBtn">＋</button>
+
+  <!-- カメラ入力（非表示） -->
+  <input type="file" id="receiptInput" accept="image/*" capture="environment" style="display:none">
+
+  <!-- レシート読み取り中オーバーレイ -->
+  <div id="scanOverlay" class="scan-overlay hidden">
+    <div class="scan-box">
+      <div class="scan-spinner"></div>
+      <p class="scan-text">レシートを読み取り中…</p>
+    </div>
+  </div>
 
   <!-- ========== 下部タブ ========== -->
   <nav class="tab-bar" id="tabBar">

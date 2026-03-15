@@ -26,12 +26,12 @@ document.addEventListener("DOMContentLoaded", () => {
     splash.classList.add("dark-text");
   }
 
-  // 0.8秒後にフェードアウト開始 → 0.4秒後に強制的にdisplay:none
+  // 0.8秒後にフェードアウト → 完了後に非表示
   setTimeout(() => {
     splash.classList.add("fade-out");
-    setTimeout(() => {
+    splash.addEventListener("transitionend", () => {
       splash.classList.add("hidden");
-    }, 450); // transitionの0.4秒より少し長めに設定
+    }, { once: true });
   }, 800);
 })();
 
@@ -295,15 +295,16 @@ function hideModal(modal, overlay) {
 // ===================================
 // 追加モーダル
 // ===================================
-function openAddModal() {
-  dateInput.value     = new Date().toISOString().slice(0, 10);
-  amountInput.value   = "";
-  memoInput.value     = "";
-  addTypeHidden.value = "expense";
+function openAddModal(prefill) {
+  dateInput.value     = prefill?.date    || new Date().toISOString().slice(0, 10);
+  amountInput.value   = prefill?.amount  || "";
+  memoInput.value     = prefill?.title   || "";
+  const type          = prefill?.type    || "expense";
+  addTypeHidden.value = type;
   addTypeToggle.querySelectorAll(".type-toggle-btn").forEach(b => {
-    b.classList.toggle("active", b.dataset.value === "expense");
+    b.classList.toggle("active", b.dataset.value === type);
   });
-  updateCategoryOptions("expense", categorySelect);
+  updateCategoryOptions(type, categorySelect, prefill?.category);
   showModal(addModal, addOverlay);
 }
 
@@ -317,7 +318,6 @@ addTypeToggle.addEventListener("click", e => {
   updateCategoryOptions(val, categorySelect);
 });
 
-openAddBtn.addEventListener("click",   openAddModal);
 closeAddBtn.addEventListener("click",  () => hideModal(addModal, addOverlay));
 addOverlay.addEventListener("click",   () => hideModal(addModal, addOverlay));
 
@@ -337,6 +337,275 @@ addButton.addEventListener("click", () => {
   render();
   hideModal(addModal, addOverlay);
 });
+
+// ===================================
+// FABメニュー（展開アニメーション）
+// ===================================
+const fabMenu    = document.getElementById("fabMenu");
+const fabOverlay = document.getElementById("fabOverlay");
+let fabOpen = false;
+
+function openFabMenu() {
+  fabOpen = true;
+  openAddBtn.classList.add("fab-open");
+  fabMenu.classList.add("open");
+  fabOverlay.classList.remove("hidden");
+  fabOverlay.classList.add("show");
+}
+
+function closeFabMenu() {
+  fabOpen = false;
+  openAddBtn.classList.remove("fab-open");
+  fabMenu.classList.remove("open");
+  fabOverlay.classList.remove("show");
+  setTimeout(() => fabOverlay.classList.add("hidden"), 200);
+}
+
+openAddBtn.addEventListener("click", () => {
+  fabOpen ? closeFabMenu() : openFabMenu();
+});
+
+fabOverlay.addEventListener("click", closeFabMenu);
+
+// 手動入力ボタン
+document.getElementById("fabManualBtn").addEventListener("click", () => {
+  closeFabMenu();
+  setTimeout(() => openAddModal(), 200);
+});
+
+// ===================================
+// レシート読み取り（Google Cloud Vision API）
+// ===================================
+const VISION_API_KEY = "AIzaSyCK2LY5QwBCWPd7xhc-7Gh3RetAaZApnmo";
+const receiptInput   = document.getElementById("receiptInput");
+const scanOverlay    = document.getElementById("scanOverlay");
+
+document.getElementById("fabCameraBtn").addEventListener("click", () => {
+  closeFabMenu();
+  setTimeout(() => receiptInput.click(), 200);
+});
+
+receiptInput.addEventListener("change", async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  receiptInput.value = ""; // 同じファイルを再選択できるようリセット
+
+  // ローディング表示
+  scanOverlay.classList.remove("hidden");
+
+  try {
+    // 画像をBase64に変換
+    const base64 = await fileToBase64(file);
+
+    // Vision APIを呼び出し
+    const result = await callVisionAPI(base64);
+
+    // テキストから商品一覧を抽出
+    const parsed = parseReceipt(result);
+
+    scanOverlay.classList.add("hidden");
+
+    if (!parsed.items || parsed.items.length === 0) {
+      alert("商品を読み取れませんでした。手動で入力してください。");
+      openAddModal({ date: parsed.date, category: parsed.category, type: "expense" });
+      return;
+    }
+
+    if (parsed.items.length === 1) {
+      // 商品が1つだけならそのまま追加モーダルへ
+      openAddModal({
+        title:    parsed.items[0].title,
+        amount:   parsed.items[0].amount,
+        date:     parsed.date,
+        category: parsed.category,
+        type:     "expense",
+      });
+    } else {
+      // 複数商品なら選択UIを表示
+      showItemSelector(parsed.items, parsed.date, parsed.category);
+    }
+
+  } catch (err) {
+    scanOverlay.classList.add("hidden");
+    console.error(err);
+    alert("読み取りに失敗しました。手動で入力してください。");
+    openAddModal();
+  }
+});
+
+// ファイル→Base64変換
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload  = () => resolve(reader.result.split(",")[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// Vision API呼び出し
+async function callVisionAPI(base64Image) {
+  const res = await fetch(
+    `https://vision.googleapis.com/v1/images:annotate?key=${VISION_API_KEY}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        requests: [{
+          image:    { content: base64Image },
+          features: [{ type: "TEXT_DETECTION", maxResults: 1 }],
+        }],
+      }),
+    }
+  );
+  if (!res.ok) throw new Error(`Vision API error: ${res.status}`);
+  const data = await res.json();
+  return data.responses[0]?.fullTextAnnotation?.text || "";
+}
+
+// テキストからレシートの商品一覧を解析
+function parseReceipt(text) {
+  const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
+
+  // ---- 商品行を抽出 ----
+  // 「商品名 + 金額」が同じ行、または直前行が商品名・直後行が金額のパターンを検出
+  const amountPattern = /[¥￥]?\s*(\d[\d,]+)/;
+  // 合計・税・小計などの除外キーワード
+  const skipPattern = /合計|小計|税|お釣|おつり|預り|お預|ポイント|値引|割引|total|subtotal|change|tax/i;
+
+  const items = []; // { title, amount }
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (skipPattern.test(line)) continue;
+
+    // 同一行に商品名と金額が含まれるパターン: 「牛乳　198」
+    const inlineMatch = line.match(/^(.+?)\s+[¥￥]?\s*(\d[\d,]+)\s*$/);
+    if (inlineMatch) {
+      const name = inlineMatch[1].trim();
+      const val  = parseInt(inlineMatch[2].replace(/,/g, ""), 10);
+      // 名前が数字だけ・短すぎる・金額が大きすぎる（合計っぽい）は除外
+      if (name.length >= 2 && !/^\d+$/.test(name) && val >= 10 && val <= 100000) {
+        items.push({ title: name, amount: val });
+        continue;
+      }
+    }
+
+    // 商品名行・次行が金額のパターン
+    const nextLine = lines[i + 1] || "";
+    const amountOnly = nextLine.match(/^\s*[¥￥]?\s*(\d[\d,]+)\s*$/);
+    if (amountOnly && !skipPattern.test(line) && line.length >= 2 && !/^\d+$/.test(line)) {
+      const val = parseInt(amountOnly[1].replace(/,/g, ""), 10);
+      if (val >= 10 && val <= 100000) {
+        items.push({ title: line, amount: val });
+        i++; // 次行（金額行）をスキップ
+        continue;
+      }
+    }
+  }
+
+  // ---- 日付を探す ----
+  let date = new Date().toISOString().slice(0, 10);
+  const datePatterns = [
+    /(\d{4})[\/\-年](\d{1,2})[\/\-月](\d{1,2})/,
+    /(\d{2})[\/\-年](\d{1,2})[\/\-月](\d{1,2})/,
+    /(\d{1,2})月(\d{1,2})日/,
+  ];
+  for (const line of lines) {
+    for (const pat of datePatterns) {
+      const m = line.match(pat);
+      if (m) {
+        try {
+          let y = m[1].length === 2 ? "20" + m[1] : m[1];
+          if (pat.source.includes("月")) y = new Date().getFullYear().toString();
+          const mo = String(parseInt(m[2] || m[1])).padStart(2, "0");
+          const d  = String(parseInt(m[3] || m[2])).padStart(2, "0");
+          date = `${y}-${mo}-${d}`;
+        } catch {}
+        break;
+      }
+    }
+    if (date !== new Date().toISOString().slice(0, 10)) break;
+  }
+
+  // ---- カテゴリを推測 ----
+  const shopKeywords = {
+    "食費":   /スーパー|コンビニ|セイコーマート|セブン|ローソン|ファミマ|食品|フード|レストラン|食堂|弁当|惣菜|肉|魚|野菜|果物|パン|スタバ|マック|吉野家|すき家|サイゼ/i,
+    "日用品": /ドラッグ|薬局|ホームセンター|100均|ダイソー|ニトリ|雑貨|文具|日用/i,
+    "交通":   /ガソリン|駐車|バス|電車|タクシー|JR|高速|スタンド/i,
+    "家賃":   /家賃|管理費|光熱|電気|ガス|水道/i,
+  };
+  let category = "その他";
+  for (const [cat, pat] of Object.entries(shopKeywords)) {
+    if (pat.test(text)) { category = cat; break; }
+  }
+
+  return { items, date, category };
+}
+
+// 商品選択UIを表示（複数商品の場合）
+function showItemSelector(items, date, category) {
+  // 既存のセレクターがあれば削除
+  const existing = document.getElementById("itemSelectorOverlay");
+  if (existing) existing.remove();
+
+  const overlay = document.createElement("div");
+  overlay.id = "itemSelectorOverlay";
+  overlay.style.cssText = `
+    position:fixed;inset:0;background:rgba(0,0,0,0.5);
+    z-index:350;display:flex;align-items:flex-end;
+  `;
+
+  const sheet = document.createElement("div");
+  sheet.style.cssText = `
+    background:#fff;width:100%;border-radius:20px 20px 0 0;
+    max-height:70vh;overflow-y:auto;padding:0 0 32px;
+  `;
+
+  sheet.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;
+      padding:16px 20px 12px;border-bottom:1px solid #eee;">
+      <span style="font-size:16px;font-weight:bold;">商品を選択</span>
+      <button id="closeItemSelector" style="width:32px;height:32px;border-radius:50%;
+        border:none;background:#f0f0f0;font-size:14px;cursor:pointer;">✕</button>
+    </div>
+    <p style="font-size:12px;color:#888;padding:8px 20px 4px;margin:0;">
+      追加したい商品をタップしてください
+    </p>
+    <ul style="list-style:none;padding:0;margin:0;" id="itemSelectorList"></ul>
+  `;
+
+  const ul = sheet.querySelector("#itemSelectorList");
+  items.forEach(item => {
+    const li = document.createElement("li");
+    li.style.cssText = `
+      display:flex;justify-content:space-between;align-items:center;
+      padding:14px 20px;border-bottom:1px solid #f5f5f5;cursor:pointer;
+    `;
+    li.innerHTML = `
+      <span style="font-size:14px;font-weight:bold;color:#222;flex:1;
+        overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+        margin-right:12px;">${item.title}</span>
+      <span style="font-size:14px;font-weight:bold;color:#c62828;
+        white-space:nowrap;">¥${item.amount.toLocaleString()}</span>
+    `;
+    li.addEventListener("click", () => {
+      overlay.remove();
+      openAddModal({ title: item.title, amount: item.amount, date, category, type: "expense" });
+    });
+    li.addEventListener("touchstart", () => li.style.background = "#f5f5f5", { passive: true });
+    li.addEventListener("touchend",   () => li.style.background = "",         { passive: true });
+    ul.appendChild(li);
+  });
+
+  sheet.querySelector("#closeItemSelector").addEventListener("click", () => overlay.remove());
+  overlay.addEventListener("click", e => { if (e.target === overlay) overlay.remove(); });
+
+  overlay.appendChild(sheet);
+  document.body.appendChild(overlay);
+}
+
+
 
 // ===================================
 // 編集モーダル
@@ -837,7 +1106,6 @@ document.getElementById("toggleAccount").addEventListener("change", e => {
   saveTabVisibility();
   applyTabVisibility();
 });
-
 
 // ===================================
 // 月ナビゲーション

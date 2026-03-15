@@ -67,6 +67,8 @@ body {
   left: 0;
   right: 0;
   height: 52px;
+  max-width: 430px;
+  margin: 0 auto;
   background: var(--theme);
   display: flex;
   align-items: center;
@@ -552,7 +554,6 @@ ul { list-style: none; padding: 0; margin: 0; }
 =================================== */
 .fab-add {
   position: fixed;
-  /* タブバー(60px)の上、少し浮かせた位置 */
   bottom: 72px;
   right: 16px;
   width: 52px !important;
@@ -568,19 +569,130 @@ ul { list-style: none; padding: 0; margin: 0; }
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 99;
+  z-index: 150;
   padding: 0;
   margin: 0;
-  transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+  transition: background 0.2s, transform 0.25s, box-shadow 0.15s;
 }
-.fab-add:active {
+.fab-add.fab-open {
+  transform: rotate(45deg);
   background: var(--theme-dark);
-  transform: scale(0.93);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
-/* タブバーが非表示（設定画面）の時はFABも隠す */
-.tab-bar.hidden ~ .fab-add,
 .fab-add.hidden { display: none; }
+
+/* FABメニューのオーバーレイ */
+.fab-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 140;
+  background: rgba(0,0,0,0.3);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.fab-overlay.show   { opacity: 1; }
+.fab-overlay.hidden { display: none; }
+
+/* FABサブメニュー */
+.fab-menu {
+  position: fixed;
+  bottom: 136px;
+  right: 16px;
+  z-index: 150;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-end;
+  pointer-events: none;
+}
+
+.fab-sub-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  opacity: 0;
+  transform: translateY(20px) scale(0.8);
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+/* 展開時のアニメーション */
+.fab-menu.open .fab-sub-item {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+.fab-menu.open .fab-sub-item:nth-child(1) { transition-delay: 0.05s; }
+.fab-menu.open .fab-sub-item:nth-child(2) { transition-delay: 0.0s;  }
+
+.fab-sub-label {
+  background: rgba(0,0,0,0.7);
+  color: #fff;
+  font-size: 13px;
+  padding: 5px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.fab-sub-btn {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 50%;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  padding: 0;
+  margin: 0;
+  flex-shrink: 0;
+}
+.fab-camera { background: #fff; }
+.fab-manual { background: #fff; }
+.fab-sub-btn:active { transform: scale(0.92); }
+
+/* スキャン中オーバーレイ */
+.scan-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.scan-overlay.hidden { display: none; }
+
+.scan-box {
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px 28px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.scan-spinner {
+  width: 44px;
+  height: 44px;
+  border: 4px solid #eee;
+  border-top-color: var(--theme);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.scan-text {
+  font-size: 15px;
+  color: #444;
+  margin: 0;
+  font-weight: bold;
+}
 
 /* ===================================
    下部タブバー
@@ -591,6 +703,8 @@ ul { list-style: none; padding: 0; margin: 0; }
   left: 0;
   right: 0;
   height: 60px;
+  max-width: 430px;
+  margin: 0 auto;
   display: flex;
   border-top: 1px solid #ddd;
   background: #fff;
