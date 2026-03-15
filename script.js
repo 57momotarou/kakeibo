@@ -399,8 +399,7 @@ receiptInput.addEventListener("change", async e => {
 
     // Vision APIを呼び出し
     const result = await callVisionAPI(base64);
-
-    // テキストから商品一覧を抽出
+    alert("【APIテキスト】\n" + result);
     const parsed = parseReceipt(result);
 
     scanOverlay.classList.add("hidden");
