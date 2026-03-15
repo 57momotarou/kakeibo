@@ -260,6 +260,7 @@ function showCurrentView() {
   document.getElementById("tabBar").classList.toggle("hidden", !config.showTabs);
   openAddBtn.classList.toggle("hidden", !config.showTabs);
 
+  if (name === "home")        renderHome();
   if (name === "transaction") render();
   if (name === "calendar")    renderCalendar();
   if (name === "category")    renderCategoryView();
@@ -1221,6 +1222,65 @@ document.getElementById("graphToggle").addEventListener("click", e => {
 });
 
 // ===================================
+// ホーム描画
+// ===================================
+function renderHome() {
+  const card      = document.getElementById("homeBudgetCard");
+  const rowsEl    = document.getElementById("homeBudgetRows");
+  const monthEl   = document.getElementById("homeBudgetMonth");
+  if (!card || !rowsEl) return;
+
+  // 予算が1件も設定されていなければ非表示
+  const budgetCats = Object.keys(budgets).filter(k => budgets[k] > 0);
+  if (budgetCats.length === 0) {
+    card.style.display = "none";
+    return;
+  }
+
+  card.style.display = "";
+  rowsEl.innerHTML   = "";
+
+  // 表示月ラベル
+  const ym = monthSelector.value;
+  const [y, m] = ym.split("-").map(Number);
+  if (monthEl) monthEl.textContent = `${y}年${m}月`;
+
+  const spending = getMonthlySpending();
+
+  budgetCats.forEach(catName => {
+    const budget = budgets[catName];
+    const spent  = spending[catName] || 0;
+    const pct    = Math.min(spent / budget * 100, 100);
+    const over   = spent > budget;
+    const warn   = !over && spent / budget >= 0.8;
+    const barClass = over ? "over" : warn ? "warn" : "ok";
+
+    const row = document.createElement("div");
+    row.className = "home-budget-row";
+    row.innerHTML = `
+      <div class="home-budget-row-top">
+        <span class="home-budget-cat">${catName}</span>
+        <span class="home-budget-amt ${over ? "over-text" : ""}">
+          ¥${spent.toLocaleString()} <span class="home-budget-limit">/ ¥${budget.toLocaleString()}</span>
+        </span>
+      </div>
+      <div class="home-budget-bar-wrap">
+        <div class="home-budget-bar ${barClass}" style="width:${pct}%"></div>
+      </div>
+      <div class="home-budget-row-foot">
+        <span class="${over ? "over-text" : "home-budget-remain"}">
+          ${over
+            ? `¥${(spent - budget).toLocaleString()} オーバー`
+            : `残り ¥${(budget - spent).toLocaleString()}`}
+        </span>
+        <span class="home-budget-pct">${Math.round(spent / budget * 100)}%</span>
+      </div>
+    `;
+    rowsEl.appendChild(row);
+  });
+}
+
+// ===================================
 // 予算管理
 // ===================================
 let budgets = JSON.parse(localStorage.getItem("budgets")) || {};
@@ -1285,6 +1345,7 @@ function renderBudgetView() {
       else         delete budgets[cat.name];
       saveBudgets();
       renderBudgetView();
+      renderHome();
     });
     ul.appendChild(li);
   });

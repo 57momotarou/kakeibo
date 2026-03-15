@@ -1492,3 +1492,90 @@ body {
 .view {
   will-change: transform;
 }
+
+/* ===================================
+   ホーム：予算進捗カード
+=================================== */
+.home-budget-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 16px 16px 10px;
+  margin: 8px 0 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+.home-budget-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.home-budget-title {
+  font-size: 14px;
+  font-weight: bold;
+  color: #333;
+}
+
+.home-budget-month {
+  font-size: 12px;
+  color: #aaa;
+}
+
+.home-budget-row {
+  margin-bottom: 14px;
+}
+.home-budget-row:last-child { margin-bottom: 4px; }
+
+.home-budget-row-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 5px;
+}
+
+.home-budget-cat {
+  font-size: 13px;
+  font-weight: bold;
+  color: #222;
+}
+
+.home-budget-amt {
+  font-size: 13px;
+  font-weight: bold;
+  color: #222;
+}
+
+.home-budget-limit {
+  font-size: 11px;
+  color: #aaa;
+  font-weight: normal;
+}
+
+.home-budget-bar-wrap {
+  height: 7px;
+  background: #eee;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.home-budget-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+.home-budget-bar.ok   { background: var(--theme); }
+.home-budget-bar.warn { background: #ff9800; }
+.home-budget-bar.over { background: #e53935; }
+
+.home-budget-row-foot {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #aaa;
+}
+
+.home-budget-remain { color: #aaa; }
+.home-budget-pct    { color: #bbb; }
+.over-text          { color: #e53935; font-weight: bold; }
