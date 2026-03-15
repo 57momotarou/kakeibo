@@ -403,11 +403,6 @@ receiptInput.addEventListener("change", async e => {
     // テキストから商品一覧を抽出
     const parsed = parseReceipt(result);
 
-    // ★デバッグ：APIが返したテキストと検出商品数を表示
-    console.log("=== Vision API raw text ===\n" + result);
-    console.log("=== 検出商品数:", parsed.items.length);
-    alert(`APIテキスト冒頭:\n${result.slice(0,200)}\n\n検出商品数: ${parsed.items.length}`);
-
     scanOverlay.classList.add("hidden");
 
     if (!parsed.items || parsed.items.length === 0) {
@@ -417,7 +412,6 @@ receiptInput.addEventListener("change", async e => {
     }
 
     if (parsed.items.length === 1) {
-      // 商品が1つだけならそのまま追加モーダルへ
       openAddModal({
         title:    parsed.items[0].title,
         amount:   parsed.items[0].amount,
@@ -426,14 +420,14 @@ receiptInput.addEventListener("change", async e => {
         type:     "expense",
       });
     } else {
-      // 複数商品なら選択UIを表示
       showItemSelector(parsed.items, parsed.date, parsed.category);
     }
 
   } catch (err) {
     scanOverlay.classList.add("hidden");
     console.error(err);
-    alert("エラー詳細:\n" + err.message + "\n\n" + (err.stack || ""));
+    alert("読み取りに失敗しました。手動で入力してください。");
+    openAddModal();
   }
 });
 
@@ -471,11 +465,8 @@ async function callVisionAPI(base64Image) {
 function parseReceipt(text) {
   const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
 
-  // ---- 商品行を抽出 ----
-  // 金額パターン：¥100、¥100外、100外、1,000 など
-  const amountPattern = /[¥￥]?\s*(\d[\d,]*)\s*(?:外|込|税抜|税込)?$/;
-  // 合計・税・小計などの除外キーワード
-  const skipPattern = /合計|小計|税|お釣|おつり|預り|お預|ポイント|値引|割引|total|subtotal|change|TEL|電話|登録|QUICPay|paypay|交通系|クレジット|お支払|レジ|No\.|領収|公式|検索|通販|オンライン|^\*/i;
+  // 除外キーワード
+  const skipPattern = /合計|小計|税|お釣|おつり|預り|お預|ポイント|値引|割引|total|subtotal|change|TEL|電話|登録|QUICPay|paypay|交通系|クレジット|お支払|レジ|No\.|領収|公式|検索|通販|オンライン|^\*|^-|登録番号/i;
 
   const items = [];
 
@@ -483,34 +474,44 @@ function parseReceipt(text) {
     const line = lines[i];
     if (skipPattern.test(line)) continue;
 
-    // 同一行に商品名と金額が含まれるパターン
-    // 例: 「抗菌カトラリーセット　¥100外」「牛乳　198」
-    const inlineMatch = line.match(/^(.+?)\s+[¥￥]?\s*(\d[\d,]*)\s*(?:外|込|税抜|税込)?\s*$/);
-    if (inlineMatch) {
-      const name = inlineMatch[1].trim();
-      const val  = parseInt(inlineMatch[2].replace(/,/g, ""), 10);
+    // パターン1: 「商品名　¥金額外」（¥マーク必須）
+    // 例: 「抗菌カトラリーセット（ス　¥100外」
+    const yenInline = line.match(/^(.+?)\s+[¥￥]\s*(\d[\d,]*)\s*(?:外|込|税抜|税込)?\s*$/);
+    if (yenInline) {
+      const name = yenInline[1].trim();
+      const val  = parseInt(yenInline[2].replace(/,/g, ""), 10);
+      // 名前から末尾の余分な数字（商品コードなど）を除去
+      const cleanName = name.replace(/\s+\d+\s*$/, "").trim();
+      if (cleanName.length >= 2 && !/^\d+$/.test(cleanName) && val >= 10 && val <= 100000) {
+        items.push({ title: cleanName, amount: val });
+        continue;
+      }
+    }
+
+    // パターン2: 「商品名　金額」（¥なし、ただし次行が¥金額でないこと）
+    // 例: 「牛乳　198」
+    const noYenInline = line.match(/^(.+?)\s+(\d[\d,]+)\s*$/);
+    if (noYenInline) {
+      const name = noYenInline[1].trim();
+      const val  = parseInt(noYenInline[2].replace(/,/g, ""), 10);
+      // 名前に数字が混じっていても末尾の数字は価格の可能性あり
+      // ただし名前だけが数字の場合は除外
       if (
         name.length >= 2 &&
-        !/^\d+$/.test(name) &&      // 数字だけの行を除外
-        !/^[¥￥*＊]/.test(name) &&  // 記号始まりを除外
-        val >= 10 && val <= 100000
+        !/^\d+$/.test(name) &&
+        !/^[¥￥*＊]/.test(name) &&
+        val >= 100 && val <= 100000 // ¥なしは100円以上に絞る
       ) {
         items.push({ title: name, amount: val });
         continue;
       }
     }
 
-    // 商品名行の次行が金額のみのパターン
+    // パターン3: 商品名行の次行が「¥金額」のみ
     const nextLine = lines[i + 1] || "";
-    const amountOnly = nextLine.match(/^\s*[¥￥]?\s*(\d[\d,]*)\s*(?:外|込|税抜|税込)?\s*$/);
-    if (
-      amountOnly &&
-      !skipPattern.test(line) &&
-      line.length >= 2 &&
-      !/^\d/.test(line) &&
-      !/^[¥￥*＊]/.test(line)
-    ) {
-      const val = parseInt(amountOnly[1].replace(/,/g, ""), 10);
+    const nextYen = nextLine.match(/^\s*[¥￥]\s*(\d[\d,]*)\s*(?:外|込|税抜|税込)?\s*$/);
+    if (nextYen && line.length >= 2 && !/^\d/.test(line) && !/^[¥￥*＊]/.test(line)) {
+      const val = parseInt(nextYen[1].replace(/,/g, ""), 10);
       if (val >= 10 && val <= 100000) {
         items.push({ title: line, amount: val });
         i++;
@@ -546,7 +547,7 @@ function parseReceipt(text) {
   // ---- カテゴリを推測 ----
   const shopKeywords = {
     "食費":   /スーパー|コンビニ|セイコーマート|セブン|ローソン|ファミマ|食品|フード|レストラン|食堂|弁当|惣菜|肉|魚|野菜|果物|パン|スタバ|マック|吉野家|すき家|サイゼ/i,
-    "日用品": /ドラッグ|薬局|ホームセンター|100均|ダイソー|ニトリ|雑貨|文具|日用/i,
+    "日用品": /ドラッグ|薬局|ホームセンター|ダイソー|百均|ニトリ|雑貨|文具|日用/i,
     "交通":   /ガソリン|駐車|バス|電車|タクシー|JR|高速|スタンド/i,
     "家賃":   /家賃|管理費|光熱|電気|ガス|水道/i,
   };
