@@ -117,12 +117,18 @@
 
   <!-- カレンダー -->
   <div id="calendarView" class="view">
+    <!-- 年月・期間ヘッダー -->
+    <div class="cal-header">
+      <div class="cal-header-year-month" id="calYearMonth"></div>
+      <div class="cal-header-range" id="calRange"></div>
+    </div>
     <div class="week-header">
       <div>日</div><div>月</div><div>火</div><div>水</div>
       <div>木</div><div>金</div><div>土</div>
     </div>
     <div id="calendar"></div>
-    <div id="dayDetail"></div>
+    <!-- 出入金リスト（期間内） -->
+    <div class="cal-transaction-list" id="calTransactionList"></div>
   </div>
 
   <!-- 設定トップ -->
@@ -148,11 +154,6 @@
         <span class="settings-menu-label">表示 / 非表示</span>
         <span class="settings-menu-arrow">›</span>
       </li>
-      <li class="settings-menu-item" id="goBudget">
-        <span class="settings-menu-icon">💰</span>
-        <span class="settings-menu-label">予算設定</span>
-        <span class="settings-menu-arrow">›</span>
-      </li>
     </ul>
   </div>
 
@@ -168,15 +169,6 @@
         </label>
       </li>
     </ul>
-  </div>
-
-  <!-- 予算設定 -->
-  <div id="budgetView" class="view">
-    <p style="font-size:13px;color:#666;margin:4px 0 12px;line-height:1.7;">
-      カテゴリごとに月の支出予算を設定します。<br>
-      80%を超えるとオレンジ、予算を超えると赤で表示されます。
-    </p>
-    <ul id="budgetList" class="budget-list"></ul>
   </div>
 
   <!-- 集計期間設定 -->
