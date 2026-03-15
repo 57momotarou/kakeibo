@@ -550,6 +550,32 @@ function parseReceipt(text) {
     if (pat.test(text)) { category = cat; break; }
   }
 
+  // ---- 外税の集計 ----
+  // 「10%税額」「8%税額」など税額行の金額を合算して「外税」として追加
+  // 例: 「10%税額　¥70」「8%税額　¥8」→ 外税 ¥78
+  let taxTotal = 0;
+  for (let j = 0; j < lines.length; j++) {
+    const line = lines[j];
+    // 「〇%税額」「消費税」などの行を対象
+    if (/\d+%税額|消費税額|外税額/.test(line)) {
+      // 同じ行の金額
+      const mInline = line.match(/[¥￥]\s*(\d[\d,]*)/);
+      if (mInline) {
+        taxTotal += parseInt(mInline[1].replace(/,/g, ""), 10);
+        continue;
+      }
+      // 次の行が金額のみの場合
+      const nextLine = lines[j + 1] || "";
+      const mNext = nextLine.match(/^[¥￥]\s*(\d[\d,]*)\s*$/);
+      if (mNext) {
+        taxTotal += parseInt(mNext[1].replace(/,/g, ""), 10);
+      }
+    }
+  }
+  if (taxTotal > 0) {
+    items.push({ title: "外税", amount: taxTotal });
+  }
+
   return { items, date, category };
 }
 
