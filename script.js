@@ -405,23 +405,14 @@ receiptInput.addEventListener("change", async e => {
 
     scanOverlay.classList.add("hidden");
 
-    if (!parsed.items || parsed.items.length === 0) {
+    if (parsed.items.length === 0) {
       alert("商品を読み取れませんでした。手動で入力してください。");
       openAddModal({ date: parsed.date, category: parsed.category, type: "expense" });
       return;
     }
 
-    if (parsed.items.length === 1) {
-      openAddModal({
-        title:    parsed.items[0].title,
-        amount:   parsed.items[0].amount,
-        date:     parsed.date,
-        category: parsed.category,
-        type:     "expense",
-      });
-    } else {
-      showItemSelector(parsed.items, parsed.date, parsed.category);
-    }
+    // 商品数にかかわらず選択UIを表示
+    showItemSelector(parsed.items, parsed.date, parsed.category);
 
   } catch (err) {
     scanOverlay.classList.add("hidden");
@@ -563,9 +554,8 @@ function parseReceipt(text) {
   return { items, date, category };
 }
 
-// 商品選択UIを表示（複数商品の場合）
+// 商品選択UIを表示（チェックボックス一括選択・一括保存）
 function showItemSelector(items, date, category) {
-  // 既存のセレクターがあれば削除
   const existing = document.getElementById("itemSelectorOverlay");
   if (existing) existing.remove();
 
@@ -578,52 +568,161 @@ function showItemSelector(items, date, category) {
 
   const sheet = document.createElement("div");
   sheet.style.cssText = `
-    background:#fff;width:100%;border-radius:20px 20px 0 0;
-    max-height:70vh;overflow-y:auto;padding:0 0 32px;
+    background:#f5f5f5;width:100%;border-radius:20px 20px 0 0;
+    max-height:80vh;display:flex;flex-direction:column;
   `;
 
-  sheet.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;
-      padding:16px 20px 12px;border-bottom:1px solid #eee;">
-      <span style="font-size:16px;font-weight:bold;">商品を選択</span>
-      <button id="closeItemSelector" style="width:32px;height:32px;border-radius:50%;
-        border:none;background:#f0f0f0;font-size:14px;cursor:pointer;">✕</button>
-    </div>
-    <p style="font-size:12px;color:#888;padding:8px 20px 4px;margin:0;">
-      追加したい商品をタップしてください
-    </p>
-    <ul style="list-style:none;padding:0;margin:0;" id="itemSelectorList"></ul>
+  // ヘッダー
+  const header = document.createElement("div");
+  header.style.cssText = `
+    display:flex;align-items:center;justify-content:space-between;
+    padding:16px 20px 12px;border-bottom:1px solid #e0e0e0;
+    background:#fff;border-radius:20px 20px 0 0;flex-shrink:0;
   `;
+  header.innerHTML = `
+    <button id="toggleAllCheck" style="font-size:13px;color:var(--theme,#4caf50);
+      background:none;border:none;cursor:pointer;padding:0;font-weight:bold;">全選択</button>
+    <span style="font-size:16px;font-weight:bold;">レシートの品目一覧</span>
+    <button id="closeItemSelector" style="width:32px;height:32px;border-radius:50%;
+      border:none;background:#f0f0f0;font-size:14px;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;">✕</button>
+  `;
+  sheet.appendChild(header);
 
-  const ul = sheet.querySelector("#itemSelectorList");
-  items.forEach(item => {
+  // スクロール可能なリスト
+  const listWrap = document.createElement("div");
+  listWrap.style.cssText = "overflow-y:auto;flex:1;";
+
+  // 合計表示行
+  const totalRow = document.createElement("div");
+  totalRow.style.cssText = `
+    display:flex;justify-content:space-between;align-items:center;
+    padding:10px 20px;background:#fff;border-bottom:1px solid #e8e8e8;
+    font-size:13px;color:#666;
+  `;
+  totalRow.innerHTML = `<span>合計金額</span><span id="selectedTotal" style="font-weight:bold;color:#222;">¥0</span>`;
+  listWrap.appendChild(totalRow);
+
+  // 商品リスト（チェックボックス付き）
+  const ul = document.createElement("ul");
+  ul.style.cssText = "list-style:none;padding:0;margin:0;";
+  const checkboxes = [];
+
+  items.forEach((item, idx) => {
     const li = document.createElement("li");
     li.style.cssText = `
-      display:flex;justify-content:space-between;align-items:center;
-      padding:14px 20px;border-bottom:1px solid #f5f5f5;cursor:pointer;
+      display:flex;align-items:center;gap:12px;
+      padding:13px 20px;background:#fff;border-bottom:1px solid #f0f0f0;
+      cursor:pointer;
     `;
-    li.innerHTML = `
-      <span style="font-size:14px;font-weight:bold;color:#222;flex:1;
-        overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-        margin-right:12px;">${item.title}</span>
-      <span style="font-size:14px;font-weight:bold;color:#c62828;
-        white-space:nowrap;">¥${item.amount.toLocaleString()}</span>
+
+    const cb = document.createElement("input");
+    cb.type    = "checkbox";
+    cb.checked = true;
+    cb.style.cssText = "width:20px;height:20px;flex-shrink:0;accent-color:var(--theme,#4caf50);cursor:pointer;";
+    checkboxes.push(cb);
+
+    const label = document.createElement("div");
+    label.style.cssText = "flex:1;min-width:0;";
+    label.innerHTML = `
+      <div style="font-size:14px;font-weight:bold;color:#222;
+        overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item.title}</div>
+      <div style="font-size:12px;color:#999;margin-top:2px;">${category}</div>
     `;
-    li.addEventListener("click", () => {
-      overlay.remove();
-      openAddModal({ title: item.title, amount: item.amount, date, category, type: "expense" });
+
+    const amountSpan = document.createElement("span");
+    amountSpan.style.cssText = "font-size:15px;font-weight:bold;color:#c62828;white-space:nowrap;flex-shrink:0;";
+    amountSpan.textContent = `¥${item.amount.toLocaleString()}`;
+
+    // 行タップでチェック切り替え
+    li.addEventListener("click", e => {
+      if (e.target !== cb) cb.checked = !cb.checked;
+      updateTotal();
     });
-    li.addEventListener("touchstart", () => li.style.background = "#f5f5f5", { passive: true });
-    li.addEventListener("touchend",   () => li.style.background = "",         { passive: true });
+    cb.addEventListener("click", e => {
+      e.stopPropagation();
+      updateTotal();
+    });
+
+    li.appendChild(cb);
+    li.appendChild(label);
+    li.appendChild(amountSpan);
     ul.appendChild(li);
   });
 
-  sheet.querySelector("#closeItemSelector").addEventListener("click", () => overlay.remove());
+  listWrap.appendChild(ul);
+  sheet.appendChild(listWrap);
+
+  // 合計更新関数
+  function updateTotal() {
+    const total = items.reduce((s, item, i) => s + (checkboxes[i].checked ? item.amount : 0), 0);
+    const count = checkboxes.filter(c => c.checked).length;
+    document.getElementById("selectedTotal").textContent = `¥${total.toLocaleString()}（${count}点）`;
+    // 全選択ボタンのテキスト更新
+    const allChecked = checkboxes.every(c => c.checked);
+    const toggleBtn = document.getElementById("toggleAllCheck");
+    if (toggleBtn) toggleBtn.textContent = allChecked ? "全解除" : "全選択";
+  }
+  updateTotal();
+
+  // 保存ボタン
+  const saveBtn = document.createElement("button");
+  saveBtn.style.cssText = `
+    width:calc(100% - 32px);margin:12px 16px 32px;height:50px;
+    background:var(--theme,#4caf50);color:#fff;border:none;border-radius:12px;
+    font-size:16px;font-weight:bold;cursor:pointer;flex-shrink:0;
+  `;
+  saveBtn.textContent = "保存する";
+  sheet.appendChild(saveBtn);
+
+  // 全選択/全解除
+  header.querySelector("#toggleAllCheck").addEventListener("click", () => {
+    const allChecked = checkboxes.every(c => c.checked);
+    checkboxes.forEach(c => c.checked = !allChecked);
+    updateTotal();
+  });
+
+  // 保存処理（選択した商品を一括追加）
+  saveBtn.addEventListener("click", () => {
+    const selected = items.filter((_, i) => checkboxes[i].checked);
+    if (selected.length === 0) { alert("商品を1つ以上選択してください"); return; }
+    selected.forEach(item => {
+      records.push({
+        date,
+        amount:   item.amount,
+        type:     "expense",
+        category,
+        title:    item.title,
+      });
+    });
+    saveRecords();
+    render();
+    overlay.remove();
+    // 追加完了トースト表示
+    showToast(`${selected.length}件を追加しました`);
+  });
+
+  header.querySelector("#closeItemSelector").addEventListener("click", () => overlay.remove());
   overlay.addEventListener("click", e => { if (e.target === overlay) overlay.remove(); });
 
   overlay.appendChild(sheet);
   document.body.appendChild(overlay);
 }
+
+// トースト通知
+function showToast(msg) {
+  const t = document.createElement("div");
+  t.textContent = msg;
+  t.style.cssText = `
+    position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
+    background:rgba(0,0,0,0.75);color:#fff;padding:10px 20px;
+    border-radius:20px;font-size:14px;z-index:400;
+    animation:fadeInOut 2.2s ease forwards;pointer-events:none;
+  `;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2200);
+}
+
 
 
 
