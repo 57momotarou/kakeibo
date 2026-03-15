@@ -241,23 +241,6 @@ function showCurrentView() {
   const monthNav        = document.getElementById("topBarMonthNav");
   const homeTitleEl     = document.getElementById("topBarHomeTitle");
   const calShortcutBtn  = document.getElementById("calendarShortcutBtn");
-  const spacer          = document.getElementById("topBarSpacer");
-
-  if (isMain) {
-    const isTransaction = (name === "transaction");
-    const isHome        = (name === "home");
-    const showNav       = ["calendar","graph"].includes(name);
-
-    calShortcutBtn.style.display = isTransaction ? "" : "none";
-    monthNav.style.display       = showNav       ? "" : "none";
-    homeTitleEl.style.display    = isHome        ? "" : "none";
-    // 月ナビが非表示のときにスペーサーを出して歯車を右端へ
-    spacer.style.display         = (!showNav && !isHome) || isHome ? "" : "none";
-  }
-
-  const monthNav        = document.getElementById("topBarMonthNav");
-  const homeTitleEl     = document.getElementById("topBarHomeTitle");
-  const calShortcutBtn  = document.getElementById("calendarShortcutBtn");
   const calBackBtn      = document.getElementById("calendarBackBtn");
   const spacer          = document.getElementById("topBarSpacer");
 
