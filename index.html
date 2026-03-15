@@ -18,14 +18,20 @@
 
   <!-- ========== 上部バー ========== -->
   <header class="top-bar" id="topBar">
-    <!-- 通常時：月ナビ（カレンダー/グラフ時のみ表示） + タイトル + ⚙️ -->
     <div class="top-bar-normal" id="topBarNormal">
+      <!-- 出入金時：左端カレンダーボタン -->
+      <button class="top-bar-btn" id="calendarShortcutBtn" style="display:none">📅</button>
+      <!-- カレンダー/グラフ時：月ナビ -->
       <div class="top-bar-month-nav" id="topBarMonthNav">
         <button class="top-bar-btn month-nav-btn" id="prevMonthBtn">◀</button>
         <span class="top-bar-title" id="monthLabel">2025年3月</span>
         <button class="top-bar-btn month-nav-btn" id="nextMonthBtn">▶</button>
       </div>
-      <span class="top-bar-title top-bar-home-title" id="topBarHomeTitle" style="display:none">収支一覧</span>
+      <!-- ホーム時：タイトル -->
+      <span class="top-bar-title top-bar-home-title" id="topBarHomeTitle" style="display:none">ホーム</span>
+      <!-- 出入金・ホーム時の中央スペーサー（月ナビが非表示の時に歯車を右端に押す） -->
+      <div class="top-bar-spacer" id="topBarSpacer" style="display:none"></div>
+      <!-- 常に右端：歯車 -->
       <button class="top-bar-btn" id="openSettingsBtn">⚙️</button>
     </div>
     <!-- 設定時：← / タイトル / 空 -->
@@ -99,7 +105,7 @@
 
   <!-- ========== メイン画面群 ========== -->
 
-  <!-- ホーム（空：今後コンテンツを追加予定） -->
+  <!-- ホーム -->
   <div id="homeView" class="view active">
   </div>
 
@@ -148,14 +154,6 @@
   <!-- 表示/非表示設定 -->
   <div id="visibilityView" class="view">
     <ul class="visibility-list">
-      <li class="visibility-item">
-        <span class="visibility-icon">📅</span>
-        <span class="visibility-label">カレンダー</span>
-        <label class="toggle-switch">
-          <input type="checkbox" id="toggleCalendar">
-          <span class="toggle-slider"></span>
-        </label>
-      </li>
       <li class="visibility-item">
         <span class="visibility-icon">🏦</span>
         <span class="visibility-label">口座</span>
@@ -320,7 +318,6 @@
   <nav class="tab-bar" id="tabBar">
     <button id="homeTab" class="tab active">🏠<br><small>ホーム</small></button>
     <button id="transactionTab" class="tab">💴<br><small>出入金</small></button>
-    <button id="calendarTab" class="tab">📅<br><small>カレンダー</small></button>
     <button id="graphTab" class="tab">📊<br><small>グラフ</small></button>
     <button id="accountTab" class="tab">🏦<br><small>口座</small></button>
   </nav>

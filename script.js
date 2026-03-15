@@ -211,6 +211,7 @@ const VIEW_CONFIG = {
   category:    { el: document.getElementById("categoryView"),    title: "カテゴリ変更",   showTabs: false },
   theme:       { el: document.getElementById("themeView"),       title: "テーマカラー",   showTabs: false },
   period:      { el: document.getElementById("periodView"),      title: "集計期間",       showTabs: false },
+  budget:      { el: document.getElementById("budgetView"),      title: "予算設定",       showTabs: false },
   visibility:  { el: document.getElementById("visibilityView"),  title: "表示 / 非表示", showTabs: false },
 };
 
@@ -237,22 +238,26 @@ function showCurrentView() {
   topBarSettings.classList.toggle("hidden", isMain);
   if (!isMain) settingsBarTitle.textContent = config.title;
 
-  // 月ナビを出すのは calendar・graph・transaction のみ
-  // ホームはタイトルのみ
-  const monthNav    = document.getElementById("topBarMonthNav");
-  const homeTitleEl = document.getElementById("topBarHomeTitle");
+  const monthNav        = document.getElementById("topBarMonthNav");
+  const homeTitleEl     = document.getElementById("topBarHomeTitle");
+  const calShortcutBtn  = document.getElementById("calendarShortcutBtn");
+  const spacer          = document.getElementById("topBarSpacer");
+
   if (isMain) {
-    const showNav = ["calendar","graph","transaction"].includes(name);
-    monthNav.style.display    = showNav ? "" : "none";
-    homeTitleEl.style.display = showNav ? "none" : "";
-    // タイトルテキストを画面に合わせて変更
-    if (!showNav) homeTitleEl.textContent = "ホーム";
+    const isTransaction = (name === "transaction");
+    const isHome        = (name === "home");
+    const showNav       = ["calendar","graph"].includes(name);
+
+    calShortcutBtn.style.display = isTransaction ? "" : "none";
+    monthNav.style.display       = showNav       ? "" : "none";
+    homeTitleEl.style.display    = isHome        ? "" : "none";
+    // 月ナビが非表示のときにスペーサーを出して歯車を右端へ
+    spacer.style.display         = (!showNav && !isHome) || isHome ? "" : "none";
   }
 
   document.getElementById("tabBar").classList.toggle("hidden", !config.showTabs);
   openAddBtn.classList.toggle("hidden", !config.showTabs);
 
-  if (name === "home")        { /* ホームは今後コンテンツを追加 */ }
   if (name === "transaction") render();
   if (name === "category")    renderCategoryView();
   if (name === "theme")       renderColorPresets();
@@ -260,17 +265,19 @@ function showCurrentView() {
   if (name === "period")      renderPeriodView();
   if (name === "account")     renderAccountView();
   if (name === "visibility")  renderVisibilityView();
+  if (name === "budget")      renderBudgetView();
 
   applyTabVisibility();
   document.getElementById("homeTab").classList.toggle("active",        name === "home");
   document.getElementById("transactionTab").classList.toggle("active", name === "transaction");
-  document.getElementById("calendarTab").classList.toggle("active",    name === "calendar");
   document.getElementById("graphTab").classList.toggle("active",       name === "graph");
   document.getElementById("accountTab").classList.toggle("active",     name === "account");
 }
 
 backBtn.addEventListener("click", goBack);
 openSettingsBtn.addEventListener("click", () => navigate("settings"));
+// 出入金バー左端のカレンダーボタン → カレンダー画面に遷移
+document.getElementById("calendarShortcutBtn").addEventListener("click", () => switchToTab("calendar"));
 document.getElementById("goCategory").addEventListener("click",   () => navigate("category"));
 document.getElementById("goTheme").addEventListener("click",      () => navigate("theme"));
 document.getElementById("goPeriod").addEventListener("click",     () => navigate("period"));
@@ -283,7 +290,6 @@ function switchToTab(name) {
 }
 document.getElementById("homeTab").addEventListener("click",        () => switchToTab("home"));
 document.getElementById("transactionTab").addEventListener("click", () => switchToTab("transaction"));
-document.getElementById("calendarTab").addEventListener("click",    () => switchToTab("calendar"));
 document.getElementById("graphTab").addEventListener("click",       () => switchToTab("graph"));
 document.getElementById("accountTab").addEventListener("click",     () => switchToTab("account"));
 
@@ -857,19 +863,6 @@ saveEditButton.addEventListener("click", () => {
 // ===================================
 // ホーム描画
 // ===================================
-// カテゴリ→背景色・絵文字アイコンのマッピング
-const CATEGORY_ICON = {
-  "食費":   { bg: "#ef5350", icon: "🍴" },
-  "日用品": { bg: "#ff9800", icon: "🧴" },
-  "交通":   { bg: "#42a5f5", icon: "🚃" },
-  "家賃":   { bg: "#7e57c2", icon: "🏠" },
-  "その他": { bg: "#9e9e9e", icon: "•••" },
-  "給与":   { bg: "#66bb6a", icon: "💴" },
-};
-function getCategoryStyle(cat) {
-  return CATEGORY_ICON[cat] || { bg: "#90a4ae", icon: cat.slice(0,1) };
-}
-
 function render() {
   list.innerHTML = "";
 
@@ -1289,27 +1282,17 @@ document.getElementById("deleteAccountBtn").addEventListener("click", () => {
 // 表示 / 非表示
 // ===================================
 function applyTabVisibility() {
-  const calTab = document.getElementById("calendarTab");
   const accTab = document.getElementById("accountTab");
-  calTab.style.display = tabVisibility.calendar ? "" : "none";
-  accTab.style.display = tabVisibility.account  ? "" : "none";
+  accTab.style.display = tabVisibility.account ? "" : "none";
 
   // 現在非表示のタブにいる場合はホームに戻す
   const cur = viewStack[viewStack.length - 1];
-  if (cur === "calendar" && !tabVisibility.calendar) switchToTab("home");
-  if (cur === "account"  && !tabVisibility.account)  switchToTab("home");
+  if (cur === "account" && !tabVisibility.account) switchToTab("home");
 }
 
 function renderVisibilityView() {
-  document.getElementById("toggleCalendar").checked = !!tabVisibility.calendar;
-  document.getElementById("toggleAccount").checked  = !!tabVisibility.account;
+  document.getElementById("toggleAccount").checked = !!tabVisibility.account;
 }
-
-document.getElementById("toggleCalendar").addEventListener("change", e => {
-  tabVisibility.calendar = e.target.checked;
-  saveTabVisibility();
-  applyTabVisibility();
-});
 
 document.getElementById("toggleAccount").addEventListener("change", e => {
   tabVisibility.account = e.target.checked;
@@ -1350,12 +1333,9 @@ function changeMonth(delta, direction) {
     if (currentView === "graph") {
       document.getElementById("graphMonthSelector").value = newVal;
       renderGraph();
-    } else if (currentView === "transaction") {
-      render();
     } else {
       render();
     }
-
     // スライドインアニメーション
     viewEl.classList.remove(outClass);
     viewEl.classList.add(inClass);
