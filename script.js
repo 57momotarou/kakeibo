@@ -675,10 +675,7 @@ document.getElementById("graphMonthSelector").addEventListener("change", renderG
 // ===================================
 // 口座管理
 // ===================================
-let accounts = JSON.parse(localStorage.getItem("accounts")) || [
-  { id: 1, name: "北見信用金庫",    balance: 0, memo: "" },
-  { id: 2, name: "北海道労働金庫",  balance: 0, memo: "" },
-];
+let accounts = JSON.parse(localStorage.getItem("accounts")) || [];
 let editingAccount  = null;
 let nextAccountId   = Math.max(0, ...accounts.map(a => a.id)) + 1;
 
@@ -687,9 +684,7 @@ function saveAccounts() {
 }
 
 function renderAccountView() {
-  const ul    = document.getElementById("accountList");
-  const total = accounts.reduce((s, a) => s + a.balance, 0);
-  document.getElementById("accountTotal").textContent = total.toLocaleString();
+  const ul = document.getElementById("accountList");
   ul.innerHTML = "";
 
   accounts.forEach(account => {
