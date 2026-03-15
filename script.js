@@ -282,6 +282,7 @@ document.getElementById("goCategory").addEventListener("click",   () => navigate
 document.getElementById("goTheme").addEventListener("click",      () => navigate("theme"));
 document.getElementById("goPeriod").addEventListener("click",     () => navigate("period"));
 document.getElementById("goVisibility").addEventListener("click", () => navigate("visibility"));
+document.getElementById("goBudget").addEventListener("click",     () => navigate("budget"));
 
 function switchToTab(name) {
   viewStack.forEach(v => VIEW_CONFIG[v].el.classList.remove("active"));
@@ -1155,6 +1156,76 @@ function renderGraph() {
 }
 
 document.getElementById("graphMonthSelector").addEventListener("change", renderGraph);
+
+// ===================================
+// 予算管理
+// ===================================
+let budgets = JSON.parse(localStorage.getItem("budgets")) || {};
+
+function saveBudgets() {
+  localStorage.setItem("budgets", JSON.stringify(budgets));
+}
+
+function getMonthlySpending() {
+  const map = {};
+  filterByPeriod(monthSelector.value).forEach(r => {
+    if (r.type === "expense") map[r.category] = (map[r.category] || 0) + r.amount;
+  });
+  return map;
+}
+
+function renderBudgetView() {
+  const ul = document.getElementById("budgetList");
+  ul.innerHTML = "";
+  const expenseCats = categories.filter(c => c.type === "expense" || c.type === "both");
+  if (expenseCats.length === 0) {
+    ul.innerHTML = '<li style="color:#aaa;font-size:14px;padding:12px 0;">支出カテゴリがありません</li>';
+    return;
+  }
+  const spending = getMonthlySpending();
+  expenseCats.forEach(cat => {
+    const budget   = budgets[cat.name] || 0;
+    const spent    = spending[cat.name] || 0;
+    const pct      = budget > 0 ? Math.min(spent / budget * 100, 100) : 0;
+    const barClass = budget > 0
+      ? (spent > budget ? "over" : spent / budget >= 0.8 ? "warn" : "ok")
+      : "ok";
+    const li = document.createElement("li");
+    li.className = "budget-item";
+    li.innerHTML = `
+      <div class="budget-item-top">
+        <span class="budget-item-name">${cat.name}</span>
+        <div class="budget-item-input-wrap">
+          <span>¥</span>
+          <input type="number" class="budget-input" data-cat="${cat.name}"
+            value="${budget > 0 ? budget : ""}" placeholder="未設定">
+        </div>
+      </div>
+      <div class="budget-bar-wrap">
+        <div class="budget-bar ${barClass}" style="width:${pct}%"></div>
+      </div>
+      <div class="budget-bar-info">
+        <span>使用中：¥${spent.toLocaleString()}</span>
+        <span class="${spent > budget && budget > 0 ? "over-text" : ""}">
+          ${budget > 0
+            ? (spent > budget
+                ? `¥${(spent - budget).toLocaleString()} オーバー`
+                : `残り ¥${(budget - spent).toLocaleString()}`)
+            : "予算未設定"}
+        </span>
+      </div>
+    `;
+    const input = li.querySelector(".budget-input");
+    input.addEventListener("change", () => {
+      const val = Number(input.value);
+      if (val > 0) budgets[cat.name] = val;
+      else         delete budgets[cat.name];
+      saveBudgets();
+      renderBudgetView();
+    });
+    ul.appendChild(li);
+  });
+}
 
 // ===================================
 // 口座管理

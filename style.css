@@ -1328,3 +1328,83 @@ ul { list-style: none; padding: 0; margin: 0; }
   gap: 8px;
   margin-bottom: 14px;
 }
+
+/* ===================================
+   予算設定画面
+=================================== */
+.budget-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.budget-item {
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+}
+
+.budget-item-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.budget-item-name {
+  font-size: 14px;
+  font-weight: bold;
+  color: #222;
+  flex: 1;
+}
+
+.budget-item-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.budget-item-input-wrap span {
+  font-size: 14px;
+  color: #555;
+}
+
+.budget-input {
+  width: 110px !important;
+  height: 36px !important;
+  font-size: 14px !important;
+  text-align: right;
+  padding: 4px 8px !important;
+  margin: 0 !important;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+.budget-input:focus { border-color: var(--theme); }
+
+.budget-bar-wrap {
+  height: 8px;
+  background: #eee;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.budget-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+.budget-bar.ok   { background: var(--theme); }
+.budget-bar.warn { background: #ff9800; }
+.budget-bar.over { background: #e53935; }
+
+.budget-bar-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #888;
+  margin-top: 5px;
+}
+.budget-bar-info .over-text { color: #e53935; font-weight: bold; }
