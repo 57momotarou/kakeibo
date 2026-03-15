@@ -581,21 +581,27 @@ function parseReceipt(text) {
     if (pat.test(text)) { category = cat; break; }
   }
 
-  // ---- 外税の集計 ----
-  let taxTotal = 0;
-  for (let j = 0; j < lines.length; j++) {
-    const line = lines[j];
-    if (/\d+%税額|消費税額|外税額/.test(line)) {
-      // 同じ行の金額
-      const mInline = line.match(/[¥￥\\]\s*(\d[\d,]*)/);
-      if (mInline) { taxTotal += parseInt(mInline[1].replace(/,/g, ""), 10); continue; }
-      // 次の行が「¥金額」または「\金額)」
-      const nextLine = lines[j + 1] || "";
-      const mNext = nextLine.match(/^[¥￥\\]\s*(\d[\d,\s]*)\)?\s*$/);
-      if (mNext) taxTotal += parseInt(mNext[1].replace(/[,\s]/g, ""), 10);
+  // ---- 内税・外税の判別 ----
+  // 「¥〇〇内」「税込」が1行でもあれば内税レシートと判定
+  const hasTaxIn  = lines.some(l => /[¥￥\\]\s*[\d,]+\s*内\s*$/.test(l) || /税込対象額|内税/.test(l));
+  // 「¥〇〇外」が1行でもあれば外税レシートと判定
+  const hasTaxOut = lines.some(l => /[¥￥\\]\s*[\d,]+\s*外\s*$/.test(l) || /税抜対象額|外税/.test(l));
+
+  // 内税のみのレシートはスキップ、それ以外（外税・不明・両方）は税額を追加
+  if (!hasTaxIn || hasTaxOut) {
+    let taxTotal = 0;
+    for (let j = 0; j < lines.length; j++) {
+      const line = lines[j];
+      if (/\d+%税額|消費税額|外税額/.test(line)) {
+        const mInline = line.match(/[¥￥\\]\s*(\d[\d,]*)/);
+        if (mInline) { taxTotal += parseInt(mInline[1].replace(/,/g, ""), 10); continue; }
+        const nextLine = lines[j + 1] || "";
+        const mNext = nextLine.match(/^[¥￥\\]\s*(\d[\d,\s]*)\)?\s*$/);
+        if (mNext) taxTotal += parseInt(mNext[1].replace(/[,\s]/g, ""), 10);
+      }
     }
+    if (taxTotal > 0) items.push({ title: "外税", amount: taxTotal });
   }
-  if (taxTotal > 0) items.push({ title: "外税", amount: taxTotal });
 
   return { items, date, category };
 }
