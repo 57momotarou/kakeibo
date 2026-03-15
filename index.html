@@ -238,7 +238,7 @@
   <div id="graphView" class="view">
     <input type="month" id="graphMonthSelector" style="display:none">
 
-    <!-- サマリーカード（グラフ画面に移動） -->
+    <!-- サマリーカード -->
     <div id="summary">
       <div class="summary-item income-item">
         <span class="summary-label">収入</span>
@@ -254,24 +254,21 @@
       </div>
     </div>
 
-    <!-- 支出円グラフ -->
-    <div class="chart-section">
-      <h3 class="chart-title">💸 支出の内訳</h3>
-      <div class="chart-wrap">
-        <canvas id="expenseChart" width="220" height="220"></canvas>
-        <div class="chart-total" id="expenseChartTotal"></div>
+    <!-- 収支トグル -->
+    <div class="graph-toggle-wrap">
+      <div class="graph-toggle" id="graphToggle">
+        <button class="graph-toggle-btn active" data-value="expense">支出</button>
+        <button class="graph-toggle-btn" data-value="income">収入</button>
       </div>
-      <ul class="chart-legend" id="expenseLegend"></ul>
     </div>
 
-    <!-- 収入円グラフ -->
-    <div class="chart-section">
-      <h3 class="chart-title">💰 収入の内訳</h3>
+    <!-- 円グラフ（1つ） -->
+    <div class="chart-section" id="graphChartSection">
       <div class="chart-wrap">
-        <canvas id="incomeChart" width="220" height="220"></canvas>
-        <div class="chart-total" id="incomeChartTotal"></div>
+        <canvas id="mainChart" width="220" height="220"></canvas>
+        <div class="chart-total" id="mainChartTotal"></div>
       </div>
-      <ul class="chart-legend" id="incomeLegend"></ul>
+      <ul class="chart-legend" id="mainLegend"></ul>
     </div>
   </div>
 

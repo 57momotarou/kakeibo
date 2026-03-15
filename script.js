@@ -1186,7 +1186,7 @@ function renderLegend(legendId, data) {
 function renderGraph() {
   document.getElementById("graphMonthSelector").value = monthSelector.value;
 
-  // サマリー（収入・支出・差額）をグラフ画面で更新
+  // サマリー更新
   const forSummary = filterByPeriod(monthSelector.value);
   let income = 0, expense = 0;
   forSummary.forEach(r => r.type === "income" ? income += r.amount : expense += r.amount);
@@ -1197,15 +1197,28 @@ function renderGraph() {
   balEl.textContent = bal.toLocaleString();
   balEl.style.color = bal >= 0 ? "var(--theme)" : "#c62828";
 
-  const expenseData = aggregateByCategory("expense");
-  const incomeData  = aggregateByCategory("income");
-  drawPieChart("expenseChart", expenseData, "expenseChartTotal");
-  renderLegend("expenseLegend", expenseData);
-  drawPieChart("incomeChart",   incomeData,  "incomeChartTotal");
-  renderLegend("incomeLegend",  incomeData);
+  // 現在選択中のトグルに合わせてグラフを描画
+  const activeBtn = document.querySelector("#graphToggle .graph-toggle-btn.active");
+  const type = activeBtn ? activeBtn.dataset.value : "expense";
+  renderGraphByType(type);
+}
+
+function renderGraphByType(type) {
+  const data = aggregateByCategory(type);
+  drawPieChart("mainChart", data, "mainChartTotal");
+  renderLegend("mainLegend", data);
 }
 
 document.getElementById("graphMonthSelector").addEventListener("change", renderGraph);
+
+// トグルボタンのイベント
+document.getElementById("graphToggle").addEventListener("click", e => {
+  const btn = e.target.closest(".graph-toggle-btn");
+  if (!btn) return;
+  document.querySelectorAll("#graphToggle .graph-toggle-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  renderGraphByType(btn.dataset.value);
+});
 
 // ===================================
 // 予算管理

@@ -1440,3 +1440,43 @@ ul { list-style: none; padding: 0; margin: 0; }
   margin-top: 5px;
 }
 .budget-bar-info .over-text { color: #e53935; font-weight: bold; }
+
+/* ===================================
+   グラフ：収支トグル
+=================================== */
+.graph-toggle-wrap {
+  display: flex;
+  justify-content: center;
+  margin: 0 0 14px;
+}
+
+.graph-toggle {
+  display: flex;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 2px solid var(--theme);
+  width: 200px;
+}
+
+.graph-toggle-btn {
+  flex: 1;
+  height: 40px;
+  border: none;
+  background: #fff;
+  font-size: 15px;
+  font-weight: bold;
+  color: var(--theme);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  padding: 0;
+  margin: 0;
+}
+
+.graph-toggle-btn.active {
+  background: var(--theme);
+  color: #fff;
+}
+
+.graph-toggle-btn:not(.active):active {
+  background: #f0f0f0;
+}
