@@ -433,8 +433,7 @@ receiptInput.addEventListener("change", async e => {
   } catch (err) {
     scanOverlay.classList.add("hidden");
     console.error(err);
-    alert("読み取りに失敗しました。手動で入力してください。");
-    openAddModal();
+    alert("エラー詳細:\n" + err.message + "\n\n" + (err.stack || ""));
   }
 });
 
