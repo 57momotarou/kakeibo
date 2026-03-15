@@ -839,6 +839,10 @@ document.getElementById("toggleAccount").addEventListener("change", e => {
 });
 
 
+// ===================================
+// 月ナビゲーション
+// ===================================
+function updateMonthLabel() {
   const [year, month] = monthSelector.value.split("-").map(Number);
   document.getElementById("monthLabel").textContent = `${year}年${month}月`;
 }
