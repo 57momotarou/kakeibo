@@ -210,6 +210,7 @@ const VIEW_CONFIG = {
   category:   { el: document.getElementById("categoryView"),   title: "カテゴリ変更",   showTabs: false },
   theme:      { el: document.getElementById("themeView"),      title: "テーマカラー",   showTabs: false },
   period:     { el: document.getElementById("periodView"),     title: "集計期間",       showTabs: false },
+  budget:     { el: document.getElementById("budgetView"),     title: "予算設定",       showTabs: false },
   visibility: { el: document.getElementById("visibilityView"), title: "表示 / 非表示", showTabs: false },
 };
 
@@ -255,6 +256,7 @@ function showCurrentView() {
   if (name === "period")     renderPeriodView();
   if (name === "account")    renderAccountView();
   if (name === "visibility") renderVisibilityView();
+  if (name === "budget")     renderBudgetView();
 
   applyTabVisibility();
   document.getElementById("homeTab").classList.toggle("active",    name === "home");
@@ -269,6 +271,7 @@ document.getElementById("goCategory").addEventListener("click",   () => navigate
 document.getElementById("goTheme").addEventListener("click",      () => navigate("theme"));
 document.getElementById("goPeriod").addEventListener("click",     () => navigate("period"));
 document.getElementById("goVisibility").addEventListener("click", () => navigate("visibility"));
+document.getElementById("goBudget").addEventListener("click",     () => navigate("budget"));
 
 function switchToTab(name) {
   viewStack.forEach(v => VIEW_CONFIG[v].el.classList.remove("active"));
@@ -850,19 +853,6 @@ saveEditButton.addEventListener("click", () => {
 // ===================================
 // ホーム描画
 // ===================================
-// カテゴリ→背景色・絵文字アイコンのマッピング
-const CATEGORY_ICON = {
-  "食費":   { bg: "#ef5350", icon: "🍴" },
-  "日用品": { bg: "#ff9800", icon: "🧴" },
-  "交通":   { bg: "#42a5f5", icon: "🚃" },
-  "家賃":   { bg: "#7e57c2", icon: "🏠" },
-  "その他": { bg: "#9e9e9e", icon: "•••" },
-  "給与":   { bg: "#66bb6a", icon: "💴" },
-};
-function getCategoryStyle(cat) {
-  return CATEGORY_ICON[cat] || { bg: "#90a4ae", icon: cat.slice(0,1) };
-}
-
 function render() {
   list.innerHTML = "";
 
@@ -1157,11 +1147,83 @@ function renderGraph() {
 document.getElementById("graphMonthSelector").addEventListener("change", renderGraph);
 
 // ===================================
+// 予算管理
+// ===================================
+let budgets = JSON.parse(localStorage.getItem("budgets")) || {};
+
+function saveBudgets() {
+  localStorage.setItem("budgets", JSON.stringify(budgets));
+}
+
+// 今月の支出をカテゴリ別に集計
+function getMonthlySpending() {
+  const map = {};
+  filterByPeriod(monthSelector.value).forEach(r => {
+    if (r.type === "expense") map[r.category] = (map[r.category] || 0) + r.amount;
+  });
+  return map;
+}
+
+// 予算設定画面を描画
+function renderBudgetView() {
+  const ul = document.getElementById("budgetList");
+  ul.innerHTML = "";
+  const expenseCats = categories.filter(c => c.type === "expense" || c.type === "both");
+  if (expenseCats.length === 0) {
+    ul.innerHTML = '<li style="color:#aaa;font-size:14px;padding:12px 0;">支出カテゴリがありません</li>';
+    return;
+  }
+  const spending = getMonthlySpending();
+  expenseCats.forEach(cat => {
+    const budget   = budgets[cat.name] || 0;
+    const spent    = spending[cat.name] || 0;
+    const pct      = budget > 0 ? Math.min(spent / budget * 100, 100) : 0;
+    const barClass = budget > 0
+      ? (spent > budget ? "over" : spent / budget >= 0.8 ? "warn" : "ok")
+      : "ok";
+    const li = document.createElement("li");
+    li.className = "budget-item";
+    li.innerHTML = `
+      <div class="budget-item-top">
+        <span class="budget-item-name">${cat.name}</span>
+        <div class="budget-item-input-wrap">
+          <span>¥</span>
+          <input type="number" class="budget-input" data-cat="${cat.name}"
+            value="${budget > 0 ? budget : ""}" placeholder="未設定">
+        </div>
+      </div>
+      <div class="budget-bar-wrap">
+        <div class="budget-bar ${barClass}" style="width:${pct}%"></div>
+      </div>
+      <div class="budget-bar-info">
+        <span>使用中：¥${spent.toLocaleString()}</span>
+        <span class="${spent > budget && budget > 0 ? "over-text" : ""}">
+          ${budget > 0
+            ? (spent > budget
+                ? `¥${(spent - budget).toLocaleString()} オーバー`
+                : `残り ¥${(budget - spent).toLocaleString()}`)
+            : "予算未設定"}
+        </span>
+      </div>
+    `;
+    const input = li.querySelector(".budget-input");
+    input.addEventListener("change", () => {
+      const val = Number(input.value);
+      if (val > 0) budgets[cat.name] = val;
+      else         delete budgets[cat.name];
+      saveBudgets();
+      renderBudgetView();
+    });
+    ul.appendChild(li);
+  });
+}
+
+// ===================================
 // 口座管理
 // ===================================
 let accounts = JSON.parse(localStorage.getItem("accounts")) || [];
 let editingAccount  = null;
-let nextAccountId   = Math.max(0, ...accounts.map(a => a.id)) + 1;
+let nextAccountId   = (accounts.length > 0 ? Math.max(...accounts.map(a => a.id || 0)) : 0) + 1;
 
 function saveAccounts() {
   localStorage.setItem("accounts", JSON.stringify(accounts));
