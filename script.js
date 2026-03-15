@@ -212,6 +212,7 @@ const VIEW_CONFIG = {
   theme:       { el: document.getElementById("themeView"),       title: "テーマカラー",   showTabs: false },
   period:      { el: document.getElementById("periodView"),      title: "集計期間",       showTabs: false },
   budget:      { el: document.getElementById("budgetView"),      title: "予算設定",       showTabs: false },
+  apiKey:      { el: document.getElementById("apiKeyView"),      title: "Vision APIキー", showTabs: false },
   visibility:  { el: document.getElementById("visibilityView"),  title: "表示 / 非表示", showTabs: false },
 };
 
@@ -270,6 +271,7 @@ function showCurrentView() {
   if (name === "account")     renderAccountView();
   if (name === "visibility")  renderVisibilityView();
   if (name === "budget")      renderBudgetView();
+  if (name === "apiKey")      renderApiKeyView();
 
   applyTabVisibility();
   document.getElementById("homeTab").classList.toggle("active",        name === "home");
@@ -289,6 +291,7 @@ document.getElementById("goTheme").addEventListener("click",      () => navigate
 document.getElementById("goPeriod").addEventListener("click",     () => navigate("period"));
 document.getElementById("goVisibility").addEventListener("click", () => navigate("visibility"));
 document.getElementById("goBudget").addEventListener("click",     () => navigate("budget"));
+document.getElementById("goApiKey").addEventListener("click",     () => navigate("apiKey"));
 
 function switchToTab(name) {
   viewStack.forEach(v => VIEW_CONFIG[v].el.classList.remove("active"));
@@ -374,6 +377,17 @@ const fabMenu    = document.getElementById("fabMenu");
 const fabOverlay = document.getElementById("fabOverlay");
 let fabOpen = false;
 
+// Vision APIキーはlocalStorageから取得（コードに埋め込まない）
+function getVisionApiKey() {
+  return localStorage.getItem("visionApiKey") || "";
+}
+
+// APIキー設定状態に合わせてFABサブメニューのカメラ項目を表示制御
+function applyFabVisibility() {
+  const hasKey = !!getVisionApiKey();
+  document.getElementById("fabCameraItem").style.display = hasKey ? "" : "none";
+}
+
 function openFabMenu() {
   fabOpen = true;
   openAddBtn.classList.add("fab-open");
@@ -390,8 +404,14 @@ function closeFabMenu() {
   setTimeout(() => fabOverlay.classList.add("hidden"), 200);
 }
 
+// APIキーなし → 直接手動入力モーダル / あり → サブメニュー展開
 openAddBtn.addEventListener("click", () => {
-  fabOpen ? closeFabMenu() : openFabMenu();
+  if (fabOpen) { closeFabMenu(); return; }
+  if (!getVisionApiKey()) {
+    openAddModal();
+  } else {
+    openFabMenu();
+  }
 });
 
 fabOverlay.addEventListener("click", closeFabMenu);
@@ -405,8 +425,7 @@ document.getElementById("fabManualBtn").addEventListener("click", () => {
 // ===================================
 // レシート読み取り（Google Cloud Vision API）
 // ===================================
-const VISION_API_KEY = "AIzaSyCK2LY5QwBCWPd7xhc-7Gh3RetAaZApnmo";
-const receiptInput   = document.getElementById("receiptInput");
+const receiptInput = document.getElementById("receiptInput");
 const scanOverlay    = document.getElementById("scanOverlay");
 
 document.getElementById("fabCameraBtn").addEventListener("click", () => {
@@ -417,7 +436,14 @@ document.getElementById("fabCameraBtn").addEventListener("click", () => {
 receiptInput.addEventListener("change", async e => {
   const file = e.target.files[0];
   if (!file) return;
-  receiptInput.value = ""; // 同じファイルを再選択できるようリセット
+  receiptInput.value = "";
+
+  // APIキー未設定チェック
+  const apiKey = getVisionApiKey();
+  if (!apiKey) {
+    alert("Vision APIキーが設定されていません。\n設定 → Vision APIキー から登録してください。");
+    return;
+  }
 
   // ローディング表示
   scanOverlay.classList.remove("hidden");
@@ -462,8 +488,9 @@ function fileToBase64(file) {
 
 // Vision API呼び出し
 async function callVisionAPI(base64Image) {
+  const apiKey = getVisionApiKey();
   const res = await fetch(
-    `https://vision.googleapis.com/v1/images:annotate?key=${VISION_API_KEY}`,
+    `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -1352,6 +1379,70 @@ function renderBudgetView() {
 }
 
 // ===================================
+// Vision APIキー設定
+// ===================================
+function renderApiKeyView() {
+  const input     = document.getElementById("visionApiKeyInput");
+  const statusEl  = document.getElementById("apiKeyStatus");
+  const deleteBtn = document.getElementById("deleteApiKeyBtn");
+  const saved     = localStorage.getItem("visionApiKey") || "";
+
+  // 保存済みキーがあれば伏せ字で表示（実際の値は入力欄には入れない）
+  input.value = saved ? "●".repeat(20) : "";
+  input.dataset.hasKey = saved ? "1" : "0";
+
+  if (saved) {
+    statusEl.textContent  = "✅ APIキーが保存されています";
+    statusEl.className    = "api-key-status api-key-status-ok";
+    deleteBtn.style.display = "";
+  } else {
+    statusEl.textContent  = "⚠️ APIキーが未設定です。レシート読み取りを使うには設定が必要です。";
+    statusEl.className    = "api-key-status api-key-status-warn";
+    deleteBtn.style.display = "none";
+  }
+}
+
+// 入力欄にフォーカスしたら伏せ字をクリア（新規入力モード）
+document.getElementById("visionApiKeyInput").addEventListener("focus", function() {
+  if (this.dataset.hasKey === "1") {
+    this.value = "";
+    this.dataset.hasKey = "0";
+  }
+});
+
+// 表示/非表示トグル
+document.getElementById("toggleApiKeyVisible").addEventListener("click", () => {
+  const input = document.getElementById("visionApiKeyInput");
+  input.type = input.type === "password" ? "text" : "password";
+});
+
+// 保存
+document.getElementById("saveApiKeyBtn").addEventListener("click", () => {
+  const input = document.getElementById("visionApiKeyInput");
+  const val   = input.value.trim();
+  if (!val || val === "●".repeat(20)) {
+    alert("APIキーを入力してください");
+    return;
+  }
+  if (!val.startsWith("AIza")) {
+    if (!confirm("APIキーの形式が正しくない可能性があります（通常 AIza で始まります）。\nこのまま保存しますか？")) return;
+  }
+  localStorage.setItem("visionApiKey", val);
+  showToast("APIキーを保存しました");
+  renderApiKeyView();
+  applyFabVisibility();
+});
+
+// 削除
+document.getElementById("deleteApiKeyBtn").addEventListener("click", () => {
+  if (!confirm("保存済みのAPIキーを削除しますか？\nレシート読み取りが使えなくなります。")) return;
+  localStorage.removeItem("visionApiKey");
+  showToast("APIキーを削除しました");
+  renderApiKeyView();
+  applyFabVisibility();
+});
+
+// ===================================
 // 口座管理
 // ===================================
 let accounts = JSON.parse(localStorage.getItem("accounts")) || [];
@@ -1697,6 +1788,7 @@ monthSelector.value = getDefaultMonth();
 updateMonthLabel();
 updateCategoryOptions("expense", categorySelect);
 applyTabVisibility();
+applyFabVisibility();
 render();
 
 // ===================================

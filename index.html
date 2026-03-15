@@ -168,6 +168,11 @@
         <span class="settings-menu-label">予算設定</span>
         <span class="settings-menu-arrow">›</span>
       </li>
+      <li class="settings-menu-item" id="goApiKey">
+        <span class="settings-menu-icon">🔑</span>
+        <span class="settings-menu-label">Vision APIキー</span>
+        <span class="settings-menu-arrow">›</span>
+      </li>
     </ul>
   </div>
 
@@ -238,6 +243,34 @@
     <div class="theme-preview">
       <p class="theme-preview-label">現在のカラー</p>
       <div id="themePreviewBar"></div>
+    </div>
+  </div>
+
+  <!-- Vision APIキー設定 -->
+  <div id="apiKeyView" class="view">
+    <div class="api-key-card">
+      <p class="api-key-desc">
+        レシート読み取りに使用する Google Cloud Vision API のキーを設定します。<br>
+        キーはこの端末のみに保存され、外部に送信されることはありません。
+      </p>
+      <label class="field-label">APIキー</label>
+      <div class="api-key-input-wrap">
+        <input type="password" id="visionApiKeyInput" placeholder="AIza..." autocomplete="off">
+        <button class="api-key-toggle" id="toggleApiKeyVisible" type="button">👁</button>
+      </div>
+      <button class="btn-primary" id="saveApiKeyBtn">保存する</button>
+      <button class="btn-danger" id="deleteApiKeyBtn">キーを削除する</button>
+      <div class="api-key-status" id="apiKeyStatus"></div>
+      <div class="api-key-help">
+        <p class="api-key-help-title">🔗 APIキーの取得方法</p>
+        <ol class="api-key-help-list">
+          <li><a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a> でプロジェクトを作成</li>
+          <li>「Cloud Vision API」を有効化</li>
+          <li>「認証情報」→「APIキーを作成」</li>
+          <li><strong>キーの制限を設定</strong>：「APIの制限」で「Cloud Vision API」のみ選択</li>
+          <li>作成したキーをここに貼り付けて保存</li>
+        </ol>
+      </div>
     </div>
   </div>
 

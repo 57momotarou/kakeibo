@@ -1579,3 +1579,105 @@ body {
 .home-budget-remain { color: #aaa; }
 .home-budget-pct    { color: #bbb; }
 .over-text          { color: #e53935; font-weight: bold; }
+
+/* ===================================
+   Vision APIキー設定
+=================================== */
+.api-key-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 20px 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  margin-top: 4px;
+}
+
+.api-key-desc {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.7;
+  margin: 0 0 16px;
+}
+
+.api-key-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.api-key-input-wrap input {
+  flex: 1;
+  margin: 0;
+  font-family: monospace;
+  letter-spacing: 0.04em;
+}
+
+.api-key-toggle {
+  width: 44px !important;
+  height: 44px !important;
+  flex-shrink: 0;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fafafa;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+}
+.api-key-toggle:active { background: #efefef; }
+
+.btn-danger {
+  width: 100%;
+  height: 44px;
+  background: #fff;
+  color: #e53935;
+  border: 1.5px solid #e53935;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background 0.15s;
+}
+.btn-danger:active { background: #ffeaea; }
+
+.api-key-status {
+  font-size: 13px;
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  line-height: 1.5;
+}
+.api-key-status-ok   { background: #e8f5e9; color: #2e7d32; }
+.api-key-status-warn { background: #fff8e1; color: #f57f17; }
+
+.api-key-help {
+  margin-top: 20px;
+  background: #f5f5f5;
+  border-radius: 10px;
+  padding: 14px 14px 12px;
+}
+
+.api-key-help-title {
+  font-size: 13px;
+  font-weight: bold;
+  color: #444;
+  margin: 0 0 10px;
+}
+
+.api-key-help-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+  color: #555;
+  line-height: 1.9;
+}
+
+.api-key-help-list a {
+  color: var(--theme);
+  text-decoration: none;
+}
+.api-key-help-list a:active { opacity: 0.7; }
