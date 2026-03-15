@@ -889,43 +889,26 @@ function render() {
     else dayGroups.push({ date: record.date, records: [record] });
   });
 
-  // 月ヘッダーを挟みながら描画
-  let currentYM = null;
   dayGroups.forEach(group => {
-    const ym = group.date.slice(0, 7);
-    if (ym !== currentYM) {
-      currentYM = ym;
-      const [y, m] = ym.split("-").map(Number);
-      const monthHeader = document.createElement("div");
-      monthHeader.className = "list-month-header";
-      monthHeader.textContent = `${y}年${m}月`;
-      list.appendChild(monthHeader);
-    }
-
-    // 日付ヘッダー行
+    // 日付ヘッダー行：年月日（曜日）
     const d = new Date(group.date + "T00:00:00");
     const weekDay = ["日","月","火","水","木","金","土"][d.getDay()];
     const dateHeader = document.createElement("div");
     dateHeader.className = "list-date-header";
-    dateHeader.textContent = `${d.getMonth()+1}月${d.getDate()}日（${weekDay}）`;
+    dateHeader.textContent = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${weekDay}）`;
     list.appendChild(dateHeader);
 
-    // 各レコード行（MFスタイル）
+    // 各レコード行
     group.records.forEach(record => {
       const row = document.createElement("div");
       row.className = "mf-record-row";
 
-      const { bg, icon } = getCategoryStyle(record.category);
       const isExpense = record.type === "expense";
       const sign      = isExpense ? "-" : "+";
       const amtClass  = isExpense ? "mf-amount-expense" : "mf-amount-income";
 
       row.innerHTML = `
-        <div class="mf-icon" style="background:${bg}">${icon}</div>
-        <div class="mf-info">
-          <span class="mf-title">${record.title || record.category}</span>
-          <span class="mf-category">${record.category}</span>
-        </div>
+        <span class="mf-title">${record.title || record.category}</span>
         <span class="mf-amount ${amtClass}">${sign}¥${record.amount.toLocaleString()}</span>
       `;
       row.addEventListener("click", () => openEditModal(record));
