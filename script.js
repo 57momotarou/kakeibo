@@ -400,6 +400,15 @@ receiptInput.addEventListener("change", async e => {
     // Vision APIを呼び出し
     const result = await callVisionAPI(base64);
 
+    // デバッグ：生テキストとパース途中経過を表示
+    const dbgLines = result.split("\n").map(l => l.trim()).filter(Boolean);
+    const dbgSkip = /合計|小計|税|お釣|おつり|預り|お預|ポイント|値引|割引|total|subtotal|change|TEL|電話|登録|QUICPay|paypay|交通系|クレジット|お支払|レジ|No\.|領収|公式|検索|通販|オンライン|^\*|^-|登録番号|だいぞう|ハッピー|LINE|パラダイス|スタンプ|楽曲/i;
+    const dbgIsAmt = l => /^[¥￥]\s*\d[\d,]*\s*(?:外|込|税抜|税込)?\s*$/.test(l);
+    const dbgIsName = l => !dbgSkip.test(l) && l.length >= 2 && !/^\d/.test(l) && !/^[¥￥*＊<>]/.test(l) && !dbgIsAmt(l);
+    const dbgFiltered = dbgLines.filter(l => !dbgSkip.test(l));
+    const dbgInfo = dbgFiltered.map(l => `[${dbgIsName(l)?"名":""}${dbgIsAmt(l)?"金":""}${!dbgIsName(l)&&!dbgIsAmt(l)?"?":""}] ${l}`).join("\n");
+    alert("【生テキスト冒頭200字】\n" + result.slice(0, 200) + "\n\n【filtered行】\n" + dbgInfo);
+
     // テキストから商品一覧を抽出
     const parsed = parseReceipt(result);
 
