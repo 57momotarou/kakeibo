@@ -400,9 +400,6 @@ receiptInput.addEventListener("change", async e => {
     // Vision APIを呼び出し
     const result = await callVisionAPI(base64);
 
-    // デバッグ：APIの生テキストをアラートで表示
-    alert("【APIテキスト】\n" + result);
-
     // テキストから商品一覧を抽出
     const parsed = parseReceipt(result);
 
@@ -468,57 +465,55 @@ async function callVisionAPI(base64Image) {
 function parseReceipt(text) {
   const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
 
-  // 除外キーワード
-  const skipPattern = /合計|小計|税|お釣|おつり|預り|お預|ポイント|値引|割引|total|subtotal|change|TEL|電話|登録|QUICPay|paypay|交通系|クレジット|お支払|レジ|No\.|領収|公式|検索|通販|オンライン|^\*|^-|登録番号/i;
+  const skipPattern = /合計|小計|税|お釣|おつり|預り|お預|ポイント|値引|割引|total|subtotal|change|TEL|電話|登録|QUICPay|paypay|交通系|クレジット|お支払|レジ|No\.|領収|公式|検索|通販|オンライン|^\*|^-|登録番号|だいぞう|ハッピー|LINE|パラダイス|スタンプ|楽曲/i;
 
+  // ¥金額 の行かどうか判定
+  const isAmountLine = l => /^[¥￥]\s*\d[\d,]*\s*(?:外|込|税抜|税込)?\s*$/.test(l);
+  // 商品名行かどうか判定（数字だけ・記号始まりを除外）
+  const isNameLine   = l => !skipPattern.test(l) && l.length >= 2 && !/^\d/.test(l) && !/^[¥￥*＊<>]/.test(l) && !isAmountLine(l);
+
+  // --- パターンA: 商品名グループ → 金額グループが連続するレイアウト ---
+  // skipPatternの行を先に除外してから処理（「小計」などがブロックを分断しないよう）
+  const filtered = lines.filter(l => !skipPattern.test(l));
   const items = [];
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    if (skipPattern.test(line)) continue;
-
-    // パターン1: 「商品名　¥金額外」（¥マーク必須）
-    // 例: 「抗菌カトラリーセット（ス　¥100外」
-    const yenInline = line.match(/^(.+?)\s+[¥￥]\s*(\d[\d,]*)\s*(?:外|込|税抜|税込)?\s*$/);
-    if (yenInline) {
-      const name = yenInline[1].trim();
-      const val  = parseInt(yenInline[2].replace(/,/g, ""), 10);
-      // 名前から末尾の余分な数字（商品コードなど）を除去
-      const cleanName = name.replace(/\s+\d+\s*$/, "").trim();
-      if (cleanName.length >= 2 && !/^\d+$/.test(cleanName) && val >= 10 && val <= 100000) {
-        items.push({ title: cleanName, amount: val });
-        continue;
-      }
+  let i = 0;
+  while (i < filtered.length) {
+    const nameBlock = [];
+    while (i < filtered.length && isNameLine(filtered[i])) {
+      nameBlock.push(filtered[i]);
+      i++;
+    }
+    const amountBlock = [];
+    while (i < filtered.length && isAmountLine(filtered[i])) {
+      const m = filtered[i].match(/(\d[\d,]*)/);
+      if (m) amountBlock.push(parseInt(m[1].replace(/,/g, ""), 10));
+      i++;
     }
 
-    // パターン2: 「商品名　金額」（¥なし、ただし次行が¥金額でないこと）
-    // 例: 「牛乳　198」
-    const noYenInline = line.match(/^(.+?)\s+(\d[\d,]+)\s*$/);
-    if (noYenInline) {
-      const name = noYenInline[1].trim();
-      const val  = parseInt(noYenInline[2].replace(/,/g, ""), 10);
-      // 名前に数字が混じっていても末尾の数字は価格の可能性あり
-      // ただし名前だけが数字の場合は除外
-      if (
-        name.length >= 2 &&
-        !/^\d+$/.test(name) &&
-        !/^[¥￥*＊]/.test(name) &&
-        val >= 100 && val <= 100000 // ¥なしは100円以上に絞る
-      ) {
-        items.push({ title: name, amount: val });
-        continue;
-      }
+    if (nameBlock.length > 0 && amountBlock.length > 0 && nameBlock.length === amountBlock.length) {
+      nameBlock.forEach((name, idx) => {
+        const cleanName = name.replace(/\s+\d+\s*$/, "").trim();
+        const val = amountBlock[idx];
+        if (cleanName.length >= 2 && val >= 10 && val <= 100000) {
+          items.push({ title: cleanName, amount: val });
+        }
+      });
     }
+    if (nameBlock.length === 0 && amountBlock.length === 0) i++;
+  }
 
-    // パターン3: 商品名行の次行が「¥金額」のみ
-    const nextLine = lines[i + 1] || "";
-    const nextYen = nextLine.match(/^\s*[¥￥]\s*(\d[\d,]*)\s*(?:外|込|税抜|税込)?\s*$/);
-    if (nextYen && line.length >= 2 && !/^\d/.test(line) && !/^[¥￥*＊]/.test(line)) {
-      const val = parseInt(nextYen[1].replace(/,/g, ""), 10);
-      if (val >= 10 && val <= 100000) {
-        items.push({ title: line, amount: val });
-        i++;
-        continue;
+  // --- パターンBにフォールバック: 同一行に「商品名 ¥金額」 ---
+  if (items.length === 0) {
+    for (const line of lines) {
+      if (skipPattern.test(line)) continue;
+      const m = line.match(/^(.+?)\s+[¥￥]\s*(\d[\d,]*)\s*(?:外|込)?$/);
+      if (m) {
+        const name = m[1].replace(/\s+\d+\s*$/, "").trim();
+        const val  = parseInt(m[2].replace(/,/g, ""), 10);
+        if (name.length >= 2 && !/^\d+$/.test(name) && val >= 10 && val <= 100000) {
+          items.push({ title: name, amount: val });
+        }
       }
     }
   }
