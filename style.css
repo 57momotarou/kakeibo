@@ -67,6 +67,8 @@ body {
   left: 0;
   right: 0;
   height: 52px;
+  max-width: 430px;
+  margin: 0 auto;
   background: var(--theme);
   display: flex;
   align-items: center;
@@ -76,8 +78,6 @@ body {
   box-shadow: 0 2px 6px rgba(0,0,0,0.15);
   transition: background 0.3s;
 }
-
-/* max-width制限はinner wrapperで行い、バー自体は画面幅いっぱいに */
 
 .top-bar-title {
   color: #fff;
@@ -309,8 +309,6 @@ body {
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  max-width: 430px;
-  margin: 0 auto;
 }
 .top-bar-settings.hidden,
 .top-bar-normal.hidden { display: none; }
@@ -1242,8 +1240,20 @@ ul { list-style: none; padding: 0; margin: 0; }
 }
 
 /* ===================================
-   上部バー：月ナビとホームタイトルの切り替え
+   上部バー：色切れ修正＋月ナビ切り替え
 =================================== */
+/* バー本体は画面幅いっぱい（max-width撤廃） */
+.top-bar {
+  max-width: none !important;
+  margin: 0 !important;
+}
+/* 内側のコンテンツをmax-width 430pxで中央揃え */
+.top-bar-normal,
+.top-bar-settings {
+  max-width: 430px;
+  margin: 0 auto;
+}
+
 .top-bar-month-nav {
   display: flex;
   align-items: center;
@@ -1258,10 +1268,10 @@ ul { list-style: none; padding: 0; margin: 0; }
 }
 
 /* ===================================
-   MFスタイル 収支リスト
+   MFスタイル 収支リスト（全幅）
 =================================== */
 .list-month-header {
-  display: none; /* 月ヘッダーは非表示 */
+  display: none;
 }
 
 .list-date-header {
@@ -1284,8 +1294,8 @@ ul { list-style: none; padding: 0; margin: 0; }
   border-bottom: 1px solid #f0f0f0;
   cursor: pointer;
   transition: background 0.12s;
-  /* リスト幅を約2/3に制限 */
-  max-width: 67%;
+  width: 100%;
+  box-sizing: border-box;
 }
 .mf-record-row:active { background: #f5f5f5; }
 
@@ -1317,5 +1327,4 @@ ul { list-style: none; padding: 0; margin: 0; }
   display: flex;
   gap: 8px;
   margin-bottom: 14px;
-  background: transparent;
 }
