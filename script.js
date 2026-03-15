@@ -1608,18 +1608,13 @@ document.getElementById("nextMonthBtn").addEventListener("click", () => changeMo
       decided = true;
     }
 
-    // バックジェスチャー中：現在画面＋上部バーを指に追随
+    // バックジェスチャー中：現在画面を指に追随（topBarは固定のまま動かさない）
     if (isBackGesture) {
-      const el    = getCurrentEl();
-      const topBar = document.getElementById("topBar");
-      const move  = Math.max(0, dx); // 左には動かさない
-      el.style.transition      = "none";
-      el.style.transform       = `translateX(${move}px)`;
-      el.style.boxShadow       = `-8px 0 20px rgba(0,0,0,${0.2 * (1 - move / window.innerWidth)})`;
-      if (topBar) {
-        topBar.style.transition = "none";
-        topBar.style.transform  = `translateX(${move}px)`;
-      }
+      const el   = getCurrentEl();
+      const move = Math.max(0, dx); // 左には動かさない
+      el.style.transition = "none";
+      el.style.transform  = `translateX(${move}px)`;
+      el.style.boxShadow  = `-8px 0 20px rgba(0,0,0,${0.2 * (1 - move / window.innerWidth)})`;
     }
   }, { passive: true });
 
@@ -1634,41 +1629,28 @@ document.getElementById("nextMonthBtn").addEventListener("click", () => changeMo
 
     // ── バックジェスチャーの確定 ──
     if (isBackGesture) {
-      const el     = getCurrentEl();
-      const topBar = document.getElementById("topBar");
+      const el = getCurrentEl();
 
       if (dx >= BACK_THRESHOLD) {
         // 十分スワイプ → 画面を右に飛ばしてから画面遷移
-        const trans = "transform 0.25s cubic-bezier(0.4,0,0.2,1)";
-        el.style.transition      = trans;
-        el.style.transform       = `translateX(${window.innerWidth}px)`;
-        el.style.boxShadow       = "none";
-        if (topBar) {
-          topBar.style.transition = trans;
-          topBar.style.transform  = `translateX(${window.innerWidth}px)`;
-        }
+        el.style.transition = "transform 0.25s cubic-bezier(0.4,0,0.2,1)";
+        el.style.transform  = `translateX(${window.innerWidth}px)`;
+        el.style.boxShadow  = "none";
         setTimeout(() => {
-          el.style.transition      = "";
-          el.style.transform       = "";
-          el.style.boxShadow       = "";
-          if (topBar) { topBar.style.transition = ""; topBar.style.transform = ""; }
+          el.style.transition = "";
+          el.style.transform  = "";
+          el.style.boxShadow  = "";
           doGoBack();
         }, 220);
       } else {
         // 不十分 → 元の位置に戻す
-        const trans = "transform 0.3s cubic-bezier(0.4,0,0.2,1), box-shadow 0.3s";
-        el.style.transition      = trans;
-        el.style.transform       = "translateX(0)";
-        el.style.boxShadow       = "none";
-        if (topBar) {
-          topBar.style.transition = "transform 0.3s cubic-bezier(0.4,0,0.2,1)";
-          topBar.style.transform  = "translateX(0)";
-        }
+        el.style.transition = "transform 0.3s cubic-bezier(0.4,0,0.2,1), box-shadow 0.3s";
+        el.style.transform  = "translateX(0)";
+        el.style.boxShadow  = "none";
         setTimeout(() => {
-          el.style.transition      = "";
-          el.style.transform       = "";
-          el.style.boxShadow       = "";
-          if (topBar) { topBar.style.transition = ""; topBar.style.transform = ""; }
+          el.style.transition = "";
+          el.style.transform  = "";
+          el.style.boxShadow  = "";
         }, 300);
       }
       isBackGesture = false;
