@@ -1480,3 +1480,15 @@ ul { list-style: none; padding: 0; margin: 0; }
 .graph-toggle-btn:not(.active):active {
   background: #f0f0f0;
 }
+
+/* ===================================
+   バックジェスチャー
+=================================== */
+/* ジェスチャー中にoverflow:hiddenで画面外にはみ出さないよう制御 */
+body {
+  overflow-x: hidden;
+}
+
+.view {
+  will-change: transform;
+}

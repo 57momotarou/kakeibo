@@ -1484,53 +1484,127 @@ function changeMonth(delta, direction) {
 document.getElementById("prevMonthBtn").addEventListener("click", () => changeMonth(-1, "right"));
 document.getElementById("nextMonthBtn").addEventListener("click", () => changeMonth( 1, "left"));
 
-// タッチスワイプで月変更 ＋ バックジェスチャー
+// タッチスワイプで月変更 ＋ Safari風バックジェスチャー
 (function setupSwipe() {
-  let startX = 0;
-  let startY = 0;
-  const THRESHOLD      = 50;  // 月切り替えの最低スワイプ距離
-  const BACK_THRESHOLD = 40;  // バックジェスチャーの最低スワイプ距離
-  const BACK_EDGE      = 40;  // 左端何px以内から始まればバックジェスチャーとみなすか
+  let startX       = 0;
+  let startY       = 0;
+  let isBackGesture = false;   // バックジェスチャー中かどうか
+  let isMonthSwipe  = false;   // 月切り替えスワイプ中かどうか
+  let decided       = false;   // どちらのジェスチャーか決定済みか
+
+  const BACK_EDGE       = 40;  // 左端何px以内から始まればバックとみなすか
+  const BACK_THRESHOLD  = 60;  // 離したときにバック確定する最低距離
+  const MONTH_THRESHOLD = 50;  // 月切り替えの最低スワイプ距離
+
+  // 現在の画面要素を取得
+  function getCurrentEl() {
+    return VIEW_CONFIG[viewStack[viewStack.length - 1]].el;
+  }
+
+  // バック可能かどうか
+  function canGoBack() {
+    const cur = viewStack[viewStack.length - 1];
+    return viewStack.length > 1 || cur === "calendar";
+  }
+
+  // バック実行
+  function doGoBack() {
+    const cur = viewStack[viewStack.length - 1];
+    if (viewStack.length > 1) goBack();
+    else if (cur === "calendar") switchToTab("transaction");
+  }
 
   document.addEventListener("touchstart", e => {
-    startX = e.touches[0].clientX;
-    startY = e.touches[0].clientY;
+    startX        = e.touches[0].clientX;
+    startY        = e.touches[0].clientY;
+    isBackGesture = false;
+    isMonthSwipe  = false;
+    decided       = false;
   }, { passive: true });
 
-  document.addEventListener("touchend", e => {
-    // モーダルが開いているときは何もしない
+  document.addEventListener("touchmove", e => {
     if (!addModal.classList.contains("hidden")) return;
     if (!editModal.classList.contains("hidden")) return;
 
-    const endX  = e.changedTouches[0].clientX;
-    const endY  = e.changedTouches[0].clientY;
-    const diffX = startX - endX;  // 正 = 左スワイプ、負 = 右スワイプ
-    const diffY = startY - endY;
+    const curX  = e.touches[0].clientX;
+    const curY  = e.touches[0].clientY;
+    const dx    = curX - startX;  // 正 = 右方向
+    const dy    = curY - startY;
 
-    // 縦の動きが大きい場合は無視
-    if (Math.abs(diffY) > Math.abs(diffX)) return;
+    // どちらのジェスチャーか未確定の場合に判定
+    if (!decided) {
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return; // まだ動き始め
+      if (Math.abs(dy) > Math.abs(dx)) { decided = true; return; } // 縦スクロール
 
-    // ── バックジェスチャー ──
-    // 左端BACK_EDGEpx以内から始まり、右方向にBACK_THRESHOLD以上スワイプ
-    if (startX <= BACK_EDGE && diffX < -BACK_THRESHOLD) {
-      const currentView = viewStack[viewStack.length - 1];
-      // viewStackが2以上（前の画面がある）場合のみ戻る
-      if (viewStack.length > 1) {
-        goBack();
-        return;
+      // バックジェスチャー：左端BACK_EDGE以内から右方向
+      if (startX <= BACK_EDGE && dx > 0 && canGoBack()) {
+        isBackGesture = true;
+      } else {
+        // 月切り替えスワイプ
+        const cur = viewStack[viewStack.length - 1];
+        if (["calendar","graph","transaction"].includes(cur)) isMonthSwipe = true;
       }
-      // stackが1（メイン画面）の場合はカレンダー→出入金など特定画面を戻す
-      if (currentView === "calendar") { switchToTab("transaction"); return; }
+      decided = true;
+    }
+
+    // バックジェスチャー中：現在画面を指に追随
+    if (isBackGesture) {
+      const el = getCurrentEl();
+      const move = Math.max(0, dx); // 左には動かさない
+      el.style.transition = "none";
+      el.style.transform  = `translateX(${move}px)`;
+      // 奥の画面を少し覗かせる（暗くした背景）
+      el.style.boxShadow  = `-8px 0 20px rgba(0,0,0,${0.2 * (1 - move / window.innerWidth)})`;
+    }
+  }, { passive: true });
+
+  document.addEventListener("touchend", e => {
+    if (!addModal.classList.contains("hidden")) return;
+    if (!editModal.classList.contains("hidden")) return;
+
+    const endX = e.changedTouches[0].clientX;
+    const endY = e.changedTouches[0].clientY;
+    const dx   = endX - startX;
+    const dy   = endY - startY;
+
+    // ── バックジェスチャーの確定 ──
+    if (isBackGesture) {
+      const el = getCurrentEl();
+
+      if (dx >= BACK_THRESHOLD) {
+        // 十分スワイプ → 画面を右に飛ばしてから画面遷移
+        el.style.transition = "transform 0.25s cubic-bezier(0.4,0,0.2,1)";
+        el.style.transform  = `translateX(${window.innerWidth}px)`;
+        el.style.boxShadow  = "none";
+        setTimeout(() => {
+          el.style.transition = "";
+          el.style.transform  = "";
+          el.style.boxShadow  = "";
+          doGoBack();
+        }, 220);
+      } else {
+        // 不十分 → 元の位置に戻す
+        el.style.transition = "transform 0.3s cubic-bezier(0.4,0,0.2,1), box-shadow 0.3s";
+        el.style.transform  = "translateX(0)";
+        el.style.boxShadow  = "none";
+        setTimeout(() => {
+          el.style.transition = "";
+          el.style.transform  = "";
+          el.style.boxShadow  = "";
+        }, 300);
+      }
+      isBackGesture = false;
       return;
     }
 
     // ── 月切り替えスワイプ ──
-    const currentView = viewStack[viewStack.length - 1];
-    if (!["calendar", "graph", "transaction"].includes(currentView)) return;
-    if (Math.abs(diffX) < THRESHOLD) return;
-
-    if (diffX > 0) changeMonth( 1, "left");  // 左スワイプ → 次月
-    else           changeMonth(-1, "right"); // 右スワイプ → 前月
+    if (isMonthSwipe) {
+      if (Math.abs(dy) > Math.abs(dx)) return;
+      const diffX = startX - endX;
+      if (Math.abs(diffX) < MONTH_THRESHOLD) return;
+      if (diffX > 0) changeMonth( 1, "left");
+      else           changeMonth(-1, "right");
+    }
   }, { passive: true });
 })();
 
