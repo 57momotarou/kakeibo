@@ -26,12 +26,12 @@ document.addEventListener("DOMContentLoaded", () => {
     splash.classList.add("dark-text");
   }
 
-  // 0.8秒後にフェードアウト → 完了後に非表示
+  // 0.8秒後にフェードアウト開始 → 0.4秒後に強制的にdisplay:none
   setTimeout(() => {
     splash.classList.add("fade-out");
-    splash.addEventListener("transitionend", () => {
+    setTimeout(() => {
       splash.classList.add("hidden");
-    }, { once: true });
+    }, 450); // transitionの0.4秒より少し長めに設定
   }, 800);
 })();
 
