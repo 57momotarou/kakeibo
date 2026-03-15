@@ -52,6 +52,14 @@ let themeColor     = localStorage.getItem("themeColor") || "#4caf50";
 let editingRecord  = null;
 let periodListenerAdded = false;
 
+// タブ表示設定（カレンダーはデフォルト非表示）
+const DEFAULT_TAB_VISIBILITY = { calendar: false, account: true };
+let tabVisibility = JSON.parse(localStorage.getItem("tabVisibility")) || DEFAULT_TAB_VISIBILITY;
+
+function saveTabVisibility() {
+  localStorage.setItem("tabVisibility", JSON.stringify(tabVisibility));
+}
+
 // ===================================
 // 要素の取得
 // ===================================
@@ -194,14 +202,15 @@ function updateCategoryOptions(type, catEl, currentValue) {
 let viewStack = ["home"];
 
 const VIEW_CONFIG = {
-  home:     { el: document.getElementById("homeView"),     title: null,           showTabs: true  },
-  calendar: { el: document.getElementById("calendarView"), title: null,           showTabs: true  },
-  graph:    { el: document.getElementById("graphView"),    title: null,           showTabs: true  },
-  account:  { el: document.getElementById("accountView"),  title: null,           showTabs: true  },
-  settings: { el: document.getElementById("settingsView"), title: "設定",         showTabs: false },
-  category: { el: document.getElementById("categoryView"), title: "カテゴリ変更", showTabs: false },
-  theme:    { el: document.getElementById("themeView"),    title: "テーマカラー", showTabs: false },
-  period:   { el: document.getElementById("periodView"),   title: "集計期間",     showTabs: false },
+  home:       { el: document.getElementById("homeView"),       title: null,             showTabs: true  },
+  calendar:   { el: document.getElementById("calendarView"),   title: null,             showTabs: true  },
+  graph:      { el: document.getElementById("graphView"),      title: null,             showTabs: true  },
+  account:    { el: document.getElementById("accountView"),    title: null,             showTabs: true  },
+  settings:   { el: document.getElementById("settingsView"),   title: "設定",           showTabs: false },
+  category:   { el: document.getElementById("categoryView"),   title: "カテゴリ変更",   showTabs: false },
+  theme:      { el: document.getElementById("themeView"),      title: "テーマカラー",   showTabs: false },
+  period:     { el: document.getElementById("periodView"),     title: "集計期間",       showTabs: false },
+  visibility: { el: document.getElementById("visibilityView"), title: "表示 / 非表示", showTabs: false },
 };
 
 function navigate(viewName) {
@@ -230,13 +239,15 @@ function showCurrentView() {
   document.getElementById("tabBar").classList.toggle("hidden", !config.showTabs);
   openAddBtn.classList.toggle("hidden", !config.showTabs);
 
-  if (name === "home")     render();
-  if (name === "category") renderCategoryView();
-  if (name === "theme")    renderColorPresets();
-  if (name === "graph")    renderGraph();
-  if (name === "period")   renderPeriodView();
-  if (name === "account")  renderAccountView();
+  if (name === "home")       render();
+  if (name === "category")   renderCategoryView();
+  if (name === "theme")      renderColorPresets();
+  if (name === "graph")      renderGraph();
+  if (name === "period")     renderPeriodView();
+  if (name === "account")    renderAccountView();
+  if (name === "visibility") renderVisibilityView();
 
+  applyTabVisibility();
   document.getElementById("homeTab").classList.toggle("active",    name === "home");
   document.getElementById("calendarTab").classList.toggle("active",name === "calendar");
   document.getElementById("graphTab").classList.toggle("active",   name === "graph");
@@ -245,9 +256,10 @@ function showCurrentView() {
 
 backBtn.addEventListener("click", goBack);
 openSettingsBtn.addEventListener("click", () => navigate("settings"));
-document.getElementById("goCategory").addEventListener("click", () => navigate("category"));
-document.getElementById("goTheme").addEventListener("click",    () => navigate("theme"));
-document.getElementById("goPeriod").addEventListener("click",   () => navigate("period"));
+document.getElementById("goCategory").addEventListener("click",   () => navigate("category"));
+document.getElementById("goTheme").addEventListener("click",      () => navigate("theme"));
+document.getElementById("goPeriod").addEventListener("click",     () => navigate("period"));
+document.getElementById("goVisibility").addEventListener("click", () => navigate("visibility"));
 
 function switchToTab(name) {
   viewStack.forEach(v => VIEW_CONFIG[v].el.classList.remove("active"));
@@ -794,9 +806,39 @@ document.getElementById("deleteAccountBtn").addEventListener("click", () => {
   closeAccountModal();
 });
 
-
 // ===================================
-function updateMonthLabel() {
+// 表示 / 非表示
+// ===================================
+function applyTabVisibility() {
+  const calTab = document.getElementById("calendarTab");
+  const accTab = document.getElementById("accountTab");
+  calTab.style.display = tabVisibility.calendar ? "" : "none";
+  accTab.style.display = tabVisibility.account  ? "" : "none";
+
+  // 現在非表示のタブにいる場合はホームに戻す
+  const cur = viewStack[viewStack.length - 1];
+  if (cur === "calendar" && !tabVisibility.calendar) switchToTab("home");
+  if (cur === "account"  && !tabVisibility.account)  switchToTab("home");
+}
+
+function renderVisibilityView() {
+  document.getElementById("toggleCalendar").checked = !!tabVisibility.calendar;
+  document.getElementById("toggleAccount").checked  = !!tabVisibility.account;
+}
+
+document.getElementById("toggleCalendar").addEventListener("change", e => {
+  tabVisibility.calendar = e.target.checked;
+  saveTabVisibility();
+  applyTabVisibility();
+});
+
+document.getElementById("toggleAccount").addEventListener("change", e => {
+  tabVisibility.account = e.target.checked;
+  saveTabVisibility();
+  applyTabVisibility();
+});
+
+
   const [year, month] = monthSelector.value.split("-").map(Number);
   document.getElementById("monthLabel").textContent = `${year}年${month}月`;
 }
@@ -900,6 +942,7 @@ applyThemeColor(themeColor);
 monthSelector.value = getDefaultMonth();
 updateMonthLabel();
 updateCategoryOptions("expense", categorySelect);
+applyTabVisibility();
 render();
 
 // ===================================
