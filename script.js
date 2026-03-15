@@ -241,25 +241,27 @@ function showCurrentView() {
   const monthNav        = document.getElementById("topBarMonthNav");
   const homeTitleEl     = document.getElementById("topBarHomeTitle");
   const calShortcutBtn  = document.getElementById("calendarShortcutBtn");
+  const calBackBtn      = document.getElementById("calendarBackBtn");
   const spacer          = document.getElementById("topBarSpacer");
 
   if (isMain) {
     const isTransaction = (name === "transaction");
     const isHome        = (name === "home");
-    const showNav       = ["calendar","graph"].includes(name);
+    const isCalendar    = (name === "calendar");
+    const showNav       = (name === "graph"); // 月ナビはグラフのみ
 
     calShortcutBtn.style.display = isTransaction ? "" : "none";
+    calBackBtn.style.display     = isCalendar    ? "" : "none";
     monthNav.style.display       = showNav       ? "" : "none";
     homeTitleEl.style.display    = isHome        ? "" : "none";
-    // 月ナビが非表示のときにスペーサーを出して歯車を右端へ
-    spacer.style.display         = (!showNav && !isHome) || isHome ? "" : "none";
+    // 月ナビが非表示のときスペーサーで歯車を右端へ
+    spacer.style.display         = !showNav ? "" : "none";
   }
 
   document.getElementById("tabBar").classList.toggle("hidden", !config.showTabs);
   openAddBtn.classList.toggle("hidden", !config.showTabs);
 
   if (name === "transaction") render();
-  if (name === "calendar")    renderCalendar();
   if (name === "category")    renderCategoryView();
   if (name === "theme")       renderColorPresets();
   if (name === "graph")       renderGraph();
@@ -279,6 +281,8 @@ backBtn.addEventListener("click", goBack);
 openSettingsBtn.addEventListener("click", () => navigate("settings"));
 // 出入金バー左端のカレンダーボタン → カレンダー画面に遷移
 document.getElementById("calendarShortcutBtn").addEventListener("click", () => switchToTab("calendar"));
+// カレンダーバー左端の「←」→ 出入金に戻る
+document.getElementById("calendarBackBtn").addEventListener("click", () => switchToTab("transaction"));
 document.getElementById("goCategory").addEventListener("click",   () => navigate("category"));
 document.getElementById("goTheme").addEventListener("click",      () => navigate("theme"));
 document.getElementById("goPeriod").addEventListener("click",     () => navigate("period"));
@@ -924,47 +928,21 @@ function render() {
 // カレンダー描画
 // ===================================
 function renderCalendar() {
-  const calendar   = document.getElementById("calendar");
-  const txList     = document.getElementById("calTransactionList");
-  const ymEl       = document.getElementById("calYearMonth");
-  const rangeEl    = document.getElementById("calRange");
-  if (!calendar) return;
+  const calendar = document.getElementById("calendar");
   calendar.innerHTML = "";
-  if (txList)  txList.innerHTML  = "";
-  if (ymEl)    ymEl.textContent  = "";
-  if (rangeEl) rangeEl.textContent = "";
 
-  const ym = monthSelector.value;
-  const [year, m] = ym.split("-").map(Number);
+  const month    = monthSelector.value;
+  const [year, m] = month.split("-").map(Number);
+  const lastDay  = new Date(year, m, 0).getDate();
+  const firstDay = new Date(year, m - 1, 1).getDay();
 
-  // 集計期間（基準日〜翌月基準日前日）
-  const { start, end } = getPeriodRange(ym);
-  const startDate = new Date(start + "T00:00:00");
-  const endDate   = new Date(end   + "T00:00:00");
-
-  // ── 年月・期間ヘッダー ──
-  if (ymEl) {
-    ymEl.textContent = `${year}年${m}月`;
-  }
-  if (rangeEl) {
-    const fmt = d => `${d.getMonth()+1}月${d.getDate()}日`;
-    rangeEl.textContent = `（${fmt(startDate)}〜${fmt(endDate)}）`;
-  }
-
-  // ── カレンダーグリッド ──
-  // 期間の最初の日の曜日から始める
-  const firstDow = startDate.getDay(); // 0=日
-  // 空白セルを埋める
-  for (let i = 0; i < firstDow; i++) {
+  for (let i = 0; i < firstDay; i++) {
     calendar.appendChild(document.createElement("div"));
   }
 
-  // start から end まで1日ずつ描画
-  const cur = new Date(startDate);
-  const todayStr = new Date().toISOString().slice(0, 10);
+  for (let day = 1; day <= lastDay; day++) {
+    const dayStr = `${month}-${String(day).padStart(2, "0")}`;
 
-  while (cur <= endDate) {
-    const dayStr = `${cur.getFullYear()}-${String(cur.getMonth()+1).padStart(2,"0")}-${String(cur.getDate()).padStart(2,"0")}`;
     let income = 0, expense = 0;
     records.forEach(r => {
       if (r.date === dayStr) r.type === "income" ? income += r.amount : expense += r.amount;
@@ -973,66 +951,30 @@ function renderCalendar() {
     const div = document.createElement("div");
     div.className = "day";
     div.innerHTML = `
-      <div class="date">${cur.getDate()}</div>
-      <div class="income">${income  > 0 ? "＋¥" + income.toLocaleString()  : ""}</div>
-      <div class="expense">${expense > 0 ? "−¥" + expense.toLocaleString() : ""}</div>
+      <div class="date">${day}</div>
+      <div class="income">＋¥${income > 0 ? income.toLocaleString() : 0}</div>
+      <div class="expense">−¥${expense > 0 ? expense.toLocaleString() : 0}</div>
     `;
 
-    if (dayStr === todayStr)             div.classList.add("today");
-    if      (expense > 0 && income > 0)  div.classList.add("both");
-    else if (expense > 0)                div.classList.add("expense-day");
-    else if (income > 0)                 div.classList.add("income-day");
+    if (new Date().toISOString().slice(0,10) === dayStr) div.classList.add("today");
+    if      (expense > 0 && income > 0) div.classList.add("both");
+    else if (expense > 0)               div.classList.add("expense-day");
+    else if (income > 0)                div.classList.add("income-day");
+
+    div.addEventListener("click", () => {
+      const detailBox = document.getElementById("dayDetail");
+      const details = records
+        .filter(r => r.date === dayStr)
+        .map(r => `<div class="detail-row">
+          <span>${r.title || r.category}</span>
+          <span class="${r.type === "expense" ? "tag-expense" : "tag-income"}">${r.type === "expense" ? "支出" : "収入"}</span>
+          <span>¥${r.amount.toLocaleString()}</span>
+        </div>`).join("");
+      detailBox.innerHTML = `<h3>${m}月${day}日の明細</h3>${details || "<p>記録なし</p>"}`;
+    });
 
     calendar.appendChild(div);
-    cur.setDate(cur.getDate() + 1);
   }
-
-  // ── 下部：期間内の出入金リスト ──
-  if (!txList) return;
-
-  const periodRecords = records.filter(r => r.date >= start && r.date <= end);
-  if (periodRecords.length === 0) {
-    txList.innerHTML = '<p style="text-align:center;color:#aaa;font-size:14px;padding:20px 0;">この期間の記録はありません</p>';
-    return;
-  }
-
-  // 日付降順・同日内は登録順新しい順
-  const sorted = [...periodRecords].sort((a, b) => {
-    if (b.date !== a.date) return b.date.localeCompare(a.date);
-    return periodRecords.indexOf(b) - periodRecords.indexOf(a);
-  });
-
-  // 日付グループ化
-  const dayGroups = [];
-  sorted.forEach(record => {
-    const last = dayGroups[dayGroups.length - 1];
-    if (last && last.date === record.date) last.records.push(record);
-    else dayGroups.push({ date: record.date, records: [record] });
-  });
-
-  dayGroups.forEach(group => {
-    const d = new Date(group.date + "T00:00:00");
-    const weekDay = ["日","月","火","水","木","金","土"][d.getDay()];
-
-    const dateHeader = document.createElement("div");
-    dateHeader.className = "list-date-header";
-    dateHeader.textContent = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${weekDay}）`;
-    txList.appendChild(dateHeader);
-
-    group.records.forEach(record => {
-      const row = document.createElement("div");
-      row.className = "mf-record-row";
-      const isExpense = record.type === "expense";
-      const sign      = isExpense ? "-" : "+";
-      const amtClass  = isExpense ? "mf-amount-expense" : "mf-amount-income";
-      row.innerHTML = `
-        <span class="mf-title">${record.title || record.category}</span>
-        <span class="mf-amount ${amtClass}">${sign}¥${record.amount.toLocaleString()}</span>
-      `;
-      row.addEventListener("click", () => openEditModal(record));
-      txList.appendChild(row);
-    });
-  });
 }
 
 // ===================================

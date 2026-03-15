@@ -21,7 +21,9 @@
     <div class="top-bar-normal" id="topBarNormal">
       <!-- 出入金時：左端カレンダーボタン -->
       <button class="top-bar-btn" id="calendarShortcutBtn" style="display:none">📅</button>
-      <!-- カレンダー/グラフ時：月ナビ -->
+      <!-- カレンダー時：左端に「←」戻るボタン -->
+      <button class="top-bar-btn" id="calendarBackBtn" style="display:none">←</button>
+      <!-- グラフ時のみ：月ナビ -->
       <div class="top-bar-month-nav" id="topBarMonthNav">
         <button class="top-bar-btn month-nav-btn" id="prevMonthBtn">◀</button>
         <span class="top-bar-title" id="monthLabel">2025年3月</span>
@@ -29,7 +31,7 @@
       </div>
       <!-- ホーム時：タイトル -->
       <span class="top-bar-title top-bar-home-title" id="topBarHomeTitle" style="display:none">ホーム</span>
-      <!-- 出入金・ホーム時の中央スペーサー（月ナビが非表示の時に歯車を右端に押す） -->
+      <!-- スペーサー（月ナビが非表示の時に歯車を右端に押す） -->
       <div class="top-bar-spacer" id="topBarSpacer" style="display:none"></div>
       <!-- 常に右端：歯車 -->
       <button class="top-bar-btn" id="openSettingsBtn">⚙️</button>
@@ -117,18 +119,12 @@
 
   <!-- カレンダー -->
   <div id="calendarView" class="view">
-    <!-- 年月・期間ヘッダー -->
-    <div class="cal-header">
-      <div class="cal-header-year-month" id="calYearMonth"></div>
-      <div class="cal-header-range" id="calRange"></div>
-    </div>
     <div class="week-header">
       <div>日</div><div>月</div><div>火</div><div>水</div>
       <div>木</div><div>金</div><div>土</div>
     </div>
     <div id="calendar"></div>
-    <!-- 出入金リスト（期間内） -->
-    <div class="cal-transaction-list" id="calTransactionList"></div>
+    <div id="dayDetail"></div>
   </div>
 
   <!-- 設定トップ -->
