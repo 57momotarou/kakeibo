@@ -115,6 +115,10 @@
         <span class="summary-value">¥<span id="balance">0</span></span>
       </div>
     </div>
+    <div id="budgetSummaryCard" class="budget-summary-card" style="display:none">
+      <div class="budget-summary-title">📊 今月の予算進捗</div>
+      <div id="budgetSummaryRows"></div>
+    </div>
     <ul id="list"></ul>
   </div>
 
@@ -151,6 +155,11 @@
         <span class="settings-menu-label">表示 / 非表示</span>
         <span class="settings-menu-arrow">›</span>
       </li>
+      <li class="settings-menu-item" id="goBudget">
+        <span class="settings-menu-icon">💰</span>
+        <span class="settings-menu-label">予算設定</span>
+        <span class="settings-menu-arrow">›</span>
+      </li>
     </ul>
   </div>
 
@@ -174,6 +183,15 @@
         </label>
       </li>
     </ul>
+  </div>
+
+  <!-- 予算設定 -->
+  <div id="budgetView" class="view">
+    <p style="font-size:13px;color:#666;margin:4px 0 12px;line-height:1.7;">
+      カテゴリごとに月の支出予算を設定します。<br>予算を超えると赤、80%超えるとオレンジで表示されます。
+    </p>
+    <p class="budget-section-label">💸 支出カテゴリの予算</p>
+    <ul id="budgetList" class="budget-list"></ul>
   </div>
 
   <!-- 集計期間設定 -->
