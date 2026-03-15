@@ -468,37 +468,48 @@ function parseReceipt(text) {
   const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
 
   // ---- 商品行を抽出 ----
-  // 「商品名 + 金額」が同じ行、または直前行が商品名・直後行が金額のパターンを検出
-  const amountPattern = /[¥￥]?\s*(\d[\d,]+)/;
+  // 金額パターン：¥100、¥100外、100外、1,000 など
+  const amountPattern = /[¥￥]?\s*(\d[\d,]*)\s*(?:外|込|税抜|税込)?$/;
   // 合計・税・小計などの除外キーワード
-  const skipPattern = /合計|小計|税|お釣|おつり|預り|お預|ポイント|値引|割引|total|subtotal|change|tax/i;
+  const skipPattern = /合計|小計|税|お釣|おつり|預り|お預|ポイント|値引|割引|total|subtotal|change|TEL|電話|登録|QUICPay|paypay|交通系|クレジット|お支払|レジ|No\.|領収|公式|検索|通販|オンライン|^\*/i;
 
-  const items = []; // { title, amount }
+  const items = [];
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     if (skipPattern.test(line)) continue;
 
-    // 同一行に商品名と金額が含まれるパターン: 「牛乳　198」
-    const inlineMatch = line.match(/^(.+?)\s+[¥￥]?\s*(\d[\d,]+)\s*$/);
+    // 同一行に商品名と金額が含まれるパターン
+    // 例: 「抗菌カトラリーセット　¥100外」「牛乳　198」
+    const inlineMatch = line.match(/^(.+?)\s+[¥￥]?\s*(\d[\d,]*)\s*(?:外|込|税抜|税込)?\s*$/);
     if (inlineMatch) {
       const name = inlineMatch[1].trim();
       const val  = parseInt(inlineMatch[2].replace(/,/g, ""), 10);
-      // 名前が数字だけ・短すぎる・金額が大きすぎる（合計っぽい）は除外
-      if (name.length >= 2 && !/^\d+$/.test(name) && val >= 10 && val <= 100000) {
+      if (
+        name.length >= 2 &&
+        !/^\d+$/.test(name) &&      // 数字だけの行を除外
+        !/^[¥￥*＊]/.test(name) &&  // 記号始まりを除外
+        val >= 10 && val <= 100000
+      ) {
         items.push({ title: name, amount: val });
         continue;
       }
     }
 
-    // 商品名行・次行が金額のパターン
+    // 商品名行の次行が金額のみのパターン
     const nextLine = lines[i + 1] || "";
-    const amountOnly = nextLine.match(/^\s*[¥￥]?\s*(\d[\d,]+)\s*$/);
-    if (amountOnly && !skipPattern.test(line) && line.length >= 2 && !/^\d+$/.test(line)) {
+    const amountOnly = nextLine.match(/^\s*[¥￥]?\s*(\d[\d,]*)\s*(?:外|込|税抜|税込)?\s*$/);
+    if (
+      amountOnly &&
+      !skipPattern.test(line) &&
+      line.length >= 2 &&
+      !/^\d/.test(line) &&
+      !/^[¥￥*＊]/.test(line)
+    ) {
       const val = parseInt(amountOnly[1].replace(/,/g, ""), 10);
       if (val >= 10 && val <= 100000) {
         items.push({ title: line, amount: val });
-        i++; // 次行（金額行）をスキップ
+        i++;
         continue;
       }
     }
