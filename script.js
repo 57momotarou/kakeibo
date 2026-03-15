@@ -236,6 +236,15 @@ function showCurrentView() {
   topBarSettings.classList.toggle("hidden", isMain);
   if (!isMain) settingsBarTitle.textContent = config.title;
 
+  // ホーム時：月ナビ非表示・タイトル表示。それ以外のメイン：月ナビ表示
+  const monthNav      = document.getElementById("topBarMonthNav");
+  const homeTitleEl   = document.getElementById("topBarHomeTitle");
+  if (isMain) {
+    const isHome = (name === "home");
+    monthNav.style.display    = isHome ? "none" : "";
+    homeTitleEl.style.display = isHome ? "" : "none";
+  }
+
   document.getElementById("tabBar").classList.toggle("hidden", !config.showTabs);
   openAddBtn.classList.toggle("hidden", !config.showTabs);
 
@@ -841,37 +850,38 @@ saveEditButton.addEventListener("click", () => {
 // ===================================
 // ホーム描画
 // ===================================
+// カテゴリ→背景色・絵文字アイコンのマッピング
+const CATEGORY_ICON = {
+  "食費":   { bg: "#ef5350", icon: "🍴" },
+  "日用品": { bg: "#ff9800", icon: "🧴" },
+  "交通":   { bg: "#42a5f5", icon: "🚃" },
+  "家賃":   { bg: "#7e57c2", icon: "🏠" },
+  "その他": { bg: "#9e9e9e", icon: "•••" },
+  "給与":   { bg: "#66bb6a", icon: "💴" },
+};
+function getCategoryStyle(cat) {
+  return CATEGORY_ICON[cat] || { bg: "#90a4ae", icon: cat.slice(0,1) };
+}
+
 function render() {
-  const selectedMonth = monthSelector.value;
   list.innerHTML = "";
 
-  // ── サマリーは選択月のみ ──
-  const forSummary = filterByPeriod(selectedMonth);
-  let income = 0, expense = 0;
-  forSummary.forEach(r => r.type === "income" ? income += r.amount : expense += r.amount);
-  document.getElementById("incomeTotal").textContent  = income.toLocaleString();
-  document.getElementById("expenseTotal").textContent = expense.toLocaleString();
-  const bal   = income - expense;
-  const balEl = document.getElementById("balance");
-  balEl.textContent = bal.toLocaleString();
-  balEl.style.color = bal >= 0 ? "var(--theme)" : "#c62828";
-
-  // ── リストは全件を日付降順で表示 ──
   if (records.length === 0) {
     const empty = document.createElement("p");
-    empty.style.cssText = "text-align:center;color:#aaa;font-size:14px;margin-top:40px;";
+    empty.style.cssText = "text-align:center;color:#aaa;font-size:14px;margin-top:60px;";
     empty.textContent = "記録がありません";
     list.appendChild(empty);
     renderCalendar();
     return;
   }
 
+  // 全件を日付降順で表示
   const sorted = [...records].sort((a, b) => {
     if (b.date !== a.date) return b.date.localeCompare(a.date);
     return records.indexOf(b) - records.indexOf(a);
   });
 
-  // 日付でグループ化
+  // 日付グループ化
   const dayGroups = [];
   sorted.forEach(record => {
     const last = dayGroups[dayGroups.length - 1];
@@ -879,49 +889,48 @@ function render() {
     else dayGroups.push({ date: record.date, records: [record] });
   });
 
-  // 月でさらにグループ化してヘッダーを挟む
+  // 月ヘッダーを挟みながら描画
   let currentYM = null;
   dayGroups.forEach(group => {
-    const ym = group.date.slice(0, 7); // "2025-03"
+    const ym = group.date.slice(0, 7);
     if (ym !== currentYM) {
       currentYM = ym;
       const [y, m] = ym.split("-").map(Number);
       const monthHeader = document.createElement("div");
-      monthHeader.style.cssText = `
-        font-size:12px;font-weight:bold;color:#999;
-        padding:14px 4px 4px;letter-spacing:0.05em;
-      `;
+      monthHeader.className = "list-month-header";
       monthHeader.textContent = `${y}年${m}月`;
       list.appendChild(monthHeader);
     }
 
-    const card = document.createElement("div");
-    card.className = "date-group-card";
-
-    const header = document.createElement("div");
-    header.className = "date-header";
+    // 日付ヘッダー行
     const d = new Date(group.date + "T00:00:00");
     const weekDay = ["日","月","火","水","木","金","土"][d.getDay()];
-    header.innerHTML = `<span class="date-header-label">${d.getMonth()+1}月${d.getDate()}日（${weekDay}）</span>`;
-    card.appendChild(header);
+    const dateHeader = document.createElement("div");
+    dateHeader.className = "list-date-header";
+    dateHeader.textContent = `${d.getMonth()+1}月${d.getDate()}日（${weekDay}）`;
+    list.appendChild(dateHeader);
 
+    // 各レコード行（MFスタイル）
     group.records.forEach(record => {
-      const li   = document.createElement("div");
-      li.className = "record-li";
-      const main = document.createElement("div");
-      main.className = "record-main";
       const row = document.createElement("div");
-      row.className = "record-main-row";
-      row.innerHTML =
-        `<span class="record-title">${record.title || record.category}</span>` +
-        `<span class="record-amount ${record.type === "expense" ? "amount-expense" : "amount-income"}">¥${record.amount.toLocaleString()}</span>`;
-      main.appendChild(row);
-      main.addEventListener("click", () => openEditModal(record));
-      li.appendChild(main);
-      card.appendChild(li);
-    });
+      row.className = "mf-record-row";
 
-    list.appendChild(card);
+      const { bg, icon } = getCategoryStyle(record.category);
+      const isExpense = record.type === "expense";
+      const sign      = isExpense ? "-" : "+";
+      const amtClass  = isExpense ? "mf-amount-expense" : "mf-amount-income";
+
+      row.innerHTML = `
+        <div class="mf-icon" style="background:${bg}">${icon}</div>
+        <div class="mf-info">
+          <span class="mf-title">${record.title || record.category}</span>
+          <span class="mf-category">${record.category}</span>
+        </div>
+        <span class="mf-amount ${amtClass}">${sign}¥${record.amount.toLocaleString()}</span>
+      `;
+      row.addEventListener("click", () => openEditModal(record));
+      list.appendChild(row);
+    });
   });
 
   renderCalendar();
@@ -1142,6 +1151,18 @@ function renderLegend(legendId, data) {
 
 function renderGraph() {
   document.getElementById("graphMonthSelector").value = monthSelector.value;
+
+  // サマリー（収入・支出・差額）をグラフ画面で更新
+  const forSummary = filterByPeriod(monthSelector.value);
+  let income = 0, expense = 0;
+  forSummary.forEach(r => r.type === "income" ? income += r.amount : expense += r.amount);
+  document.getElementById("incomeTotal").textContent  = income.toLocaleString();
+  document.getElementById("expenseTotal").textContent = expense.toLocaleString();
+  const bal   = income - expense;
+  const balEl = document.getElementById("balance");
+  balEl.textContent = bal.toLocaleString();
+  balEl.style.color = bal >= 0 ? "var(--theme)" : "#c62828";
+
   const expenseData = aggregateByCategory("expense");
   const incomeData  = aggregateByCategory("income");
   drawPieChart("expenseChart", expenseData, "expenseChartTotal");
@@ -1370,7 +1391,8 @@ document.getElementById("nextMonthBtn").addEventListener("click", () => changeMo
 
   document.addEventListener("touchend", e => {
     const currentView = viewStack[viewStack.length - 1];
-    if (!["home", "calendar", "graph"].includes(currentView)) return;
+    // ホームはスワイプ無効
+    if (!["calendar", "graph"].includes(currentView)) return;
     if (!addModal.classList.contains("hidden")) return;
     if (!editModal.classList.contains("hidden")) return;
 

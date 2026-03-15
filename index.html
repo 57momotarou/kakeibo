@@ -18,14 +18,15 @@
 
   <!-- ========== 上部バー ========== -->
   <header class="top-bar" id="topBar">
-    <!-- 通常時：◀ / 年月 / ▶ + ⚙️ -->
+    <!-- 通常時：月ナビ（カレンダー/グラフ時のみ表示） + タイトル + ⚙️ -->
     <div class="top-bar-normal" id="topBarNormal">
-      <button class="top-bar-btn month-nav-btn" id="prevMonthBtn">◀</button>
-      <span class="top-bar-title" id="monthLabel">2025年3月</span>
-      <div class="top-bar-right">
+      <div class="top-bar-month-nav" id="topBarMonthNav">
+        <button class="top-bar-btn month-nav-btn" id="prevMonthBtn">◀</button>
+        <span class="top-bar-title" id="monthLabel">2025年3月</span>
         <button class="top-bar-btn month-nav-btn" id="nextMonthBtn">▶</button>
-        <button class="top-bar-btn" id="openSettingsBtn">⚙️</button>
       </div>
+      <span class="top-bar-title top-bar-home-title" id="topBarHomeTitle" style="display:none">収支一覧</span>
+      <button class="top-bar-btn" id="openSettingsBtn">⚙️</button>
     </div>
     <!-- 設定時：← / タイトル / 空 -->
     <div class="top-bar-settings hidden" id="topBarSettings">
@@ -101,24 +102,6 @@
   <!-- ホーム -->
   <div id="homeView" class="view active">
     <input type="month" id="monthSelector" style="display:none">
-    <div id="summary">
-      <div class="summary-item income-item">
-        <span class="summary-label">収入</span>
-        <span class="summary-value">¥<span id="incomeTotal">0</span></span>
-      </div>
-      <div class="summary-item expense-item">
-        <span class="summary-label">支出</span>
-        <span class="summary-value">¥<span id="expenseTotal">0</span></span>
-      </div>
-      <div class="summary-item balance-item">
-        <span class="summary-label">差額</span>
-        <span class="summary-value">¥<span id="balance">0</span></span>
-      </div>
-    </div>
-    <div id="budgetSummaryCard" class="budget-summary-card" style="display:none">
-      <div class="budget-summary-title">📊 今月の予算進捗</div>
-      <div id="budgetSummaryRows"></div>
-    </div>
     <ul id="list"></ul>
   </div>
 
@@ -155,11 +138,6 @@
         <span class="settings-menu-label">表示 / 非表示</span>
         <span class="settings-menu-arrow">›</span>
       </li>
-      <li class="settings-menu-item" id="goBudget">
-        <span class="settings-menu-icon">💰</span>
-        <span class="settings-menu-label">予算設定</span>
-        <span class="settings-menu-arrow">›</span>
-      </li>
     </ul>
   </div>
 
@@ -183,15 +161,6 @@
         </label>
       </li>
     </ul>
-  </div>
-
-  <!-- 予算設定 -->
-  <div id="budgetView" class="view">
-    <p style="font-size:13px;color:#666;margin:4px 0 12px;line-height:1.7;">
-      カテゴリごとに月の支出予算を設定します。<br>予算を超えると赤、80%超えるとオレンジで表示されます。
-    </p>
-    <p class="budget-section-label">💸 支出カテゴリの予算</p>
-    <ul id="budgetList" class="budget-list"></ul>
   </div>
 
   <!-- 集計期間設定 -->
@@ -244,6 +213,22 @@
   <!-- グラフ -->
   <div id="graphView" class="view">
     <input type="month" id="graphMonthSelector" style="display:none">
+
+    <!-- サマリーカード（グラフ画面に移動） -->
+    <div id="summary">
+      <div class="summary-item income-item">
+        <span class="summary-label">収入</span>
+        <span class="summary-value">¥<span id="incomeTotal">0</span></span>
+      </div>
+      <div class="summary-item expense-item">
+        <span class="summary-label">支出</span>
+        <span class="summary-value">¥<span id="expenseTotal">0</span></span>
+      </div>
+      <div class="summary-item balance-item">
+        <span class="summary-label">差額</span>
+        <span class="summary-value">¥<span id="balance">0</span></span>
+      </div>
+    </div>
 
     <!-- 支出円グラフ -->
     <div class="chart-section">
