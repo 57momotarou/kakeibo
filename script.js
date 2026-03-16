@@ -212,7 +212,7 @@ const VIEW_CONFIG = {
   theme:       { el: document.getElementById("themeView"),       title: "テーマカラー",   showTabs: false },
   period:      { el: document.getElementById("periodView"),      title: "集計期間",       showTabs: false },
   budget:      { el: document.getElementById("budgetView"),      title: "予算設定",       showTabs: false },
-  apiKey:      { el: document.getElementById("apiKeyView"),      title: "Vision APIキー", showTabs: false },
+  apiKey:      { el: document.getElementById("apiKeyView"),      title: "Gemini APIキー", showTabs: false },
   visibility:  { el: document.getElementById("visibilityView"),  title: "表示 / 非表示", showTabs: false },
 };
 
@@ -377,7 +377,7 @@ const fabMenu    = document.getElementById("fabMenu");
 const fabOverlay = document.getElementById("fabOverlay");
 let fabOpen = false;
 
-// Vision APIキーはlocalStorageから取得（コードに埋め込まない）
+// Gemini APIキーはlocalStorageから取得（コードに埋め込まない）
 function getGeminiApiKey() {
   return localStorage.getItem("geminiApiKey") || "";
 }
@@ -1262,10 +1262,10 @@ function renderBudgetView() {
 }
 
 // ===================================
-// Vision APIキー設定
+// Gemini APIキー設定
 // ===================================
 function renderApiKeyView() {
-  const input     = document.getElementById("visionApiKeyInput");
+  const input     = document.getElementById("geminiApiKeyInput");
   const statusEl  = document.getElementById("apiKeyStatus");
   const deleteBtn = document.getElementById("deleteApiKeyBtn");
   const saved     = localStorage.getItem("geminiApiKey") || "";
@@ -1286,7 +1286,7 @@ function renderApiKeyView() {
 }
 
 // 入力欄にフォーカスしたら伏せ字をクリア（新規入力モード）
-document.getElementById("visionApiKeyInput").addEventListener("focus", function() {
+document.getElementById("geminiApiKeyInput").addEventListener("focus", function() {
   if (this.dataset.hasKey === "1") {
     this.value = "";
     this.dataset.hasKey = "0";
@@ -1295,13 +1295,13 @@ document.getElementById("visionApiKeyInput").addEventListener("focus", function(
 
 // 表示/非表示トグル
 document.getElementById("toggleApiKeyVisible").addEventListener("click", () => {
-  const input = document.getElementById("visionApiKeyInput");
+  const input = document.getElementById("geminiApiKeyInput");
   input.type = input.type === "password" ? "text" : "password";
 });
 
 // 保存
 document.getElementById("saveApiKeyBtn").addEventListener("click", () => {
-  const input = document.getElementById("visionApiKeyInput");
+  const input = document.getElementById("geminiApiKeyInput");
   const val   = input.value.trim();
   if (!val || val === "●".repeat(20)) {
     alert("APIキーを入力してください");
