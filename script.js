@@ -378,13 +378,13 @@ const fabOverlay = document.getElementById("fabOverlay");
 let fabOpen = false;
 
 // Vision APIキーはlocalStorageから取得（コードに埋め込まない）
-function getVisionApiKey() {
-  return localStorage.getItem("visionApiKey") || "";
+function getGeminiApiKey() {
+  return localStorage.getItem("geminiApiKey") || "";
 }
 
 // APIキー設定状態に合わせてFABサブメニューのカメラ項目を表示制御
 function applyFabVisibility() {
-  const hasKey = !!getVisionApiKey();
+  const hasKey = !!getGeminiApiKey();
   document.getElementById("fabCameraItem").style.display = hasKey ? "" : "none";
 }
 
@@ -407,7 +407,7 @@ function closeFabMenu() {
 // APIキーなし → 直接手動入力モーダル / あり → サブメニュー展開
 openAddBtn.addEventListener("click", () => {
   if (fabOpen) { closeFabMenu(); return; }
-  if (!getVisionApiKey()) {
+  if (!getGeminiApiKey()) {
     openAddModal();
   } else {
     openFabMenu();
@@ -423,10 +423,10 @@ document.getElementById("fabManualBtn").addEventListener("click", () => {
 });
 
 // ===================================
-// レシート読み取り（Google Cloud Vision API）
+// レシート読み取り（Gemini API）
 // ===================================
 const receiptInput = document.getElementById("receiptInput");
-const scanOverlay    = document.getElementById("scanOverlay");
+const scanOverlay  = document.getElementById("scanOverlay");
 
 document.getElementById("fabCameraBtn").addEventListener("click", () => {
   closeFabMenu();
@@ -439,9 +439,9 @@ receiptInput.addEventListener("change", async e => {
   receiptInput.value = "";
 
   // APIキー未設定チェック
-  const apiKey = getVisionApiKey();
+  const apiKey = getGeminiApiKey();
   if (!apiKey) {
-    alert("Vision APIキーが設定されていません。\n設定 → Vision APIキー から登録してください。");
+    alert("Gemini APIキーが設定されていません。\n設定 → Gemini APIキー から登録してください。");
     return;
   }
 
@@ -449,30 +449,24 @@ receiptInput.addEventListener("change", async e => {
   scanOverlay.classList.remove("hidden");
 
   try {
-    // 画像をBase64に変換
-    const base64 = await fileToBase64(file);
-
-    // Vision APIを呼び出し
-    const result = await callVisionAPI(base64);
-
-    // テキストから商品一覧を抽出
-    const parsed = parseReceipt(result);
+    const base64    = await fileToBase64(file);
+    const mimeType  = file.type || "image/jpeg";
+    const parsed    = await callGeminiReceiptAPI(base64, mimeType, apiKey);
 
     scanOverlay.classList.add("hidden");
 
-    if (parsed.items.length === 0) {
+    if (!parsed || parsed.items.length === 0) {
       alert("商品を読み取れませんでした。手動で入力してください。");
-      openAddModal({ date: parsed.date, category: parsed.category, type: "expense" });
+      openAddModal({ date: parsed?.date, type: "expense" });
       return;
     }
 
-    // 商品数にかかわらず選択UIを表示
     showItemSelector(parsed.items, parsed.date, parsed.category);
 
   } catch (err) {
     scanOverlay.classList.add("hidden");
     console.error(err);
-    alert("エラー詳細:\n" + err.message + "\n\n" + err.stack);
+    alert("読み取りエラー:\n" + err.message);
   }
 });
 
@@ -486,180 +480,69 @@ function fileToBase64(file) {
   });
 }
 
-// Vision API呼び出し
-async function callVisionAPI(base64Image) {
-  const apiKey = getVisionApiKey();
+// Gemini API でレシート画像を解析
+async function callGeminiReceiptAPI(base64Image, mimeType, apiKey) {
+  const today         = new Date().toISOString().slice(0, 10);
+  const expenseCatNames = categories
+    .filter(c => c.type === "expense" || c.type === "both")
+    .map(c => c.name);
+
+  const prompt = `あなたはレシート解析AIです。添付画像のレシートを読み取り、以下のJSON形式のみで回答してください。余分なテキストや\`\`\`は不要です。
+
+{
+  "date": "YYYY-MM-DD形式の購入日（不明な場合は${today}）",
+  "category": "以下のカテゴリから最も適切なもの1つ：${expenseCatNames.join("・")}",
+  "items": [
+    { "title": "商品名（簡潔に）", "amount": 金額の数値（税込・円） }
+  ]
+}
+
+ルール：
+- 合計・小計・税額・ポイント・お釣り・店舗情報は items に含めない
+- 値引きがある場合は該当商品の金額から引いた税込金額を使う
+- 金額は整数（円）で返す
+- 商品名が長い場合は20文字以内に要約する`;
+
   const res = await fetch(
-    `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
     {
-      method: "POST",
+      method:  "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        requests: [{
-          image:    { content: base64Image },
-          features: [{ type: "TEXT_DETECTION", maxResults: 1 }],
+        contents: [{
+          parts: [
+            { text: prompt },
+            { inline_data: { mime_type: mimeType, data: base64Image } },
+          ],
         }],
+        generationConfig: { temperature: 0 },
       }),
     }
   );
-  if (!res.ok) throw new Error(`Vision API error: ${res.status}`);
+
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}));
+    const msg = errBody?.error?.message || res.status;
+    throw new Error(`Gemini API error: ${msg}`);
+  }
+
   const data = await res.json();
-  return data.responses[0]?.fullTextAnnotation?.text || "";
-}
+  let text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
-// テキストからレシートの商品一覧を解析
-function parseReceipt(text) {
-  const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
+  // ```json ... ``` や ``` ... ``` を除去
+  text = text.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
 
-  const skipPattern = /合計|小計|税|お釣|おつり|預り|お預|ポイント|値引|割引|total|subtotal|change|TEL|電話|登録|QUICPay|paypay|交通系|クレジット|お支払|レジ|No\.|領収|公式|検索|通販|オンライン|^\*|^-|登録番号|だいぞう|ハッピー|LINE|パラダイス|スタンプ|楽曲/i;
+  const parsed = JSON.parse(text);
 
-  // ¥金額・\金額 の行かどうか判定（内・外・括弧付きも対応）
-  const isAmountLine = l =>
-    /^[¥￥\\]\s*[\d,]+\s*(?:内|外|込|税抜|税込)?\)?\s*$/.test(l) ||
-    /^[¥￥\\]\s*\d[\d,\s]*\)?\s*$/.test(l);
+  // バリデーション：items が配列でなければ空扱い
+  if (!Array.isArray(parsed.items)) parsed.items = [];
 
-  // 商品名行かどうか判定
-  const isNameLine = l =>
-    !skipPattern.test(l) &&
-    l.length >= 2 &&
-    !/^\d/.test(l) &&                    // 数字始まりを除外
-    !/^[¥￥\\*＊<>(（▼\-]/.test(l) &&    // 記号・値引き始まりを除外
-    !/^\(/.test(l) &&                    // 括弧始まりを除外
-    !/\\?\d+\)/.test(l) &&              // \162) のようなパターンを除外
-    !isAmountLine(l);
+  // 金額が数値でない・範囲外のものを除外
+  parsed.items = parsed.items.filter(item =>
+    typeof item.amount === "number" && item.amount >= 1 && item.amount <= 1000000
+  );
 
-  // --- パターンA: 商品名グループ → 金額グループが連続するレイアウト ---
-  // skipPatternの行を先に除外してから処理（「小計」などがブロックを分断しないよう）
-  // ※値引き行（▼・-始まり）は除外せず残しておく
-  const filtered = lines.filter(l => !skipPattern.test(l));
-  const items = [];
-
-  let i = 0;
-  while (i < filtered.length) {
-    const nameBlock = [];
-    while (i < filtered.length && isNameLine(filtered[i])) {
-      nameBlock.push(filtered[i]);
-      i++;
-    }
-    const amountBlock = [];
-    while (i < filtered.length && isAmountLine(filtered[i])) {
-      const m = filtered[i].match(/(\d[\d,]*)/);
-      if (m) amountBlock.push(parseInt(m[1].replace(/,/g, ""), 10));
-      i++;
-    }
-
-    // 値引きブロック（▼〇〇引き → -198 のペア）を検出して合算
-    let discountTotal = 0;
-    while (i < filtered.length) {
-      const l = filtered[i];
-      // 値引き名行（▼始まり）
-      if (/^▼/.test(l)) { i++; continue; }
-      // 値引き額行（-数字 または ¥-数字）
-      const discountMatch = l.match(/^[-－]\s*(\d[\d,]*)\s*$/) ||
-                            l.match(/^[¥￥]\s*[-－]\s*(\d[\d,]*)\s*$/);
-      if (discountMatch) {
-        discountTotal += parseInt(discountMatch[1].replace(/,/g, ""), 10);
-        i++;
-        continue;
-      }
-      break;
-    }
-
-    if (nameBlock.length > 0 && amountBlock.length > 0) {
-      const useNames = nameBlock.length >= amountBlock.length
-        ? nameBlock.slice(nameBlock.length - amountBlock.length)
-        : nameBlock;
-      const useAmounts = amountBlock.slice(0, useNames.length);
-
-      useNames.forEach((name, idx) => {
-        const cleanName = name.replace(/\s+\d+\s*$/, "").trim();
-        let val = useAmounts[idx];
-        // 最後の商品に値引き分を適用
-        if (idx === useNames.length - 1 && discountTotal > 0) {
-          val = Math.max(0, val - discountTotal);
-        }
-        if (cleanName.length >= 2 && val >= 10 && val <= 100000) {
-          items.push({ title: cleanName, amount: val });
-        }
-      });
-    }
-    if (nameBlock.length === 0 && amountBlock.length === 0) i++;
-  }
-
-  // --- パターンBにフォールバック: 同一行に「商品名 ¥金額」 ---
-  if (items.length === 0) {
-    for (const line of lines) {
-      if (skipPattern.test(line)) continue;
-      const m = line.match(/^(.+?)\s+[¥￥]\s*(\d[\d,]*)\s*(?:外|込)?$/);
-      if (m) {
-        const name = m[1].replace(/\s+\d+\s*$/, "").trim();
-        const val  = parseInt(m[2].replace(/,/g, ""), 10);
-        if (name.length >= 2 && !/^\d+$/.test(name) && val >= 10 && val <= 100000) {
-          items.push({ title: name, amount: val });
-        }
-      }
-    }
-  }
-
-  // ---- 日付を探す ----
-  let date = new Date().toISOString().slice(0, 10);
-  const datePatterns = [
-    /(\d{4})[\/\-年](\d{1,2})[\/\-月](\d{1,2})/,
-    /(\d{2})[\/\-年](\d{1,2})[\/\-月](\d{1,2})/,
-    /(\d{1,2})月(\d{1,2})日/,
-  ];
-  for (const line of lines) {
-    for (const pat of datePatterns) {
-      const m = line.match(pat);
-      if (m) {
-        try {
-          let y = m[1].length === 2 ? "20" + m[1] : m[1];
-          if (pat.source.includes("月")) y = new Date().getFullYear().toString();
-          const mo = String(parseInt(m[2] || m[1])).padStart(2, "0");
-          const d  = String(parseInt(m[3] || m[2])).padStart(2, "0");
-          date = `${y}-${mo}-${d}`;
-        } catch {}
-        break;
-      }
-    }
-    if (date !== new Date().toISOString().slice(0, 10)) break;
-  }
-
-  // ---- カテゴリを推測 ----
-  const shopKeywords = {
-    "食費":   /スーパー|コンビニ|セイコーマート|セブン|ローソン|ファミマ|食品|フード|レストラン|食堂|弁当|惣菜|肉|魚|野菜|果物|パン|スタバ|マック|吉野家|すき家|サイゼ/i,
-    "日用品": /ドラッグ|薬局|ホームセンター|ダイソー|百均|ニトリ|雑貨|文具|日用/i,
-    "交通":   /ガソリン|駐車|バス|電車|タクシー|JR|高速|スタンド/i,
-    "家賃":   /家賃|管理費|光熱|電気|ガス|水道/i,
-  };
-  let category = "その他";
-  for (const [cat, pat] of Object.entries(shopKeywords)) {
-    if (pat.test(text)) { category = cat; break; }
-  }
-
-  // ---- 内税・外税の判別 ----
-  // 「¥〇〇内」「税込」が1行でもあれば内税レシートと判定
-  const hasTaxIn  = lines.some(l => /[¥￥\\]\s*[\d,]+\s*内\s*$/.test(l) || /税込対象額|内税/.test(l));
-  // 「¥〇〇外」が1行でもあれば外税レシートと判定
-  const hasTaxOut = lines.some(l => /[¥￥\\]\s*[\d,]+\s*外\s*$/.test(l) || /税抜対象額|外税/.test(l));
-
-  // 内税のみのレシートはスキップ、それ以外（外税・不明・両方）は税額を追加
-  if (!hasTaxIn || hasTaxOut) {
-    let taxTotal = 0;
-    for (let j = 0; j < lines.length; j++) {
-      const line = lines[j];
-      if (/\d+%税額|消費税額|外税額/.test(line)) {
-        const mInline = line.match(/[¥￥\\]\s*(\d[\d,]*)/);
-        if (mInline) { taxTotal += parseInt(mInline[1].replace(/,/g, ""), 10); continue; }
-        const nextLine = lines[j + 1] || "";
-        const mNext = nextLine.match(/^[¥￥\\]\s*(\d[\d,\s]*)\)?\s*$/);
-        if (mNext) taxTotal += parseInt(mNext[1].replace(/[,\s]/g, ""), 10);
-      }
-    }
-    if (taxTotal > 0) items.push({ title: "外税", amount: taxTotal });
-  }
-
-  return { items, date, category };
+  return parsed;
 }
 
 // 商品選択UIを表示（チェックボックス一括選択・一括保存）
@@ -1385,7 +1268,7 @@ function renderApiKeyView() {
   const input     = document.getElementById("visionApiKeyInput");
   const statusEl  = document.getElementById("apiKeyStatus");
   const deleteBtn = document.getElementById("deleteApiKeyBtn");
-  const saved     = localStorage.getItem("visionApiKey") || "";
+  const saved     = localStorage.getItem("geminiApiKey") || "";
 
   // 保存済みキーがあれば伏せ字で表示（実際の値は入力欄には入れない）
   input.value = saved ? "●".repeat(20) : "";
@@ -1427,7 +1310,7 @@ document.getElementById("saveApiKeyBtn").addEventListener("click", () => {
   if (!val.startsWith("AIza")) {
     if (!confirm("APIキーの形式が正しくない可能性があります（通常 AIza で始まります）。\nこのまま保存しますか？")) return;
   }
-  localStorage.setItem("visionApiKey", val);
+  localStorage.setItem("geminiApiKey", val);
   showToast("APIキーを保存しました");
   renderApiKeyView();
   applyFabVisibility();
@@ -1436,7 +1319,7 @@ document.getElementById("saveApiKeyBtn").addEventListener("click", () => {
 // 削除
 document.getElementById("deleteApiKeyBtn").addEventListener("click", () => {
   if (!confirm("保存済みのAPIキーを削除しますか？\nレシート読み取りが使えなくなります。")) return;
-  localStorage.removeItem("visionApiKey");
+  localStorage.removeItem("geminiApiKey");
   showToast("APIキーを削除しました");
   renderApiKeyView();
   applyFabVisibility();
