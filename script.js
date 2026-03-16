@@ -501,9 +501,7 @@ async function callGeminiReceiptAPI(base64Image, mimeType, apiKey) {
 - 合計・小計・税額・ポイント・お釣り・店舗情報は items に含めない
 - 値引きがある場合は該当商品の金額から引いた税込金額を使う
 - 金額は整数（円）で返す
-- 商品名が長い場合は20文字以内に要約する
-- レシートの商品名がカタカナ略称や短縮表記の場合（例：「LWムチョウセイギュウニュウ」）は、正式な日本語商品名に変換する（例：「無調整牛乳1000ml」）
-- ブランド略称（LW・LF・PB等）は商品名から除いてよい`;
+- 商品名が長い場合は20文字以内に要約する`;
 
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
@@ -1533,9 +1531,9 @@ document.getElementById("nextMonthBtn").addEventListener("click", () => changeMo
   const BACK_THRESHOLD  = 60;  // 離したときにバック確定する最低距離
   const MONTH_THRESHOLD = 50;  // 月切り替えの最低スワイプ距離
 
-  // 現在の画面要素を取得
+  // バックジェスチャーはpageWrapper全体（topBar+コンテンツ）を一緒に動かす
   function getCurrentEl() {
-    return VIEW_CONFIG[viewStack[viewStack.length - 1]].el;
+    return document.getElementById("pageWrapper");
   }
 
   // バック可能かどうか
@@ -1584,13 +1582,20 @@ document.getElementById("nextMonthBtn").addEventListener("click", () => changeMo
       decided = true;
     }
 
-    // バックジェスチャー中：現在画面を指に追随（topBarは固定のまま動かさない）
+    // バックジェスチャー中：現在画面を指に追随
+    // 設定系画面（topBarSettingsが表示中）はtopBarも一緒に動かす
     if (isBackGesture) {
-      const el   = getCurrentEl();
-      const move = Math.max(0, dx); // 左には動かさない
+      const el     = getCurrentEl();
+      const topBar = document.getElementById("topBar");
+      const move   = Math.max(0, dx);
+      const isSettingsBar = !topBarSettings.classList.contains("hidden");
       el.style.transition = "none";
       el.style.transform  = `translateX(${move}px)`;
       el.style.boxShadow  = `-8px 0 20px rgba(0,0,0,${0.2 * (1 - move / window.innerWidth)})`;
+      if (isSettingsBar && topBar) {
+        topBar.style.transition = "none";
+        topBar.style.transform  = `translateX(${move}px)`;
+      }
     }
   }, { passive: true });
 
@@ -1605,28 +1610,47 @@ document.getElementById("nextMonthBtn").addEventListener("click", () => changeMo
 
     // ── バックジェスチャーの確定 ──
     if (isBackGesture) {
-      const el = getCurrentEl();
+      const el     = getCurrentEl();
+      const topBar = document.getElementById("topBar");
+      const isSettingsBar = !topBarSettings.classList.contains("hidden");
+
+      function resetTopBar() {
+        if (isSettingsBar && topBar) {
+          topBar.style.transition = "";
+          topBar.style.transform  = "";
+        }
+      }
 
       if (dx >= BACK_THRESHOLD) {
-        // 十分スワイプ → 画面を右に飛ばしてから画面遷移
-        el.style.transition = "transform 0.25s cubic-bezier(0.4,0,0.2,1)";
+        const trans = "transform 0.25s cubic-bezier(0.4,0,0.2,1)";
+        el.style.transition = trans;
         el.style.transform  = `translateX(${window.innerWidth}px)`;
         el.style.boxShadow  = "none";
+        if (isSettingsBar && topBar) {
+          topBar.style.transition = trans;
+          topBar.style.transform  = `translateX(${window.innerWidth}px)`;
+        }
         setTimeout(() => {
           el.style.transition = "";
           el.style.transform  = "";
           el.style.boxShadow  = "";
+          resetTopBar();
           doGoBack();
         }, 220);
       } else {
-        // 不十分 → 元の位置に戻す
-        el.style.transition = "transform 0.3s cubic-bezier(0.4,0,0.2,1), box-shadow 0.3s";
+        const trans = "transform 0.3s cubic-bezier(0.4,0,0.2,1), box-shadow 0.3s";
+        el.style.transition = trans;
         el.style.transform  = "translateX(0)";
         el.style.boxShadow  = "none";
+        if (isSettingsBar && topBar) {
+          topBar.style.transition = "transform 0.3s cubic-bezier(0.4,0,0.2,1)";
+          topBar.style.transform  = "translateX(0)";
+        }
         setTimeout(() => {
           el.style.transition = "";
           el.style.transform  = "";
           el.style.boxShadow  = "";
+          resetTopBar();
         }, 300);
       }
       isBackGesture = false;
