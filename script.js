@@ -212,7 +212,9 @@ const VIEW_CONFIG = {
   theme:       { el: document.getElementById("themeView"),       title: "テーマカラー",   showTabs: false },
   period:      { el: document.getElementById("periodView"),      title: "集計期間",       showTabs: false },
   budget:      { el: document.getElementById("budgetView"),      title: "予算設定",       showTabs: false },
-  apiKey:      { el: document.getElementById("apiKeyView"),      title: "Gemini APIキー", showTabs: false },
+  apiKey:      { el: document.getElementById("apiKeyView"),      title: "Gemini APIキー",   showTabs: false },
+  reset:       { el: document.getElementById("resetView"),       title: "データのリセット", showTabs: false },
+  reset:       { el: document.getElementById("resetView"),       title: "データをリセット", showTabs: false },
   visibility:  { el: document.getElementById("visibilityView"),  title: "表示 / 非表示", showTabs: false },
 };
 
@@ -272,6 +274,8 @@ function showCurrentView() {
   if (name === "visibility")  renderVisibilityView();
   if (name === "budget")      renderBudgetView();
   if (name === "apiKey")      renderApiKeyView();
+  if (name === "reset")       renderResetView();
+  if (name === "reset")       renderResetView();
 
   applyTabVisibility();
   document.getElementById("homeTab").classList.toggle("active",        name === "home");
@@ -291,7 +295,9 @@ document.getElementById("goTheme").addEventListener("click",      () => navigate
 document.getElementById("goPeriod").addEventListener("click",     () => navigate("period"));
 document.getElementById("goVisibility").addEventListener("click", () => navigate("visibility"));
 document.getElementById("goBudget").addEventListener("click",     () => navigate("budget"));
-document.getElementById("goApiKey").addEventListener("click",     () => navigate("apiKey"));
+document.getElementById("goApiKey").addEventListener("click",  () => navigate("apiKey"));
+document.getElementById("goReset").addEventListener("click",   () => navigate("reset"));
+document.getElementById("goReset").addEventListener("click",   () => navigate("reset"));
 
 function switchToTab(name) {
   viewStack.forEach(v => VIEW_CONFIG[v].el.classList.remove("active"));
@@ -1262,6 +1268,7 @@ function renderBudgetView() {
 }
 
 // ===================================
+// ===================================
 // Gemini APIキー設定
 // ===================================
 function renderApiKeyView() {
@@ -1323,6 +1330,143 @@ document.getElementById("deleteApiKeyBtn").addEventListener("click", () => {
   showToast("APIキーを削除しました");
   renderApiKeyView();
   applyFabVisibility();
+});
+
+// ===================================
+// リセット機能
+// ===================================
+function renderResetView() {
+  // 画面を開くたびに全スイッチをオフにリセット
+  ["resetAll", "resetTransactions", "resetAccounts", "resetBudgets"].forEach(id => {
+    document.getElementById(id).checked = false;
+  });
+  updateResetBtn();
+}
+
+function updateResetBtn() {
+  const anyOn = ["resetTransactions", "resetAccounts", "resetBudgets"]
+    .some(id => document.getElementById(id).checked);
+  const btn = document.getElementById("execResetBtn");
+  btn.disabled = !anyOn;
+}
+
+// 「すべて」スイッチ → 個別スイッチを全部連動
+document.getElementById("resetAll").addEventListener("change", function() {
+  ["resetTransactions", "resetAccounts", "resetBudgets"].forEach(id => {
+    document.getElementById(id).checked = this.checked;
+  });
+  updateResetBtn();
+});
+
+// 個別スイッチ → 「すべて」スイッチの状態を更新
+["resetTransactions", "resetAccounts", "resetBudgets"].forEach(id => {
+  document.getElementById(id).addEventListener("change", () => {
+    const allOn = ["resetTransactions", "resetAccounts", "resetBudgets"]
+      .every(i => document.getElementById(i).checked);
+    document.getElementById("resetAll").checked = allOn;
+    updateResetBtn();
+  });
+});
+
+// リセット実行
+document.getElementById("execResetBtn").addEventListener("click", () => {
+  const doRecords  = document.getElementById("resetTransactions").checked;
+  const doAccounts = document.getElementById("resetAccounts").checked;
+  const doBudgets  = document.getElementById("resetBudgets").checked;
+
+  const targets = [];
+  if (doRecords)  targets.push("出入金");
+  if (doAccounts) targets.push("口座");
+  if (doBudgets)  targets.push("予算");
+
+  if (!confirm(`以下のデータを完全に削除します。\n\n・${targets.join("\n・")}\n\nこの操作は取り消せません。本当に実行しますか？`)) return;
+
+  if (doRecords) {
+    records = [];
+    saveRecords();
+  }
+  if (doAccounts) {
+    accounts = [];
+    saveAccounts();
+  }
+  if (doBudgets) {
+    budgets = {};
+    saveBudgets();
+  }
+
+  showToast(`${targets.join("・")}をリセットしました`);
+  renderResetView();
+  // 関連画面を再描画
+  render();
+  renderHome();
+});
+
+// ===================================
+// データのリセット
+// ===================================
+const resetSubIds = ["resetRecords", "resetAccounts", "resetBudgets"];
+
+function renderResetView() {
+  // 画面を開くたびに全スイッチをオフにリセット
+  document.getElementById("resetAll").checked     = false;
+  resetSubIds.forEach(id => {
+    document.getElementById(id).checked = false;
+  });
+  updateResetBtn();
+}
+
+function updateResetBtn() {
+  const anyOn = resetSubIds.some(id => document.getElementById(id).checked);
+  document.getElementById("executeResetBtn").disabled = !anyOn;
+}
+
+// 「すべて」スイッチ → 全サブをオン/オフ連動
+document.getElementById("resetAll").addEventListener("change", function() {
+  resetSubIds.forEach(id => {
+    document.getElementById(id).checked = this.checked;
+  });
+  updateResetBtn();
+});
+
+// サブスイッチ → 全部オンなら「すべて」もオン、1つでもオフなら「すべて」オフ
+resetSubIds.forEach(id => {
+  document.getElementById(id).addEventListener("change", () => {
+    const allOn = resetSubIds.every(id => document.getElementById(id).checked);
+    document.getElementById("resetAll").checked = allOn;
+    updateResetBtn();
+  });
+});
+
+// リセット実行
+document.getElementById("executeResetBtn").addEventListener("click", () => {
+  const targets = [];
+  if (document.getElementById("resetRecords").checked)  targets.push("出入金");
+  if (document.getElementById("resetAccounts").checked) targets.push("口座");
+  if (document.getElementById("resetBudgets").checked)  targets.push("予算");
+
+  if (!confirm(`以下のデータを完全に削除します。\n\n・${targets.join("\n・")}\n\nこの操作は元に戻せません。実行しますか？`)) return;
+
+  if (document.getElementById("resetRecords").checked) {
+    records = [];
+    saveRecords();
+  }
+  if (document.getElementById("resetAccounts").checked) {
+    accounts = [];
+    saveAccounts();
+  }
+  if (document.getElementById("resetBudgets").checked) {
+    budgets = {};
+    saveBudgets();
+  }
+
+  // スイッチを全部オフに戻す
+  document.getElementById("resetAll").checked = false;
+  resetSubIds.forEach(id => { document.getElementById(id).checked = false; });
+  updateResetBtn();
+
+  render();
+  renderHome();
+  showToast(`${targets.join("・")}をリセットしました`);
 });
 
 // ===================================

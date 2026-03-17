@@ -176,6 +176,26 @@
         <span class="settings-menu-label">Gemini APIキー</span>
         <span class="settings-menu-arrow">›</span>
       </li>
+      <li class="settings-menu-item" id="goReset">
+        <span class="settings-menu-icon">🗑️</span>
+        <span class="settings-menu-label">データのリセット</span>
+        <span class="settings-menu-arrow">›</span>
+      </li>
+      <li class="settings-menu-item" id="goReset">
+        <span class="settings-menu-icon">🗑️</span>
+        <span class="settings-menu-label">データのリセット</span>
+        <span class="settings-menu-arrow">›</span>
+      </li>
+      <li class="settings-menu-item" id="goReset">
+        <span class="settings-menu-icon">🗑️</span>
+        <span class="settings-menu-label">データをリセット</span>
+        <span class="settings-menu-arrow">›</span>
+      </li>
+      <li class="settings-menu-item" id="goReset">
+        <span class="settings-menu-icon">🗑️</span>
+        <span class="settings-menu-label">データをリセット</span>
+        <span class="settings-menu-arrow">›</span>
+      </li>
     </ul>
   </div>
 
@@ -247,6 +267,192 @@
       <p class="theme-preview-label">現在のカラー</p>
       <div id="themePreviewBar"></div>
     </div>
+  </div>
+
+  <!-- リセット -->
+  <div id="resetView" class="view">
+    <div class="reset-card">
+      <p class="reset-desc">削除したいデータをオンにして「リセットを実行」を押してください。<br>この操作は取り消せません。</p>
+      <ul class="reset-list">
+        <li class="reset-item">
+          <span class="reset-item-icon">✅</span>
+          <span class="reset-item-label">すべて</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="resetAll">
+            <span class="toggle-slider"></span>
+          </label>
+        </li>
+        <div class="reset-divider"></div>
+        <li class="reset-item reset-item-sub">
+          <span class="reset-item-icon">💴</span>
+          <span class="reset-item-label">出入金</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="resetRecords">
+            <span class="toggle-slider"></span>
+          </label>
+        </li>
+        <li class="reset-item reset-item-sub">
+          <span class="reset-item-icon">🏦</span>
+          <span class="reset-item-label">口座</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="resetAccounts">
+            <span class="toggle-slider"></span>
+          </label>
+        </li>
+        <li class="reset-item reset-item-sub">
+          <span class="reset-item-icon">💰</span>
+          <span class="reset-item-label">予算</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="resetBudgets">
+            <span class="toggle-slider"></span>
+          </label>
+        </li>
+      </ul>
+      <button class="btn-danger" id="executeResetBtn" disabled>リセットを実行</button>
+    </div>
+  </div>
+
+  <!-- データリセット -->
+  <div id="resetView" class="view">
+    <div class="reset-card">
+      <p class="reset-desc">リセットする項目をオンにしてから「リセット実行」を押してください。<br>この操作は取り消せません。</p>
+      <ul class="reset-list">
+        <li class="reset-item">
+          <div class="reset-item-info">
+            <span class="reset-item-icon">📋</span>
+            <span class="reset-item-label">すべて</span>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="resetAll">
+            <span class="toggle-slider"></span>
+          </label>
+        </li>
+        <li class="reset-item reset-sub-item">
+          <div class="reset-item-info">
+            <span class="reset-item-icon">💴</span>
+            <span class="reset-item-label">出入金</span>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="resetTransactions">
+            <span class="toggle-slider"></span>
+          </label>
+        </li>
+        <li class="reset-item reset-sub-item">
+          <div class="reset-item-info">
+            <span class="reset-item-icon">🏦</span>
+            <span class="reset-item-label">口座</span>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="resetAccounts">
+            <span class="toggle-slider"></span>
+          </label>
+        </li>
+        <li class="reset-item reset-sub-item">
+          <div class="reset-item-info">
+            <span class="reset-item-icon">💰</span>
+            <span class="reset-item-label">予算</span>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="resetBudgets">
+            <span class="toggle-slider"></span>
+          </label>
+        </li>
+      </ul>
+      <button class="btn-danger" id="executeResetBtn">リセット実行</button>
+    </div>
+  </div>
+
+  <!-- データのリセット -->
+  <div id="resetView" class="view">
+    <div class="reset-card">
+      <p class="reset-desc">リセットしたい項目をオンにしてから「リセット実行」を押してください。<br>この操作は元に戻せません。</p>
+
+      <ul class="reset-list">
+        <li class="reset-item">
+          <span class="reset-item-icon">🔄</span>
+          <span class="reset-item-label">すべて</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="resetAll">
+            <span class="toggle-slider"></span>
+          </label>
+        </li>
+        <div class="reset-divider"></div>
+        <li class="reset-item reset-item-sub">
+          <span class="reset-item-icon">💴</span>
+          <span class="reset-item-label">出入金</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="resetTransactions">
+            <span class="toggle-slider"></span>
+          </label>
+        </li>
+        <li class="reset-item reset-item-sub">
+          <span class="reset-item-icon">🏦</span>
+          <span class="reset-item-label">口座</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="resetAccounts">
+            <span class="toggle-slider"></span>
+          </label>
+        </li>
+        <li class="reset-item reset-item-sub">
+          <span class="reset-item-icon">💰</span>
+          <span class="reset-item-label">予算</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="resetBudgets">
+            <span class="toggle-slider"></span>
+          </label>
+        </li>
+      </ul>
+
+      <button class="btn-danger reset-exec-btn" id="execResetBtn" disabled>リセット実行</button>
+    </div>
+  </div>
+
+  <!-- データのリセット -->
+  <div id="resetView" class="view">
+    <p class="reset-desc">リセットする項目をオンにして「リセット実行」を押してください。<br>削除したデータは元に戻せません。</p>
+    <ul class="reset-list">
+      <li class="reset-item">
+        <div class="reset-item-info">
+          <span class="reset-item-icon">⚡</span>
+          <span class="reset-item-label">すべて</span>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="resetAll">
+          <span class="toggle-slider"></span>
+        </label>
+      </li>
+      <li class="reset-item reset-sub-item">
+        <div class="reset-item-info">
+          <span class="reset-item-icon">💴</span>
+          <span class="reset-item-label">出入金</span>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="resetRecords">
+          <span class="toggle-slider"></span>
+        </label>
+      </li>
+      <li class="reset-item reset-sub-item">
+        <div class="reset-item-info">
+          <span class="reset-item-icon">🏦</span>
+          <span class="reset-item-label">口座</span>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="resetAccounts">
+          <span class="toggle-slider"></span>
+        </label>
+      </li>
+      <li class="reset-item reset-sub-item">
+        <div class="reset-item-info">
+          <span class="reset-item-icon">💰</span>
+          <span class="reset-item-label">予算</span>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="resetBudgets">
+          <span class="toggle-slider"></span>
+        </label>
+      </li>
+    </ul>
+    <button class="btn-danger" id="executeResetBtn" disabled>リセット実行</button>
   </div>
 
   <!-- Gemini APIキー設定 -->

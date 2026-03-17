@@ -1705,3 +1705,242 @@ body {
   text-decoration: none;
 }
 .api-key-help-list a:active { opacity: 0.7; }
+
+/* ===================================
+   リセット画面
+=================================== */
+.reset-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 20px 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  margin-top: 4px;
+}
+
+.reset-desc {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.7;
+  margin: 0 0 16px;
+}
+
+.reset-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.reset-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 14px;
+  background: #fff;
+}
+.reset-item + .reset-item {
+  border-top: 1px solid #f0f0f0;
+}
+
+/* 「すべて」行は少し強調 */
+.reset-list > .reset-item:first-child {
+  background: #fafafa;
+}
+
+.reset-item-sub {
+  padding-left: 20px;
+}
+
+.reset-item-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  width: 28px;
+  text-align: center;
+}
+
+.reset-item-label {
+  font-size: 15px;
+  font-weight: bold;
+  color: #222;
+  flex: 1;
+}
+
+.reset-divider {
+  height: 4px;
+  background: #f0f0f0;
+  border-top: 1px solid #e8e8e8;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+#executeResetBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ===================================
+   データリセット画面
+=================================== */
+.reset-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 20px 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  margin-top: 4px;
+}
+
+.reset-desc {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.7;
+  margin: 0 0 16px;
+}
+
+.reset-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px;
+}
+
+.reset-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+.reset-item:last-child { border-bottom: none; }
+
+/* 「すべて」行を少し強調 */
+.reset-item:first-child .reset-item-label {
+  font-weight: bold;
+  color: #222;
+}
+
+/* サブ項目は少しインデント */
+.reset-sub-item {
+  padding-left: 12px;
+}
+
+.reset-item-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.reset-item-icon  { font-size: 20px; }
+.reset-item-label { font-size: 15px; color: #333; }
+
+/* ===================================
+   データリセット画面
+=================================== */
+.reset-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 20px 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  margin-top: 4px;
+}
+
+.reset-desc {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.7;
+  margin: 0 0 20px;
+}
+
+.reset-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.reset-item {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  padding: 16px 14px;
+  gap: 12px;
+}
+.reset-item + .reset-item {
+  border-top: 1px solid #f0f0f0;
+}
+
+/* サブ項目は少し右にインデント */
+.reset-item-sub {
+  padding-left: 20px;
+  background: #fafafa;
+}
+
+.reset-item-icon  { font-size: 20px; flex-shrink: 0; }
+.reset-item-label { font-size: 15px; font-weight: bold; color: #222; flex: 1; }
+
+.reset-divider {
+  height: 1px;
+  background: #e0e0e0;
+  margin: 0;
+}
+
+.reset-exec-btn {
+  margin-top: 0;
+}
+
+.reset-exec-btn:disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+/* ===================================
+   データのリセット画面
+=================================== */
+.reset-desc {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.7;
+  margin: 0 0 16px;
+}
+
+.reset-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px;
+}
+
+.reset-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  border-radius: 12px;
+  margin-bottom: 10px;
+  padding: 16px 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+}
+
+/* サブ項目は少し左にインデント */
+.reset-sub-item {
+  margin-left: 16px;
+  border-left: 3px solid #eee;
+  border-radius: 0 12px 12px 0;
+}
+
+.reset-item-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.reset-item-icon  { font-size: 20px; }
+.reset-item-label { font-size: 15px; font-weight: bold; color: #222; }
+
+#executeResetBtn {
+  width: 100%;
+}
+#executeResetBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
