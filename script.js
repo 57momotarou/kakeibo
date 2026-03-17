@@ -214,7 +214,6 @@ const VIEW_CONFIG = {
   budget:      { el: document.getElementById("budgetView"),      title: "予算設定",       showTabs: false },
   apiKey:      { el: document.getElementById("apiKeyView"),      title: "Gemini APIキー",   showTabs: false },
   reset:       { el: document.getElementById("resetView"),       title: "データのリセット", showTabs: false },
-  reset:       { el: document.getElementById("resetView"),       title: "データをリセット", showTabs: false },
   visibility:  { el: document.getElementById("visibilityView"),  title: "表示 / 非表示", showTabs: false },
 };
 
@@ -1399,74 +1398,6 @@ document.getElementById("execResetBtn").addEventListener("click", () => {
   // 関連画面を再描画
   render();
   renderHome();
-});
-
-// ===================================
-// データのリセット
-// ===================================
-const resetSubIds = ["resetRecords", "resetAccounts", "resetBudgets"];
-
-function renderResetView() {
-  // 画面を開くたびに全スイッチをオフにリセット
-  document.getElementById("resetAll").checked     = false;
-  resetSubIds.forEach(id => {
-    document.getElementById(id).checked = false;
-  });
-  updateResetBtn();
-}
-
-function updateResetBtn() {
-  const anyOn = resetSubIds.some(id => document.getElementById(id).checked);
-  document.getElementById("executeResetBtn").disabled = !anyOn;
-}
-
-// 「すべて」スイッチ → 全サブをオン/オフ連動
-document.getElementById("resetAll").addEventListener("change", function() {
-  resetSubIds.forEach(id => {
-    document.getElementById(id).checked = this.checked;
-  });
-  updateResetBtn();
-});
-
-// サブスイッチ → 全部オンなら「すべて」もオン、1つでもオフなら「すべて」オフ
-resetSubIds.forEach(id => {
-  document.getElementById(id).addEventListener("change", () => {
-    const allOn = resetSubIds.every(id => document.getElementById(id).checked);
-    document.getElementById("resetAll").checked = allOn;
-    updateResetBtn();
-  });
-});
-
-// リセット実行
-document.getElementById("executeResetBtn").addEventListener("click", () => {
-  const targets = [];
-  if (document.getElementById("resetRecords").checked)  targets.push("出入金");
-  if (document.getElementById("resetAccounts").checked) targets.push("口座");
-  if (document.getElementById("resetBudgets").checked)  targets.push("予算");
-
-  if (!confirm(`以下のデータを完全に削除します。\n\n・${targets.join("\n・")}\n\nこの操作は元に戻せません。実行しますか？`)) return;
-
-  if (document.getElementById("resetRecords").checked) {
-    records = [];
-    saveRecords();
-  }
-  if (document.getElementById("resetAccounts").checked) {
-    accounts = [];
-    saveAccounts();
-  }
-  if (document.getElementById("resetBudgets").checked) {
-    budgets = {};
-    saveBudgets();
-  }
-
-  // スイッチを全部オフに戻す
-  document.getElementById("resetAll").checked = false;
-  resetSubIds.forEach(id => { document.getElementById(id).checked = false; });
-  updateResetBtn();
-
-  render();
-  renderHome();
-  showToast(`${targets.join("・")}をリセットしました`);
 });
 
 // ===================================
