@@ -506,7 +506,9 @@ async function callGeminiReceiptAPI(base64Image, mimeType, apiKey) {
 - 合計・小計・税額・ポイント・お釣り・店舗情報は items に含めない
 - 値引きがある場合は該当商品の金額から引いた税込金額を使う
 - 金額は整数（円）で返す
-- 商品名が長い場合は20文字以内に要約する`;
+- 商品名が長い場合は20文字以内に要約する
+- レシートの商品名がカタカナ略称や短縮表記の場合（例：「LWムチョウセイギュウニュウ」）は、正式な日本語商品名に変換する（例：「無調整牛乳1000ml」）
+- ブランド略称（LW・LF・PB等）は商品名から除いてよい`;
 
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
