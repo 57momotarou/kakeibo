@@ -543,7 +543,10 @@ ul { list-style: none; padding: 0; margin: 0; }
 =================================== */
 .view { display: none; }
 .view.active {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow-y: auto;
   padding-left: 12px;
   padding-right: 12px;
   padding-bottom: 16px;
@@ -1291,8 +1294,8 @@ ul { list-style: none; padding: 0; margin: 0; }
 =================================== */
 #homeView,
 #transactionView {
-  margin-left: -12px;
-  margin-right: -12px;
+  padding-left: 0;
+  padding-right: 0;
 }
 
 /* ===================================

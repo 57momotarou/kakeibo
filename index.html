@@ -176,24 +176,10 @@
         <span class="settings-menu-label">Gemini APIキー</span>
         <span class="settings-menu-arrow">›</span>
       </li>
+    
       <li class="settings-menu-item" id="goReset">
         <span class="settings-menu-icon">🗑️</span>
         <span class="settings-menu-label">データのリセット</span>
-        <span class="settings-menu-arrow">›</span>
-      </li>
-      <li class="settings-menu-item" id="goReset">
-        <span class="settings-menu-icon">🗑️</span>
-        <span class="settings-menu-label">データのリセット</span>
-        <span class="settings-menu-arrow">›</span>
-      </li>
-      <li class="settings-menu-item" id="goReset">
-        <span class="settings-menu-icon">🗑️</span>
-        <span class="settings-menu-label">データをリセット</span>
-        <span class="settings-menu-arrow">›</span>
-      </li>
-      <li class="settings-menu-item" id="goReset">
-        <span class="settings-menu-icon">🗑️</span>
-        <span class="settings-menu-label">データをリセット</span>
         <span class="settings-menu-arrow">›</span>
       </li>
     </ul>
@@ -270,97 +256,44 @@
   </div>
 
   <!-- リセット -->
-  <div id="resetView" class="view">
-    <div class="reset-card">
-      <p class="reset-desc">削除したいデータをオンにして「リセットを実行」を押してください。<br>この操作は取り消せません。</p>
-      <ul class="reset-list">
-        <li class="reset-item">
-          <span class="reset-item-icon">✅</span>
-          <span class="reset-item-label">すべて</span>
-          <label class="toggle-switch">
-            <input type="checkbox" id="resetAll">
-            <span class="toggle-slider"></span>
-          </label>
-        </li>
-        <div class="reset-divider"></div>
-        <li class="reset-item reset-item-sub">
-          <span class="reset-item-icon">💴</span>
-          <span class="reset-item-label">出入金</span>
-          <label class="toggle-switch">
-            <input type="checkbox" id="resetRecords">
-            <span class="toggle-slider"></span>
-          </label>
-        </li>
-        <li class="reset-item reset-item-sub">
-          <span class="reset-item-icon">🏦</span>
-          <span class="reset-item-label">口座</span>
-          <label class="toggle-switch">
-            <input type="checkbox" id="resetAccounts">
-            <span class="toggle-slider"></span>
-          </label>
-        </li>
-        <li class="reset-item reset-item-sub">
-          <span class="reset-item-icon">💰</span>
-          <span class="reset-item-label">予算</span>
-          <label class="toggle-switch">
-            <input type="checkbox" id="resetBudgets">
-            <span class="toggle-slider"></span>
-          </label>
-        </li>
-      </ul>
-      <button class="btn-danger" id="executeResetBtn" disabled>リセットを実行</button>
+  
+
+  <!-- データリセット -->
+  
+
+  <!-- データのリセット -->
+  
+
+  <!-- データのリセット -->
+  
+
+  <!-- Gemini APIキー設定 -->
+  <div id="apiKeyView" class="view">
+    <div class="api-key-card">
+      <p class="api-key-desc">
+        レシート読み取りに使用する Google Gemini API のキーを設定します。<br>
+        キーはこの端末のみに保存され、外部に送信されることはありません。
+      </p>
+      <label class="field-label">APIキー</label>
+      <div class="api-key-input-wrap">
+        <input type="password" id="geminiApiKeyInput" placeholder="AIza..." autocomplete="off">
+        <button class="api-key-toggle" id="toggleApiKeyVisible" type="button">👁</button>
+      </div>
+      <button class="btn-primary" id="saveApiKeyBtn">保存する</button>
+      <button class="btn-danger" id="deleteApiKeyBtn">キーを削除する</button>
+      <div class="api-key-status" id="apiKeyStatus"></div>
+      <div class="api-key-help">
+        <p class="api-key-help-title">🔗 APIキーの取得方法</p>
+        <ol class="api-key-help-list">
+          <li><a href="https://aistudio.google.com/" target="_blank">Google AI Studio</a> にアクセス（Googleアカウントでログイン）</li>
+          <li>左メニューの「Get API key」→「APIキーを作成」</li>
+          <li>作成したキー（AIza...）をコピー</li>
+          <li>ここに貼り付けて保存</li>
+        </ol>
+      </div>
     </div>
   </div>
 
-  <!-- データリセット -->
-  <div id="resetView" class="view">
-    <div class="reset-card">
-      <p class="reset-desc">リセットする項目をオンにしてから「リセット実行」を押してください。<br>この操作は取り消せません。</p>
-      <ul class="reset-list">
-        <li class="reset-item">
-          <div class="reset-item-info">
-            <span class="reset-item-icon">📋</span>
-            <span class="reset-item-label">すべて</span>
-          </div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="resetAll">
-            <span class="toggle-slider"></span>
-          </label>
-        </li>
-        <li class="reset-item reset-sub-item">
-          <div class="reset-item-info">
-            <span class="reset-item-icon">💴</span>
-            <span class="reset-item-label">出入金</span>
-          </div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="resetTransactions">
-            <span class="toggle-slider"></span>
-          </label>
-        </li>
-        <li class="reset-item reset-sub-item">
-          <div class="reset-item-info">
-            <span class="reset-item-icon">🏦</span>
-            <span class="reset-item-label">口座</span>
-          </div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="resetAccounts">
-            <span class="toggle-slider"></span>
-          </label>
-        </li>
-        <li class="reset-item reset-sub-item">
-          <div class="reset-item-info">
-            <span class="reset-item-icon">💰</span>
-            <span class="reset-item-label">予算</span>
-          </div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="resetBudgets">
-            <span class="toggle-slider"></span>
-          </label>
-        </li>
-      </ul>
-      <button class="btn-danger" id="executeResetBtn">リセット実行</button>
-    </div>
-  </div>
 
   <!-- データのリセット -->
   <div id="resetView" class="view">
@@ -406,82 +339,6 @@
       <button class="btn-danger reset-exec-btn" id="execResetBtn" disabled>リセット実行</button>
     </div>
   </div>
-
-  <!-- データのリセット -->
-  <div id="resetView" class="view">
-    <p class="reset-desc">リセットする項目をオンにして「リセット実行」を押してください。<br>削除したデータは元に戻せません。</p>
-    <ul class="reset-list">
-      <li class="reset-item">
-        <div class="reset-item-info">
-          <span class="reset-item-icon">⚡</span>
-          <span class="reset-item-label">すべて</span>
-        </div>
-        <label class="toggle-switch">
-          <input type="checkbox" id="resetAll">
-          <span class="toggle-slider"></span>
-        </label>
-      </li>
-      <li class="reset-item reset-sub-item">
-        <div class="reset-item-info">
-          <span class="reset-item-icon">💴</span>
-          <span class="reset-item-label">出入金</span>
-        </div>
-        <label class="toggle-switch">
-          <input type="checkbox" id="resetRecords">
-          <span class="toggle-slider"></span>
-        </label>
-      </li>
-      <li class="reset-item reset-sub-item">
-        <div class="reset-item-info">
-          <span class="reset-item-icon">🏦</span>
-          <span class="reset-item-label">口座</span>
-        </div>
-        <label class="toggle-switch">
-          <input type="checkbox" id="resetAccounts">
-          <span class="toggle-slider"></span>
-        </label>
-      </li>
-      <li class="reset-item reset-sub-item">
-        <div class="reset-item-info">
-          <span class="reset-item-icon">💰</span>
-          <span class="reset-item-label">予算</span>
-        </div>
-        <label class="toggle-switch">
-          <input type="checkbox" id="resetBudgets">
-          <span class="toggle-slider"></span>
-        </label>
-      </li>
-    </ul>
-    <button class="btn-danger" id="executeResetBtn" disabled>リセット実行</button>
-  </div>
-
-  <!-- Gemini APIキー設定 -->
-  <div id="apiKeyView" class="view">
-    <div class="api-key-card">
-      <p class="api-key-desc">
-        レシート読み取りに使用する Google Gemini API のキーを設定します。<br>
-        キーはこの端末のみに保存され、外部に送信されることはありません。
-      </p>
-      <label class="field-label">APIキー</label>
-      <div class="api-key-input-wrap">
-        <input type="password" id="geminiApiKeyInput" placeholder="AIza..." autocomplete="off">
-        <button class="api-key-toggle" id="toggleApiKeyVisible" type="button">👁</button>
-      </div>
-      <button class="btn-primary" id="saveApiKeyBtn">保存する</button>
-      <button class="btn-danger" id="deleteApiKeyBtn">キーを削除する</button>
-      <div class="api-key-status" id="apiKeyStatus"></div>
-      <div class="api-key-help">
-        <p class="api-key-help-title">🔗 APIキーの取得方法</p>
-        <ol class="api-key-help-list">
-          <li><a href="https://aistudio.google.com/" target="_blank">Google AI Studio</a> にアクセス（Googleアカウントでログイン）</li>
-          <li>左メニューの「Get API key」→「APIキーを作成」</li>
-          <li>作成したキー（AIza...）をコピー</li>
-          <li>ここに貼り付けて保存</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-
   <!-- グラフ -->
   <div id="graphView" class="view">
     <input type="month" id="graphMonthSelector" style="display:none">
