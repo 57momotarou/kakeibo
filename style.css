@@ -34,12 +34,10 @@
    リセット・ベース
 =================================== */
 * { box-sizing: border-box; }
-html, body {
-  height: 100%;
-}
+html, body { height: 100%; }
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif;
-  background: var(--theme); /* ステータスバー上の色をテーマカラーに */
+  background: var(--theme);
   overflow-x: hidden;
   overflow-y: auto;
 }
@@ -51,7 +49,6 @@ body {
   max-width: 430px;
   margin: 0 auto;
   background: #f5f5f5;
-  /* overflow-x:hidden はstickyの幅計算を狂わせるので削除 */
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
@@ -70,8 +67,6 @@ body {
   justify-content: center;
   padding: 0;
   z-index: 100;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-  transition: background 0.3s;
   flex-shrink: 0;
 }
 .top-bar-title {
@@ -130,7 +125,7 @@ body {
   max-width: 430px;
   margin: 0 auto;
   background: #fff;
-  border-radius: 20px 20px 0 0;
+  border-radius: 16px 16px 0 0;
   z-index: 300;
   padding: 0 0 32px;
   transform: translateY(100%);
@@ -208,7 +203,7 @@ body {
   height: 44px !important;
   width: auto !important;
   border: 2px solid #ddd;
-  border-radius: 10px;
+  border-radius: 8px;
   background: #fafafa;
   font-size: 15px;
   font-weight: bold;
@@ -237,14 +232,8 @@ body {
   gap: 8px;
   margin: 2px 0;
 }
-.cat-select-parent {
-  flex: 1.2;
-  min-width: 0;
-}
-.cat-select-child {
-  flex: 1;
-  min-width: 0;
-}
+.cat-select-parent { flex: 1.2; min-width: 0; }
+.cat-select-child  { flex: 1;   min-width: 0; }
 
 /* ===================================
    フォーム共通
@@ -258,15 +247,14 @@ body {
 input, select {
   width: 100%;
   height: 44px;
-  font-size: 16px; /* iOSズーム防止：16px未満だとフォーカス時にズームする */
+  font-size: 16px;
   padding: 8px 10px;
-  border: 1px solid #ddd;
+  border: 1px solid #e0e0e0;
   border-radius: 8px;
   background: #fafafa;
   margin: 2px 0;
   -webkit-appearance: none;
   appearance: none;
-  /* iOS Safari のズーム完全防止 */
   touch-action: manipulation;
 }
 input:focus, select:focus {
@@ -280,7 +268,7 @@ input:focus, select:focus {
   background: var(--theme);
   color: #fff;
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
   font-size: 16px;
   font-weight: bold;
   cursor: pointer;
@@ -315,13 +303,7 @@ input:focus, select:focus {
 }
 .top-bar-settings.hidden,
 .top-bar-normal.hidden { display: none; }
-
-.top-bar-month-nav {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex: 1;
-}
+.top-bar-month-nav { display: flex; align-items: center; gap: 4px; flex: 1; }
 .top-bar-home-title { flex: 1; text-align: center; }
 .top-bar-spacer     { flex: 1; }
 
@@ -331,21 +313,21 @@ input:focus, select:focus {
 .settings-menu {
   list-style: none;
   padding: 0;
-  margin: 16px 0 0;
+  margin: 0;
+  background: #fff;
+  border-top: 1px solid #e8e8e8;
 }
 .settings-menu-item {
   display: flex;
   align-items: center;
   background: #fff;
-  border-radius: 12px;
-  margin-bottom: 10px;
   padding: 16px 14px;
   cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
   gap: 12px;
+  border-bottom: 1px solid #e8e8e8;
   transition: background 0.12s;
 }
-.settings-menu-item:active { background: #f0f0f0; }
+.settings-menu-item:active { background: #f5f5f5; }
 .settings-menu-icon  { font-size: 22px; flex-shrink: 0; }
 .settings-menu-label { font-size: 15px; font-weight: bold; color: #222; flex: 1; }
 .settings-menu-arrow { font-size: 20px; color: #ccc; flex-shrink: 0; }
@@ -356,52 +338,31 @@ input:focus, select:focus {
 .cat-view-desc {
   font-size: 13px;
   color: #888;
-  margin: 4px 0 10px;
-  padding: 0 4px;
+  margin: 8px 0 0;
+  padding: 8px 4px;
 }
-
 .parent-category-list {
   list-style: none;
   padding: 0;
   margin: 0;
+  background: #fff;
+  border-top: 1px solid #e8e8e8;
 }
-
 .parent-category-item {
   display: flex;
   align-items: center;
   background: #fff;
-  border-radius: 12px;
-  margin-bottom: 8px;
   padding: 15px 14px;
   cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
   gap: 12px;
+  border-bottom: 1px solid #e8e8e8;
   transition: background 0.12s;
 }
-.parent-category-item:active { background: #f0f0f0; }
-
-.parent-cat-icon {
-  font-size: 22px;
-  flex-shrink: 0;
-  width: 28px;
-  text-align: center;
-}
-.parent-cat-name {
-  font-size: 15px;
-  font-weight: bold;
-  color: #222;
-  flex: 1;
-}
-.parent-cat-count {
-  font-size: 12px;
-  color: #aaa;
-  flex-shrink: 0;
-}
-.parent-cat-arrow {
-  font-size: 20px;
-  color: #ccc;
-  flex-shrink: 0;
-}
+.parent-category-item:active { background: #f5f5f5; }
+.parent-cat-icon  { font-size: 22px; flex-shrink: 0; width: 28px; text-align: center; }
+.parent-cat-name  { font-size: 15px; font-weight: bold; color: #222; flex: 1; }
+.parent-cat-count { font-size: 12px; color: #aaa; flex-shrink: 0; }
+.parent-cat-arrow { font-size: 20px; color: #ccc; flex-shrink: 0; }
 
 /* ===================================
    小分類カテゴリリスト
@@ -411,8 +372,6 @@ input:focus, select:focus {
   padding: 0;
   margin: 0;
 }
-
-/* セクションヘッダー（「小分類」＋＋ボタン） */
 .child-cat-section-header {
   display: flex;
   align-items: center;
@@ -420,11 +379,7 @@ input:focus, select:focus {
   padding: 10px 4px 6px;
   margin-bottom: 4px;
 }
-.child-cat-section-title {
-  font-size: 13px;
-  font-weight: bold;
-  color: #888;
-}
+.child-cat-section-title { font-size: 13px; font-weight: bold; color: #888; }
 .child-cat-add-btn {
   width: 32px !important;
   height: 32px !important;
@@ -440,30 +395,24 @@ input:focus, select:focus {
   justify-content: center;
   padding: 0;
   margin: 0;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
   transition: background 0.15s;
 }
 .child-cat-add-btn:active { background: var(--theme-dark); }
-
-/* 空のメッセージ */
 .child-cat-empty {
   font-size: 13px;
   color: #bbb;
   padding: 16px 8px;
   text-align: center;
 }
-
-/* 小分類アイテム */
 .child-category-item {
   display: flex;
   align-items: center;
   background: #fff;
-  border-radius: 10px;
-  margin-bottom: 8px;
+  border-bottom: 1px solid #e8e8e8;
   padding: 14px 14px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
   gap: 12px;
 }
+.child-category-item:first-of-type { border-top: 1px solid #e8e8e8; }
 .child-cat-name {
   flex: 1;
   font-size: 15px;
@@ -474,10 +423,9 @@ input:focus, select:focus {
   transition: background 0.12s;
 }
 .child-cat-name:active { background: #f0f0f0; }
-
 .child-cat-edit-input {
   flex: 1;
-  font-size: 16px !important; /* iOSズーム防止 */
+  font-size: 16px !important;
   height: 36px !important;
   width: auto !important;
   border: 1.5px solid var(--theme) !important;
@@ -487,7 +435,6 @@ input:focus, select:focus {
   margin: 0 !important;
   touch-action: manipulation;
 }
-
 .child-cat-del-btn {
   flex-shrink: 0;
   background: none;
@@ -518,10 +465,10 @@ input:focus, select:focus {
 }
 
 /* 月スワイプアニメーション */
-@keyframes slideOutLeft  { from { transform: translateX(0);     opacity: 1; } to { transform: translateX(-30%); opacity: 0; } }
-@keyframes slideOutRight { from { transform: translateX(0);     opacity: 1; } to { transform: translateX(30%);  opacity: 0; } }
-@keyframes slideInFromRight { from { transform: translateX(30%);  opacity: 0; } to { transform: translateX(0);    opacity: 1; } }
-@keyframes slideInFromLeft  { from { transform: translateX(-30%); opacity: 0; } to { transform: translateX(0);    opacity: 1; } }
+@keyframes slideOutLeft  { from { transform: translateX(0);    opacity: 1; } to { transform: translateX(-30%); opacity: 0; } }
+@keyframes slideOutRight { from { transform: translateX(0);    opacity: 1; } to { transform: translateX(30%);  opacity: 0; } }
+@keyframes slideInFromRight { from { transform: translateX(30%);  opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes slideInFromLeft  { from { transform: translateX(-30%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 .view.slide-out-left  { animation: slideOutLeft    0.16s ease forwards; }
 .view.slide-out-right { animation: slideOutRight   0.16s ease forwards; }
 .view.slide-in-right  { animation: slideInFromRight 0.2s ease forwards; }
@@ -543,14 +490,13 @@ input:focus, select:focus {
   font-size: 28px;
   line-height: 1;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 150;
   padding: 0;
   margin: 0;
-  transition: background 0.2s, transform 0.25s, box-shadow 0.15s;
+  transition: background 0.2s, transform 0.25s;
 }
 .fab-add.fab-open { transform: rotate(45deg); background: var(--theme-dark); }
 .fab-add.hidden   { display: none; }
@@ -585,13 +531,9 @@ input:focus, select:focus {
   transform: translateY(20px) scale(0.8);
   transition: opacity 0.2s, transform 0.2s;
 }
-.fab-menu.open .fab-sub-item {
-  opacity: 1;
-  transform: translateY(0) scale(1);
-  pointer-events: auto;
-}
+.fab-menu.open .fab-sub-item { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
 .fab-menu.open .fab-sub-item:nth-child(1) { transition-delay: 0.05s; }
-.fab-menu.open .fab-sub-item:nth-child(2) { transition-delay: 0.0s; }
+.fab-menu.open .fab-sub-item:nth-child(2) { transition-delay: 0.0s;  }
 .fab-sub-label {
   background: rgba(0,0,0,0.7);
   color: #fff;
@@ -610,13 +552,11 @@ input:focus, select:focus {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
   padding: 0;
   margin: 0;
   flex-shrink: 0;
+  background: #fff;
 }
-.fab-camera { background: #fff; }
-.fab-manual { background: #fff; }
 .fab-sub-btn:active { transform: scale(0.92); }
 
 /* スキャン中 */
@@ -632,7 +572,7 @@ input:focus, select:focus {
 .scan-overlay.hidden { display: none; }
 .scan-box {
   background: #fff;
-  border-radius: 16px;
+  border-radius: 12px;
   padding: 32px 28px;
   text-align: center;
   display: flex;
@@ -665,10 +605,10 @@ input:focus, select:focus {
   bottom: 0;
   height: 60px;
   display: flex;
-  border-top: 1px solid #ddd;
+  border-top: 1px solid #e0e0e0;
   background: #fff;
   z-index: 100;
-  margin-top: auto; /* コンテンツが少なくても画面下部に張り付く */
+  margin-top: auto;
 }
 .tab-bar.hidden { display: none; }
 .tab {
@@ -691,17 +631,18 @@ input:focus, select:focus {
 =================================== */
 #summary {
   display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: 0;
+  margin-bottom: 0;
+  border-bottom: 1px solid #e8e8e8;
 }
 .summary-item {
   flex: 1;
   background: #fff;
-  border-radius: 10px;
-  padding: 10px 6px;
+  padding: 12px 6px;
   text-align: center;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  border-right: 1px solid #e8e8e8;
 }
+.summary-item:last-child { border-right: none; }
 .summary-label { display: block; font-size: 11px; color: #888; margin-bottom: 4px; }
 .summary-value { font-size: 15px; font-weight: bold; }
 .income-item  .summary-value { color: var(--theme); }
@@ -734,8 +675,6 @@ input:focus, select:focus {
   box-sizing: border-box;
 }
 .mf-record-row:active { background: #f5f5f5; }
-
-/* タイトル＋カテゴリラベルを縦積み */
 .mf-row-left {
   flex: 1;
   min-width: 0;
@@ -758,13 +697,7 @@ input:focus, select:focus {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.mf-amount {
-  font-size: 14px;
-  font-weight: bold;
-  flex-shrink: 0;
-  text-align: right;
-  white-space: nowrap;
-}
+.mf-amount { font-size: 14px; font-weight: bold; flex-shrink: 0; text-align: right; white-space: nowrap; }
 .mf-amount-expense { color: #333; }
 .mf-amount-income  { color: var(--theme); }
 
@@ -772,10 +705,7 @@ input:focus, select:focus {
    カレンダー
 =================================== */
 .week-header,
-#calendar {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-}
+#calendar { display: grid; grid-template-columns: repeat(7, 1fr); }
 .week-header div {
   text-align: center;
   font-weight: bold;
@@ -805,18 +735,14 @@ input:focus, select:focus {
   text-align: center;
   padding: 10px 0 8px;
   background: #fff;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid #e8e8e8;
 }
 .cal-header-year-month { font-size: 17px; font-weight: bold; color: #222; line-height: 1.4; }
 .cal-header-range { font-size: 12px; color: #888; margin-top: 2px; }
-.cal-transaction-list {
-  margin-top: 8px;
-  /* calendarView が padding:0 になったのでネガティブマージン不要 */
-}
+.cal-transaction-list { margin-top: 8px; }
 
 /* ===================================
-   ホーム・ビュー / 出入金 / カレンダー / 口座：
-   コンテンツが画面端まで伸びるビューはpadding 0にする
+   ホーム・ビュー / 出入金 / カレンダー / 口座
 =================================== */
 #homeView,
 #transactionView,
@@ -825,8 +751,6 @@ input:focus, select:focus {
   padding-left: 0 !important;
   padding-right: 0 !important;
 }
-
-/* 口座リストには内側のpadding */
 #accountView > ul,
 #accountView > button {
   margin-left: 12px;
@@ -838,10 +762,10 @@ input:focus, select:focus {
 =================================== */
 .home-budget-card {
   background: #fff;
-  border-radius: 14px;
+  border-top: 1px solid #e8e8e8;
+  border-bottom: 1px solid #e8e8e8;
   padding: 16px 16px 10px;
-  margin: 8px 12px 12px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  margin: 0 0 8px;
 }
 .home-budget-header {
   display: flex;
@@ -859,11 +783,11 @@ input:focus, select:focus {
   justify-content: space-between;
   margin-bottom: 5px;
 }
-.home-budget-cat  { font-size: 13px; font-weight: bold; color: #222; }
-.home-budget-amt  { font-size: 13px; font-weight: bold; color: #222; }
+.home-budget-cat   { font-size: 13px; font-weight: bold; color: #222; }
+.home-budget-amt   { font-size: 13px; font-weight: bold; color: #222; }
 .home-budget-limit { font-size: 11px; color: #aaa; font-weight: normal; }
-.home-budget-bar-wrap { height: 7px; background: #eee; border-radius: 4px; overflow: hidden; margin-bottom: 4px; }
-.home-budget-bar   { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+.home-budget-bar-wrap { height: 6px; background: #eee; border-radius: 3px; overflow: hidden; margin-bottom: 4px; }
+.home-budget-bar   { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
 .home-budget-bar.ok   { background: var(--theme); }
 .home-budget-bar.warn { background: #ff9800; }
 .home-budget-bar.over { background: #e53935; }
@@ -877,17 +801,17 @@ input:focus, select:focus {
 =================================== */
 .period-card {
   background: #fff;
-  border-radius: 14px;
+  border-top: 1px solid #e8e8e8;
+  border-bottom: 1px solid #e8e8e8;
   padding: 20px 16px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-  margin-top: 4px;
+  margin-top: 8px;
 }
-.period-desc    { font-size: 13px; color: #666; line-height: 1.7; margin: 0 0 16px; }
+.period-desc { font-size: 13px; color: #666; line-height: 1.7; margin: 0 0 16px; }
 .period-preview {
   margin-top: 14px;
   padding: 12px 14px;
   background: #f5f5f5;
-  border-radius: 10px;
+  border-radius: 8px;
   font-size: 13px;
   color: #444;
   font-weight: bold;
@@ -900,10 +824,10 @@ input:focus, select:focus {
 =================================== */
 .chart-section {
   background: #fff;
-  border-radius: 14px;
+  border-top: 1px solid #e8e8e8;
+  border-bottom: 1px solid #e8e8e8;
   padding: 16px;
-  margin-bottom: 16px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  margin-bottom: 8px;
 }
 .chart-wrap {
   position: relative;
@@ -943,13 +867,11 @@ input:focus, select:focus {
 .legend-pct    { color: #888; font-size: 12px; flex-shrink: 0; }
 .legend-amount { font-weight: bold; color: #333; flex-shrink: 0; text-align: right; min-width: 72px; }
 
-.graph-toggle-wrap { display: flex; justify-content: center; margin: 0 0 14px; }
+.graph-toggle-wrap { display: flex; justify-content: center; margin: 8px 0 0; }
 .graph-toggle {
   display: flex;
-  border-radius: 10px;
-  overflow: hidden;
-  border: 2px solid var(--theme);
-  width: 200px;
+  border-bottom: 2px solid var(--theme);
+  width: 100%;
 }
 .graph-toggle-btn {
   flex: 1;
@@ -958,14 +880,15 @@ input:focus, select:focus {
   background: #fff;
   font-size: 15px;
   font-weight: bold;
-  color: var(--theme);
+  color: #aaa;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: color 0.15s;
   padding: 0;
   margin: 0;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
 }
-.graph-toggle-btn.active { background: var(--theme); color: #fff; }
-.graph-toggle-btn:not(.active):active { background: #f0f0f0; }
+.graph-toggle-btn.active { color: var(--theme); border-bottom-color: var(--theme); }
 
 /* ===================================
    口座画面
@@ -974,12 +897,11 @@ input:focus, select:focus {
   display: flex;
   align-items: center;
   background: #fff;
-  border-radius: 12px;
-  margin-bottom: 8px;
+  border-bottom: 1px solid #e8e8e8;
   padding: 14px 12px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
   gap: 10px;
 }
+.account-li:first-child { border-top: 1px solid #e8e8e8; }
 .account-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .account-name { font-size: 15px; font-weight: bold; color: #222; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .account-memo { font-size: 12px; color: #999; }
@@ -997,7 +919,7 @@ input:focus, select:focus {
 }
 .account-balance:active { background: #f0f0f0; }
 .account-balance-input {
-  font-size: 16px !important; /* iOSズーム防止 */
+  font-size: 16px !important;
   font-weight: bold;
   color: var(--theme);
   width: 110px !important;
@@ -1013,7 +935,7 @@ input:focus, select:focus {
   flex-shrink: 0;
   background: #f0f0f0;
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
   font-size: 13px;
   color: #555;
   cursor: pointer;
@@ -1027,16 +949,20 @@ input:focus, select:focus {
 /* ===================================
    表示 / 非表示設定
 =================================== */
-.visibility-list { list-style: none; padding: 0; margin: 0; }
+.visibility-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  background: #fff;
+  border-top: 1px solid #e8e8e8;
+}
 .visibility-item {
   display: flex;
   align-items: center;
   background: #fff;
-  border-radius: 12px;
-  margin-bottom: 10px;
   padding: 16px 14px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
   gap: 12px;
+  border-bottom: 1px solid #e8e8e8;
 }
 .visibility-icon  { font-size: 22px; flex-shrink: 0; }
 .visibility-label { font-size: 15px; font-weight: bold; color: #222; flex: 1; }
@@ -1079,15 +1005,14 @@ input:focus, select:focus {
   background: #fff;
   border-radius: 50%;
   transition: transform 0.2s;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
-.toggle-switch input:checked + .toggle-slider             { background: var(--theme); }
-.toggle-switch input:checked + .toggle-slider::before     { transform: translateX(22px); }
+.toggle-switch input:checked + .toggle-slider         { background: var(--theme); }
+.toggle-switch input:checked + .toggle-slider::before { transform: translateX(22px); }
 
 /* ===================================
    テーマカラー設定
 =================================== */
-.theme-desc         { font-size: 13px; color: #666; margin: 0 0 16px; }
+.theme-desc          { font-size: 13px; color: #666; margin: 0 0 16px; }
 .theme-section-title { font-size: 13px; font-weight: bold; color: #444; margin: 0 0 10px; }
 .color-presets {
   display: grid;
@@ -1099,7 +1024,7 @@ input:focus, select:focus {
   width: 100% !important;
   height: 60px !important;
   border: 3px solid transparent;
-  border-radius: 10px;
+  border-radius: 8px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
@@ -1110,8 +1035,8 @@ input:focus, select:focus {
   margin: 0;
   padding: 0;
 }
-.color-swatch:active  { transform: scale(0.95); }
-.color-swatch.selected { border-color: #fff; box-shadow: 0 0 0 3px #333; }
+.color-swatch:active   { transform: scale(0.95); }
+.color-swatch.selected { border-color: #fff; outline: 3px solid #333; }
 .swatch-check  { color: #fff; font-size: 16px; font-weight: bold; opacity: 0; line-height: 1; }
 .color-swatch.selected .swatch-check { opacity: 1; }
 .swatch-label  { color: #fff; font-size: 10px; font-weight: bold; text-shadow: 0 1px 2px rgba(0,0,0,0.4); line-height: 1; }
@@ -1125,9 +1050,9 @@ input:focus, select:focus {
   flex-shrink: 0;
 }
 .custom-color-row .btn-blue { flex: 1; margin: 0; }
-.theme-preview { border: 1px solid #eee; border-radius: 10px; overflow: hidden; }
+.theme-preview { border: 1px solid #e8e8e8; border-radius: 8px; overflow: hidden; }
 .theme-preview-label { font-size: 12px; color: #888; padding: 8px 12px 4px; margin: 0; }
-#themePreviewBar { height: 40px; transition: background 0.3s; margin: 4px 12px 12px; border-radius: 8px; }
+#themePreviewBar { height: 40px; transition: background 0.3s; margin: 4px 12px 12px; border-radius: 6px; }
 
 /* ===================================
    予算設定
@@ -1135,40 +1060,34 @@ input:focus, select:focus {
 .budget-list { list-style: none; padding: 0; margin: 0; }
 .budget-item {
   background: #fff;
-  border-radius: 12px;
+  border-bottom: 1px solid #e8e8e8;
   padding: 12px 14px;
-  margin-bottom: 10px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.07);
 }
+.budget-item:first-child { border-top: 1px solid #e8e8e8; }
 .budget-item-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 8px;
 }
-.budget-item-parent {
-  font-size: 11px;
-  color: #aaa;
-  display: block;
-  margin-bottom: 2px;
-}
-.budget-item-name { font-size: 14px; font-weight: bold; color: #222; }
+.budget-item-parent { font-size: 11px; color: #aaa; display: block; margin-bottom: 2px; }
+.budget-item-name   { font-size: 14px; font-weight: bold; color: #222; }
 .budget-item-input-wrap { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
 .budget-item-input-wrap span { font-size: 14px; color: #555; }
 .budget-input {
   width: 110px !important;
   height: 36px !important;
-  font-size: 16px !important; /* iOSズーム防止 */
+  font-size: 16px !important;
   text-align: right;
   padding: 4px 8px !important;
   margin: 0 !important;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
   touch-action: manipulation;
 }
 .budget-input:focus { border-color: var(--theme); }
-.budget-bar-wrap { height: 8px; background: #eee; border-radius: 4px; overflow: hidden; }
-.budget-bar      { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+.budget-bar-wrap { height: 6px; background: #eee; border-radius: 3px; overflow: hidden; }
+.budget-bar      { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
 .budget-bar.ok   { background: var(--theme); }
 .budget-bar.warn { background: #ff9800; }
 .budget-bar.over { background: #e53935; }
@@ -1177,7 +1096,13 @@ input:focus, select:focus {
 /* ===================================
    Gemini APIキー設定
 =================================== */
-.api-key-card { background: #fff; border-radius: 14px; padding: 20px 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-top: 4px; }
+.api-key-card {
+  background: #fff;
+  border-top: 1px solid #e8e8e8;
+  border-bottom: 1px solid #e8e8e8;
+  padding: 20px 16px;
+  margin-top: 8px;
+}
 .api-key-desc { font-size: 13px; color: #666; line-height: 1.7; margin: 0 0 16px; }
 .api-key-input-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
 .api-key-input-wrap input { flex: 1; margin: 0; font-family: monospace; letter-spacing: 0.04em; }
@@ -1185,7 +1110,7 @@ input:focus, select:focus {
   width: 44px !important;
   height: 44px !important;
   flex-shrink: 0;
-  border: 1px solid #ddd;
+  border: 1px solid #e0e0e0;
   border-radius: 8px;
   background: #fafafa;
   font-size: 18px;
@@ -1203,7 +1128,7 @@ input:focus, select:focus {
   background: #fff;
   color: #e53935;
   border: 1.5px solid #e53935;
-  border-radius: 10px;
+  border-radius: 8px;
   font-size: 15px;
   font-weight: bold;
   cursor: pointer;
@@ -1211,10 +1136,10 @@ input:focus, select:focus {
   transition: background 0.15s;
 }
 .btn-danger:active { background: #ffeaea; }
-.api-key-status { font-size: 13px; margin-top: 14px; padding: 10px 12px; border-radius: 8px; line-height: 1.5; }
+.api-key-status { font-size: 13px; margin-top: 14px; padding: 10px 12px; border-radius: 6px; line-height: 1.5; }
 .api-key-status-ok   { background: #e8f5e9; color: #2e7d32; }
 .api-key-status-warn { background: #fff8e1; color: #f57f17; }
-.api-key-help { margin-top: 20px; background: #f5f5f5; border-radius: 10px; padding: 14px 14px 12px; }
+.api-key-help { margin-top: 20px; background: #f5f5f5; border-radius: 8px; padding: 14px 14px 12px; }
 .api-key-help-title { font-size: 13px; font-weight: bold; color: #444; margin: 0 0 10px; }
 .api-key-help-list { margin: 0; padding-left: 18px; font-size: 13px; color: #555; line-height: 1.9; }
 .api-key-help-list a { color: var(--theme); text-decoration: none; }
@@ -1223,12 +1148,25 @@ input:focus, select:focus {
 /* ===================================
    リセット
 =================================== */
-.reset-card { background: #fff; border-radius: 14px; padding: 20px 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-top: 4px; }
+.reset-card {
+  background: #fff;
+  border-top: 1px solid #e8e8e8;
+  border-bottom: 1px solid #e8e8e8;
+  padding: 20px 16px;
+  margin-top: 8px;
+}
 .reset-desc { font-size: 13px; color: #666; line-height: 1.7; margin: 0 0 20px; }
-.reset-list { list-style: none; padding: 0; margin: 0 0 20px; border: 1px solid #eee; border-radius: 12px; overflow: hidden; }
+.reset-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  overflow: hidden;
+}
 .reset-item { display: flex; align-items: center; background: #fff; padding: 16px 14px; gap: 12px; }
 .reset-item + .reset-item { border-top: 1px solid #f0f0f0; }
-.reset-item-sub { padding-left: 20px; background: #fafafa; }
+.reset-item-sub   { padding-left: 20px; background: #fafafa; }
 .reset-item-icon  { font-size: 20px; flex-shrink: 0; }
 .reset-item-label { font-size: 15px; font-weight: bold; color: #222; flex: 1; }
 .reset-divider    { height: 1px; background: #e0e0e0; margin: 0; }
