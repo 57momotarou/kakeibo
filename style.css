@@ -34,10 +34,14 @@
    リセット・ベース
 =================================== */
 * { box-sizing: border-box; }
+html, body {
+  height: 100%;
+}
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif;
   background: #f5f5f5;
   overflow-x: hidden;
+  overflow-y: auto;
 }
 
 /* ===================================
@@ -47,21 +51,18 @@ body {
   max-width: 430px;
   margin: 0 auto;
   background: #f5f5f5;
-  overflow-x: hidden;
-  padding-top: 52px;
-  padding-bottom: 60px;
+  /* overflow-x:hidden はstickyの幅計算を狂わせるので削除 */
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ===================================
    上部バー
 =================================== */
 .top-bar {
-  position: fixed;
+  position: sticky;
   top: 0;
-  left: 0;
-  right: 0;
-  max-width: 430px;
-  margin: 0 auto;
   height: 52px;
   background: var(--theme);
   display: flex;
@@ -509,9 +510,12 @@ input:focus, select:focus {
 .view { display: none; }
 .view.active {
   display: block;
+  flex: 1; /* pageWrapperのflexコンテナ内で伸びる */
   padding-left: 12px;
   padding-right: 12px;
   padding-bottom: 16px;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* 月スワイプアニメーション */
@@ -658,17 +662,14 @@ input:focus, select:focus {
    下部タブバー
 =================================== */
 .tab-bar {
-  position: fixed;
+  position: sticky;
   bottom: 0;
-  left: 0;
-  right: 0;
-  max-width: 430px;
-  margin: 0 auto;
   height: 60px;
   display: flex;
   border-top: 1px solid #ddd;
   background: #fff;
   z-index: 100;
+  margin-top: auto; /* コンテンツが少なくても画面下部に張り付く */
 }
 .tab-bar.hidden { display: none; }
 .tab {

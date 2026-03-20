@@ -1666,15 +1666,12 @@ document.getElementById("nextMonthBtn").addEventListener("click", () => changeMo
       decided = true;
     }
     if (isBackGesture) {
-      const el     = getCurrentEl();
-      const topBar = document.getElementById("topBar");
-      const move   = Math.max(0, dx);
-      // topBar は position:fixed で pageWrapper の外にあるため、常に一緒に動かす
-      el.style.transition     = "none";
-      el.style.transform      = `translateX(${move}px)`;
-      el.style.boxShadow      = `-8px 0 20px rgba(0,0,0,${0.2 * (1 - move / window.innerWidth)})`;
-      topBar.style.transition = "none";
-      topBar.style.transform  = `translateX(${move}px)`;
+      const el = getCurrentEl();
+      const move = Math.max(0, dx);
+      // top-bar は position:sticky なので pageWrapper と一体で動く
+      el.style.transition = "none";
+      el.style.transform  = `translateX(${move}px)`;
+      el.style.boxShadow  = `-8px 0 20px rgba(0,0,0,${0.2 * (1 - move / window.innerWidth)})`;
     }
   }, { passive: true });
 
@@ -1684,32 +1681,25 @@ document.getElementById("nextMonthBtn").addEventListener("click", () => changeMo
     const endX = e.changedTouches[0].clientX, endY = e.changedTouches[0].clientY;
     const dx = endX - startX, dy = endY - startY;
     if (isBackGesture) {
-      const el     = getCurrentEl();
-      const topBar = document.getElementById("topBar");
+      const el = getCurrentEl();
 
       function resetBars() {
-        el.style.transition     = "";
-        el.style.transform      = "";
-        el.style.boxShadow      = "";
-        topBar.style.transition = "";
-        topBar.style.transform  = "";
+        el.style.transition = "";
+        el.style.transform  = "";
+        el.style.boxShadow  = "";
       }
 
       if (dx >= BACK_THRESHOLD) {
         const trans = "transform 0.25s cubic-bezier(0.4,0,0.2,1)";
-        el.style.transition     = trans;
-        el.style.transform      = `translateX(${window.innerWidth}px)`;
-        el.style.boxShadow      = "none";
-        topBar.style.transition = trans;
-        topBar.style.transform  = `translateX(${window.innerWidth}px)`;
+        el.style.transition = trans;
+        el.style.transform  = `translateX(${window.innerWidth}px)`;
+        el.style.boxShadow  = "none";
         setTimeout(() => { resetBars(); doGoBack(); }, 220);
       } else {
         const trans = "transform 0.3s cubic-bezier(0.4,0,0.2,1), box-shadow 0.3s";
-        el.style.transition     = trans;
-        el.style.transform      = "translateX(0)";
-        el.style.boxShadow      = "none";
-        topBar.style.transition = "transform 0.3s cubic-bezier(0.4,0,0.2,1)";
-        topBar.style.transform  = "translateX(0)";
+        el.style.transition = trans;
+        el.style.transform  = "translateX(0)";
+        el.style.boxShadow  = "none";
         setTimeout(() => { resetBars(); }, 300);
       }
       isBackGesture = false; return;
