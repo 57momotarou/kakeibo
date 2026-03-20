@@ -1649,9 +1649,8 @@ document.getElementById("nextMonthBtn").addEventListener("click", () => changeMo
     else if (cur === "calendar") switchToTab("transaction");
   }
 
-  // ジェスチャー開始時：前のビューをそのまま後ろで見せる
+  // ジェスチャー開始時：前のビューをbackLayerに移動して表示
   function prepareBackLayer() {
-    // 前のビューを特定
     let prevViewEl = null;
     if (viewStack.length >= 2) {
       const prevName = viewStack[viewStack.length - 2];
@@ -1660,29 +1659,39 @@ document.getElementById("nextMonthBtn").addEventListener("click", () => changeMo
       prevViewEl = VIEW_CONFIG["transaction"]?.el;
     }
 
-    // 前のビューを一時的に表示（activeにせずblock化だけ）
     if (prevViewEl) {
-      prevViewEl.style.display = "block";
-      prevViewEl._backGestureShown = true;
+      // 元の親を記録してからbackLayerに移動
+      prevViewEl._originalParent = prevViewEl.parentNode;
+      prevViewEl._originalNextSibling = prevViewEl.nextSibling;
+      // backLayerDimの前に挿入（オーバーレイが前のビューの上に来るように）
+      backLayer.insertBefore(prevViewEl, backDim);
+      // activeクラスを付けてfixedで全画面表示
+      prevViewEl.classList.add("back-gesture-prev");
     }
 
-    // transitionを消してから暗めのオーバーレイを設定
     backDim.style.transition = "none";
     backDim.style.opacity    = "0.35";
     document.body.classList.add("back-gesture-active");
   }
 
-  // ジェスチャー終了時：後片付け
+  // ジェスチャー終了時：前のビューを元の場所に戻す
   function cleanupBackLayer() {
     document.body.classList.remove("back-gesture-active");
 
-    // 一時表示していた前のビューを元に戻す
-    Object.values(VIEW_CONFIG).forEach(cfg => {
-      if (cfg.el._backGestureShown) {
-        cfg.el.style.display = "";
-        cfg.el._backGestureShown = false;
+    // backLayerに移動していたビューを元の位置に戻す
+    const prevEl = backLayer.querySelector(".back-gesture-prev");
+    if (prevEl) {
+      prevEl.classList.remove("back-gesture-prev");
+      if (prevEl._originalParent) {
+        if (prevEl._originalNextSibling) {
+          prevEl._originalParent.insertBefore(prevEl, prevEl._originalNextSibling);
+        } else {
+          prevEl._originalParent.appendChild(prevEl);
+        }
+        prevEl._originalParent = null;
+        prevEl._originalNextSibling = null;
       }
-    });
+    }
 
     pageWrapper.style.transition = "";
     pageWrapper.style.transform  = "";
