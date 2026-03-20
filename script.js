@@ -1649,8 +1649,11 @@ document.getElementById("nextMonthBtn").addEventListener("click", () => changeMo
     else if (cur === "calendar") switchToTab("transaction");
   }
 
-  // ジェスチャー開始時：前のビューをbackLayerに準備
+  // ジェスチャー開始時：backLayerを準備
   function prepareBackLayer() {
+    // transitionを消してから表示（前回のtransitionが残らないように）
+    backDim.style.transition = "none";
+    backDim.style.opacity    = "0.15";
     document.body.classList.add("back-gesture-active");
   }
 
@@ -1660,10 +1663,13 @@ document.getElementById("nextMonthBtn").addEventListener("click", () => changeMo
     pageWrapper.style.transition = "";
     pageWrapper.style.transform  = "";
     pageWrapper.style.boxShadow  = "";
-    backDim.style.opacity = "";
-    // topBarの文字透明度リセット
-    topBar.querySelectorAll(".top-bar-title, .top-bar-btn, .tab-bar").forEach(el => {
-      el.style.opacity = "";
+    backDim.style.transition     = "";
+    backDim.style.opacity        = "";
+    topBar.style.transition      = "";
+    topBar.style.opacity         = "";
+    topBar.querySelectorAll(".top-bar-title, .top-bar-btn").forEach(el => {
+      el.style.transition = "";
+      el.style.opacity    = "";
     });
   }
 
@@ -1699,17 +1705,17 @@ document.getElementById("nextMonthBtn").addEventListener("click", () => changeMo
 
     if (isBackGesture) {
       const move     = Math.max(0, dx);
-      const progress = move / window.innerWidth; // 0〜1
+      const progress = Math.min(move / window.innerWidth, 1);
 
-      // 前面ページを右にスライド
       pageWrapper.style.transition = "none";
       pageWrapper.style.transform  = `translateX(${move}px)`;
-      pageWrapper.style.boxShadow  = `-6px 0 16px rgba(0,0,0,${0.18 * (1 - progress)})`;
+      pageWrapper.style.boxShadow  = `-6px 0 16px rgba(0,0,0,${0.15 * (1 - progress)})`;
 
-      // 背面のオーバーレイを徐々に薄く（背景が見えてくる演出）
-      backDim.style.opacity = String(0.2 * (1 - progress));
+      // 背面オーバーレイを徐々に薄く
+      backDim.style.transition = "none";
+      backDim.style.opacity    = String(0.15 * (1 - progress));
 
-      // topBarの要素をスワイプ量に応じてフェードアウト
+      // ヘッダー要素をフェードアウト
       const fadeOpacity = Math.max(0, 1 - progress * 2);
       topBar.querySelectorAll(".top-bar-title, .top-bar-btn").forEach(el => {
         el.style.opacity = String(fadeOpacity);
@@ -1728,20 +1734,22 @@ document.getElementById("nextMonthBtn").addEventListener("click", () => changeMo
 
     if (isBackGesture) {
       if (dx >= BACK_THRESHOLD) {
-        // 確定：右端までスライドしてからgoBack
-        pageWrapper.style.transition = "transform 0.22s cubic-bezier(0.4,0,0.2,1)";
+        // 確定：アニメーション後にgoBack → cleanup
+        const trans = "transform 0.22s cubic-bezier(0.4,0,0.2,1)";
+        pageWrapper.style.transition = trans;
         pageWrapper.style.transform  = `translateX(${window.innerWidth}px)`;
         pageWrapper.style.boxShadow  = "none";
         backDim.style.transition     = "opacity 0.22s";
         backDim.style.opacity        = "0";
-        // topBar全体フェードアウト
-        topBar.style.transition = "opacity 0.22s";
-        topBar.style.opacity    = "0";
+        topBar.style.transition      = "opacity 0.22s";
+        topBar.style.opacity         = "0";
         setTimeout(() => {
-          topBar.style.transition = "";
-          topBar.style.opacity    = "";
-          cleanupBackLayer();
+          // goBack先を表示してからリセット
           doGoBack();
+          // 次のフレームでリセット（goBack直後にtransformを消すと戻って見えるのを防ぐ）
+          requestAnimationFrame(() => {
+            cleanupBackLayer();
+          });
         }, 220);
       } else {
         // キャンセル：元の位置に戻す
@@ -1749,12 +1757,12 @@ document.getElementById("nextMonthBtn").addEventListener("click", () => changeMo
         pageWrapper.style.transform  = "translateX(0)";
         pageWrapper.style.boxShadow  = "none";
         backDim.style.transition     = "opacity 0.28s";
-        backDim.style.opacity        = "0.2";
+        backDim.style.opacity        = "0.15";
         topBar.querySelectorAll(".top-bar-title, .top-bar-btn").forEach(el => {
           el.style.transition = "opacity 0.28s";
           el.style.opacity    = "1";
         });
-        setTimeout(() => { cleanupBackLayer(); }, 280);
+        setTimeout(() => { cleanupBackLayer(); }, 300);
       }
       isBackGesture = false;
       return;

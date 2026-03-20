@@ -38,13 +38,14 @@
   position: fixed;
   inset: 0;
   background: #f5f5f5;
-  z-index: -1; /* pageWrapperの後ろ */
+  z-index: 0;
 }
 #backLayerDim {
   position: absolute;
   inset: 0;
-  background: rgba(0,0,0,0.2);
+  background: rgba(0,0,0,0.15);
   pointer-events: none;
+  opacity: 0.15;
 }
 
 /* バックジェスチャー中はpageWrapperの後ろに表示 */
@@ -776,12 +777,19 @@ input:focus, select:focus {
 #homeView,
 #transactionView,
 #calendarView,
-#accountView {
+#accountView,
+#graphView {
   padding-left: 0 !important;
   padding-right: 0 !important;
 }
 #accountView > ul,
 #accountView > button {
+  margin-left: 12px;
+  margin-right: 12px;
+}
+/* グラフ画面はサマリー以外にpadding付与 */
+#graphView .graph-toggle-wrap,
+#graphView .chart-section {
   margin-left: 12px;
   margin-right: 12px;
 }
@@ -896,7 +904,7 @@ input:focus, select:focus {
 .legend-pct    { color: #888; font-size: 12px; flex-shrink: 0; }
 .legend-amount { font-weight: bold; color: #333; flex-shrink: 0; text-align: right; min-width: 72px; }
 
-.graph-toggle-wrap { display: flex; justify-content: center; margin: 8px 0 0; }
+.graph-toggle-wrap { display: flex; justify-content: center; margin: 8px 12px 0; }
 .graph-toggle {
   display: flex;
   border-bottom: 2px solid var(--theme);
