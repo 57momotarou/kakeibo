@@ -1632,9 +1632,13 @@ document.getElementById("nextMonthBtn").addEventListener("click", () => changeMo
 (function setupSwipe() {
   let startX = 0, startY = 0;
   let isBackGesture = false, isMonthSwipe = false, decided = false;
-  const BACK_EDGE = 40, BACK_THRESHOLD = 60, MONTH_THRESHOLD = 50;
+  const BACK_EDGE = 40, BACK_THRESHOLD = 80, MONTH_THRESHOLD = 50;
 
-  function getCurrentEl() { return document.getElementById("pageWrapper"); }
+  const pageWrapper = document.getElementById("pageWrapper");
+  const backLayer   = document.getElementById("backLayer");
+  const backDim     = document.getElementById("backLayerDim");
+  const topBar      = document.getElementById("topBar");
+
   function canGoBack() {
     const cur = viewStack[viewStack.length - 1];
     return viewStack.length > 1 || cur === "calendar";
@@ -1645,65 +1649,117 @@ document.getElementById("nextMonthBtn").addEventListener("click", () => changeMo
     else if (cur === "calendar") switchToTab("transaction");
   }
 
+  // ジェスチャー開始時：前のビューをbackLayerに準備
+  function prepareBackLayer() {
+    document.body.classList.add("back-gesture-active");
+  }
+
+  // ジェスチャー終了時：後片付け
+  function cleanupBackLayer() {
+    document.body.classList.remove("back-gesture-active");
+    pageWrapper.style.transition = "";
+    pageWrapper.style.transform  = "";
+    pageWrapper.style.boxShadow  = "";
+    backDim.style.opacity = "";
+    // topBarの文字透明度リセット
+    topBar.querySelectorAll(".top-bar-title, .top-bar-btn, .tab-bar").forEach(el => {
+      el.style.opacity = "";
+    });
+  }
+
   document.addEventListener("touchstart", e => {
-    startX = e.touches[0].clientX; startY = e.touches[0].clientY;
-    isBackGesture = false; isMonthSwipe = false; decided = false;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    isBackGesture = false;
+    isMonthSwipe  = false;
+    decided       = false;
   }, { passive: true });
 
   document.addEventListener("touchmove", e => {
     if (!addModal.classList.contains("hidden")) return;
     if (!editModal.classList.contains("hidden")) return;
-    const curX = e.touches[0].clientX, curY = e.touches[0].clientY;
-    const dx = curX - startX, dy = curY - startY;
+
+    const curX = e.touches[0].clientX;
+    const curY = e.touches[0].clientY;
+    const dx = curX - startX;
+    const dy = curY - startY;
+
     if (!decided) {
       if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
       if (Math.abs(dy) > Math.abs(dx)) { decided = true; return; }
-      if (startX <= BACK_EDGE && dx > 0 && canGoBack()) isBackGesture = true;
-      else {
+      if (startX <= BACK_EDGE && dx > 0 && canGoBack()) {
+        isBackGesture = true;
+        prepareBackLayer();
+      } else {
         const cur = viewStack[viewStack.length - 1];
         if (["calendar","graph","transaction"].includes(cur)) isMonthSwipe = true;
       }
       decided = true;
     }
+
     if (isBackGesture) {
-      const el = getCurrentEl();
-      const move = Math.max(0, dx);
-      // top-bar は position:sticky なので pageWrapper と一体で動く
-      el.style.transition = "none";
-      el.style.transform  = `translateX(${move}px)`;
-      el.style.boxShadow  = `-8px 0 20px rgba(0,0,0,${0.2 * (1 - move / window.innerWidth)})`;
+      const move     = Math.max(0, dx);
+      const progress = move / window.innerWidth; // 0〜1
+
+      // 前面ページを右にスライド
+      pageWrapper.style.transition = "none";
+      pageWrapper.style.transform  = `translateX(${move}px)`;
+      pageWrapper.style.boxShadow  = `-6px 0 16px rgba(0,0,0,${0.18 * (1 - progress)})`;
+
+      // 背面のオーバーレイを徐々に薄く（背景が見えてくる演出）
+      backDim.style.opacity = String(0.2 * (1 - progress));
+
+      // topBarの要素をスワイプ量に応じてフェードアウト
+      const fadeOpacity = Math.max(0, 1 - progress * 2);
+      topBar.querySelectorAll(".top-bar-title, .top-bar-btn").forEach(el => {
+        el.style.opacity = String(fadeOpacity);
+      });
     }
   }, { passive: true });
 
   document.addEventListener("touchend", e => {
     if (!addModal.classList.contains("hidden")) return;
     if (!editModal.classList.contains("hidden")) return;
-    const endX = e.changedTouches[0].clientX, endY = e.changedTouches[0].clientY;
-    const dx = endX - startX, dy = endY - startY;
+
+    const endX = e.changedTouches[0].clientX;
+    const endY = e.changedTouches[0].clientY;
+    const dx = endX - startX;
+    const dy = endY - startY;
+
     if (isBackGesture) {
-      const el = getCurrentEl();
-
-      function resetBars() {
-        el.style.transition = "";
-        el.style.transform  = "";
-        el.style.boxShadow  = "";
-      }
-
       if (dx >= BACK_THRESHOLD) {
-        const trans = "transform 0.25s cubic-bezier(0.4,0,0.2,1)";
-        el.style.transition = trans;
-        el.style.transform  = `translateX(${window.innerWidth}px)`;
-        el.style.boxShadow  = "none";
-        setTimeout(() => { resetBars(); doGoBack(); }, 220);
+        // 確定：右端までスライドしてからgoBack
+        pageWrapper.style.transition = "transform 0.22s cubic-bezier(0.4,0,0.2,1)";
+        pageWrapper.style.transform  = `translateX(${window.innerWidth}px)`;
+        pageWrapper.style.boxShadow  = "none";
+        backDim.style.transition     = "opacity 0.22s";
+        backDim.style.opacity        = "0";
+        // topBar全体フェードアウト
+        topBar.style.transition = "opacity 0.22s";
+        topBar.style.opacity    = "0";
+        setTimeout(() => {
+          topBar.style.transition = "";
+          topBar.style.opacity    = "";
+          cleanupBackLayer();
+          doGoBack();
+        }, 220);
       } else {
-        const trans = "transform 0.3s cubic-bezier(0.4,0,0.2,1), box-shadow 0.3s";
-        el.style.transition = trans;
-        el.style.transform  = "translateX(0)";
-        el.style.boxShadow  = "none";
-        setTimeout(() => { resetBars(); }, 300);
+        // キャンセル：元の位置に戻す
+        pageWrapper.style.transition = "transform 0.28s cubic-bezier(0.4,0,0.2,1), box-shadow 0.28s";
+        pageWrapper.style.transform  = "translateX(0)";
+        pageWrapper.style.boxShadow  = "none";
+        backDim.style.transition     = "opacity 0.28s";
+        backDim.style.opacity        = "0.2";
+        topBar.querySelectorAll(".top-bar-title, .top-bar-btn").forEach(el => {
+          el.style.transition = "opacity 0.28s";
+          el.style.opacity    = "1";
+        });
+        setTimeout(() => { cleanupBackLayer(); }, 280);
       }
-      isBackGesture = false; return;
+      isBackGesture = false;
+      return;
     }
+
     if (isMonthSwipe) {
       if (Math.abs(dy) > Math.abs(dx)) return;
       const diffX = startX - endX;

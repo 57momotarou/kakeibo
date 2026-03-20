@@ -31,6 +31,32 @@
 #splashScreen.dark-text #splashText { color: #222; }
 
 /* ===================================
+   バックジェスチャー用背景レイヤー
+=================================== */
+#backLayer {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: #f5f5f5;
+  z-index: -1; /* pageWrapperの後ろ */
+}
+#backLayerDim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.2);
+  pointer-events: none;
+}
+
+/* バックジェスチャー中はpageWrapperの後ろに表示 */
+body.back-gesture-active #backLayer {
+  display: block;
+}
+body.back-gesture-active #pageWrapper {
+  position: relative;
+  z-index: 1;
+}
+
+/* ===================================
    リセット・ベース
 =================================== */
 * { box-sizing: border-box; }
