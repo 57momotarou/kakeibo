@@ -16,30 +16,23 @@
     <span id="splashText">家計簿</span>
   </div>
 
-  <!-- ========== ページラッパー（バックジェスチャーで一体スライド） ========== -->
+  <!-- ========== ページラッパー ========== -->
   <div id="pageWrapper">
 
   <!-- ========== 上部バー ========== -->
   <header class="top-bar" id="topBar">
     <div class="top-bar-normal" id="topBarNormal">
-      <!-- 出入金時：左端カレンダーボタン -->
       <button class="top-bar-btn" id="calendarShortcutBtn" style="display:none">🗓</button>
-      <!-- カレンダー時：左端に「←」戻るボタン -->
       <button class="top-bar-btn" id="calendarBackBtn" style="display:none">←</button>
-      <!-- カレンダー/グラフ時：月ナビ -->
       <div class="top-bar-month-nav" id="topBarMonthNav">
         <button class="top-bar-btn month-nav-btn" id="prevMonthBtn">◀</button>
         <span class="top-bar-title" id="monthLabel">2025年3月</span>
         <button class="top-bar-btn month-nav-btn" id="nextMonthBtn">▶</button>
       </div>
-      <!-- ホーム時：タイトル -->
       <span class="top-bar-title top-bar-home-title" id="topBarHomeTitle" style="display:none">ホーム</span>
-      <!-- 出入金・ホーム時の中央スペーサー（月ナビが非表示の時に歯車を右端に押す） -->
       <div class="top-bar-spacer" id="topBarSpacer" style="display:none"></div>
-      <!-- 常に右端：歯車 -->
       <button class="top-bar-btn" id="openSettingsBtn">⚙️</button>
     </div>
-    <!-- 設定時：← / タイトル / 空 -->
     <div class="top-bar-settings hidden" id="topBarSettings">
       <button class="top-bar-btn" id="backBtn">←</button>
       <span class="top-bar-title" id="settingsBarTitle">設定</span>
@@ -71,7 +64,13 @@
       <input type="number" id="amount" placeholder="例：1500">
 
       <label class="field-label">カテゴリ</label>
-      <select id="category"></select>
+      <!-- 2段階カテゴリ選択（追加モーダル） -->
+      <div class="category-selector" id="addCategorySelector">
+        <div class="cat-select-row">
+          <select id="addParentCat" class="cat-select-parent"></select>
+          <select id="addChildCat"  class="cat-select-child"></select>
+        </div>
+      </div>
 
       <button id="addButton" class="btn-primary">追加する</button>
     </div>
@@ -102,7 +101,13 @@
       <input type="number" id="editAmount" placeholder="例：1500">
 
       <label class="field-label">カテゴリ</label>
-      <select id="editCategory"></select>
+      <!-- 2段階カテゴリ選択（編集モーダル） -->
+      <div class="category-selector" id="editCategorySelector">
+        <div class="cat-select-row">
+          <select id="editParentCat" class="cat-select-parent"></select>
+          <select id="editChildCat"  class="cat-select-child"></select>
+        </div>
+      </div>
 
       <button id="saveEditButton" class="btn-primary">保存する</button>
     </div>
@@ -129,7 +134,6 @@
 
   <!-- カレンダー -->
   <div id="calendarView" class="view">
-    <!-- 年月・期間ヘッダー -->
     <div class="cal-header">
       <div class="cal-header-year-month" id="calYearMonth"></div>
       <div class="cal-header-range" id="calRange"></div>
@@ -139,7 +143,6 @@
       <div>木</div><div>金</div><div>土</div>
     </div>
     <div id="calendar"></div>
-    <!-- 期間内の出入金リスト -->
     <div class="cal-transaction-list" id="calTransactionList"></div>
   </div>
 
@@ -176,13 +179,24 @@
         <span class="settings-menu-label">Gemini APIキー</span>
         <span class="settings-menu-arrow">›</span>
       </li>
-    
       <li class="settings-menu-item" id="goReset">
         <span class="settings-menu-icon">🗑️</span>
         <span class="settings-menu-label">データのリセット</span>
         <span class="settings-menu-arrow">›</span>
       </li>
     </ul>
+  </div>
+
+  <!-- カテゴリ設定（大分類一覧） -->
+  <div id="categoryView" class="view">
+    <p class="cat-view-desc">大分類をタップすると小分類を編集できます</p>
+    <ul id="parentCategoryList" class="parent-category-list"></ul>
+  </div>
+
+  <!-- カテゴリ設定（小分類一覧） -->
+  <div id="categoryDetailView" class="view">
+    <!-- ヘッダーは topBarSettings で表示 -->
+    <ul id="childCategoryList" class="child-category-list"></ul>
   </div>
 
   <!-- 表示/非表示設定 -->
@@ -210,33 +224,12 @@
 
   <!-- 集計期間設定 -->
   <div id="periodView" class="view">
-
     <div class="period-card">
       <p class="period-desc">毎月の集計を開始する日を設定します。<br>例）25日に設定すると「2/25〜3/24」が3月分として集計されます。</p>
-
       <label class="field-label">集計開始日</label>
       <select id="periodStartDay"></select>
-
       <div class="period-preview" id="periodPreview"></div>
     </div>
-
-  </div>
-
-  <!-- カテゴリ設定 -->
-  <div id="categoryView" class="view">
-    <div class="category-add-form">
-      <input type="text" id="newCategoryName" placeholder="カテゴリ名を入力">
-      <select id="newCategoryType">
-        <option value="expense">支出</option>
-        <option value="income">収入</option>
-        <option value="both">両方</option>
-      </select>
-      <button id="addCategoryButton" class="btn-blue">追加</button>
-    </div>
-    <h4 class="category-section-label expense-label">💸 支出カテゴリ</h4>
-    <ul id="expenseCategoryList" class="category-list"></ul>
-    <h4 class="category-section-label income-label">💰 収入カテゴリ</h4>
-    <ul id="incomeCategoryList" class="category-list"></ul>
   </div>
 
   <!-- テーマ設定 -->
@@ -254,18 +247,6 @@
       <div id="themePreviewBar"></div>
     </div>
   </div>
-
-  <!-- リセット -->
-  
-
-  <!-- データリセット -->
-  
-
-  <!-- データのリセット -->
-  
-
-  <!-- データのリセット -->
-  
 
   <!-- Gemini APIキー設定 -->
   <div id="apiKeyView" class="view">
@@ -294,12 +275,10 @@
     </div>
   </div>
 
-
   <!-- データのリセット -->
   <div id="resetView" class="view">
     <div class="reset-card">
       <p class="reset-desc">リセットしたい項目をオンにしてから「リセット実行」を押してください。<br>この操作は元に戻せません。</p>
-
       <ul class="reset-list">
         <li class="reset-item">
           <span class="reset-item-icon">🔄</span>
@@ -335,15 +314,13 @@
           </label>
         </li>
       </ul>
-
       <button class="btn-danger reset-exec-btn" id="execResetBtn" disabled>リセット実行</button>
     </div>
   </div>
+
   <!-- グラフ -->
   <div id="graphView" class="view">
     <input type="month" id="graphMonthSelector" style="display:none">
-
-    <!-- サマリーカード -->
     <div id="summary">
       <div class="summary-item income-item">
         <span class="summary-label">収入</span>
@@ -358,16 +335,12 @@
         <span class="summary-value">¥<span id="balance">0</span></span>
       </div>
     </div>
-
-    <!-- 収支トグル -->
     <div class="graph-toggle-wrap">
       <div class="graph-toggle" id="graphToggle">
         <button class="graph-toggle-btn active" data-value="expense">支出</button>
         <button class="graph-toggle-btn" data-value="income">収入</button>
       </div>
     </div>
-
-    <!-- 円グラフ（1つ） -->
     <div class="chart-section" id="graphChartSection">
       <div class="chart-wrap">
         <canvas id="mainChart" width="220" height="220"></canvas>
@@ -377,13 +350,9 @@
     </div>
   </div>
 
-  <!-- ========== 浮遊＋ボタン ========== -->
   <!-- 口座 -->
   <div id="accountView" class="view">
-    <!-- 口座リスト -->
     <ul id="accountList"></ul>
-
-    <!-- 口座追加ボタン -->
     <button class="btn-primary" id="openAddAccountBtn" style="margin-top:12px">＋ 口座を追加</button>
   </div>
 
@@ -398,21 +367,16 @@
     <div class="modal-body">
       <label class="field-label">口座名</label>
       <input type="text" id="accountName" placeholder="例：北見信用金庫">
-
       <label class="field-label">残高</label>
       <input type="number" id="accountBalance" placeholder="例：100000">
-
       <label class="field-label">メモ（任意）</label>
       <input type="text" id="accountMemo" placeholder="例：普通預金・給与口座">
-
       <button class="btn-primary" id="saveAccountBtn">保存する</button>
     </div>
   </div>
 
   <!-- ========== FABメニュー ========== -->
   <div id="fabOverlay" class="fab-overlay hidden"></div>
-
-  <!-- サブボタン（展開時に表示） -->
   <div class="fab-menu" id="fabMenu">
     <div class="fab-sub-item" id="fabCameraItem">
       <span class="fab-sub-label">レシートを読み取る</span>
@@ -423,14 +387,8 @@
       <button class="fab-sub-btn fab-manual" id="fabManualBtn">✏️</button>
     </div>
   </div>
-
-  <!-- メインFABボタン -->
   <button class="fab-add" id="openAddBtn">＋</button>
-
-  <!-- カメラ入力（非表示） -->
   <input type="file" id="receiptInput" accept="image/*" capture="environment" style="display:none">
-
-  <!-- レシート読み取り中オーバーレイ -->
   <div id="scanOverlay" class="scan-overlay hidden">
     <div class="scan-box">
       <div class="scan-spinner"></div>
@@ -440,10 +398,10 @@
 
   <!-- ========== 下部タブ ========== -->
   <nav class="tab-bar" id="tabBar">
-    <button id="homeTab" class="tab active">🏠<br><small>ホーム</small></button>
+    <button id="homeTab"        class="tab active">🏠<br><small>ホーム</small></button>
     <button id="transactionTab" class="tab">💴<br><small>出入金</small></button>
-    <button id="graphTab" class="tab">📊<br><small>グラフ</small></button>
-    <button id="accountTab" class="tab">🏦<br><small>口座</small></button>
+    <button id="graphTab"       class="tab">📊<br><small>グラフ</small></button>
+    <button id="accountTab"     class="tab">🏦<br><small>口座</small></button>
   </nav>
 
   </div><!-- /#pageWrapper -->
