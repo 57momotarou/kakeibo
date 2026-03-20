@@ -1649,17 +1649,41 @@ document.getElementById("nextMonthBtn").addEventListener("click", () => changeMo
     else if (cur === "calendar") switchToTab("transaction");
   }
 
-  // ジェスチャー開始時：backLayerを準備
+  // ジェスチャー開始時：前のビューをそのまま後ろで見せる
   function prepareBackLayer() {
-    // transitionを消してから表示（前回のtransitionが残らないように）
+    // 前のビューを特定
+    let prevViewEl = null;
+    if (viewStack.length >= 2) {
+      const prevName = viewStack[viewStack.length - 2];
+      prevViewEl = VIEW_CONFIG[prevName]?.el;
+    } else if (viewStack[viewStack.length - 1] === "calendar") {
+      prevViewEl = VIEW_CONFIG["transaction"]?.el;
+    }
+
+    // 前のビューを一時的に表示（activeにせずblock化だけ）
+    if (prevViewEl) {
+      prevViewEl.style.display = "block";
+      prevViewEl._backGestureShown = true;
+    }
+
+    // transitionを消してから暗めのオーバーレイを設定
     backDim.style.transition = "none";
-    backDim.style.opacity    = "0.15";
+    backDim.style.opacity    = "0.35";
     document.body.classList.add("back-gesture-active");
   }
 
   // ジェスチャー終了時：後片付け
   function cleanupBackLayer() {
     document.body.classList.remove("back-gesture-active");
+
+    // 一時表示していた前のビューを元に戻す
+    Object.values(VIEW_CONFIG).forEach(cfg => {
+      if (cfg.el._backGestureShown) {
+        cfg.el.style.display = "";
+        cfg.el._backGestureShown = false;
+      }
+    });
+
     pageWrapper.style.transition = "";
     pageWrapper.style.transform  = "";
     pageWrapper.style.boxShadow  = "";
@@ -1711,9 +1735,9 @@ document.getElementById("nextMonthBtn").addEventListener("click", () => changeMo
       pageWrapper.style.transform  = `translateX(${move}px)`;
       pageWrapper.style.boxShadow  = `-6px 0 16px rgba(0,0,0,${0.15 * (1 - progress)})`;
 
-      // 背面オーバーレイを徐々に薄く
+      // 背面オーバーレイを徐々に薄く（前のページが見えてくる）
       backDim.style.transition = "none";
-      backDim.style.opacity    = String(0.15 * (1 - progress));
+      backDim.style.opacity    = String(0.35 * (1 - progress));
 
       // ヘッダー要素をフェードアウト
       const fadeOpacity = Math.max(0, 1 - progress * 2);
@@ -1757,7 +1781,7 @@ document.getElementById("nextMonthBtn").addEventListener("click", () => changeMo
         pageWrapper.style.transform  = "translateX(0)";
         pageWrapper.style.boxShadow  = "none";
         backDim.style.transition     = "opacity 0.28s";
-        backDim.style.opacity        = "0.15";
+        backDim.style.opacity        = "0.35";
         topBar.querySelectorAll(".top-bar-title, .top-bar-btn").forEach(el => {
           el.style.transition = "opacity 0.28s";
           el.style.opacity    = "1";
