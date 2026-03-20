@@ -611,11 +611,20 @@ async function callGeminiReceiptAPI(base64Image, mimeType, apiKey) {
   "date": "YYYY-MM-DD形式の購入日（不明な場合は${today}）",
   "category": "以下のカテゴリから最も適切なもの1つ：${allChildNames.join("・")}",
   "items": [
-    { "title": "商品名（簡潔に）", "amount": 金額の数値（税込・円） }
+    { "title": "商品名（簡潔に）", "amount": 金額の数値（税込・円・整数） }
   ]
 }
 
-ルール：合計・小計・税額・ポイント・お釣りは含めない。金額は整数。商品名は20文字以内。`;
+【金額の計算ルール】
+- 金額は必ず「税込」の整数（円）で返すこと
+- レシートに税込価格が明記されている場合 → そのまま使用
+- レシートに税抜価格しか書かれていない場合 → 以下のルールで税込に換算する
+  ・食料品・飲料（酒類除く）・新聞 → 軽減税率8%：税抜 × 1.08 を四捨五入
+  ・上記以外（外食・日用品・衣類・家電など） → 標準税率10%：税抜 × 1.10 を四捨五入
+  ・同一レシートに「※」「★」「軽」等の軽減税率マークがある場合はその商品に8%を適用
+- 合計・小計・税額・ポイント・お釣り・値引き行はitemsに含めない
+- 値引きがある商品は値引き後の税込金額を使う
+- 商品名は20文字以内。カタカナ略称は正式な日本語名に変換する`;
 
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
@@ -1712,6 +1721,7 @@ updateMonthLabel();
 applyTabVisibility();
 applyFabVisibility();
 render();
+renderHome(); // ← ホーム画面の予算カードを初期表示時にも描画
 
 // ===================================
 // Service Worker

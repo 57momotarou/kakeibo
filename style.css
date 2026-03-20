@@ -257,7 +257,7 @@ body {
 input, select {
   width: 100%;
   height: 44px;
-  font-size: 16px;
+  font-size: 16px; /* iOSズーム防止：16px未満だとフォーカス時にズームする */
   padding: 8px 10px;
   border: 1px solid #ddd;
   border-radius: 8px;
@@ -265,6 +265,8 @@ input, select {
   margin: 2px 0;
   -webkit-appearance: none;
   appearance: none;
+  /* iOS Safari のズーム完全防止 */
+  touch-action: manipulation;
 }
 input:focus, select:focus {
   outline: none;
@@ -474,7 +476,7 @@ input:focus, select:focus {
 
 .child-cat-edit-input {
   flex: 1;
-  font-size: 15px !important;
+  font-size: 16px !important; /* iOSズーム防止 */
   height: 36px !important;
   width: auto !important;
   border: 1.5px solid var(--theme) !important;
@@ -482,6 +484,7 @@ input:focus, select:focus {
   padding: 4px 8px !important;
   background: #fff !important;
   margin: 0 !important;
+  touch-action: manipulation;
 }
 
 .child-cat-del-btn {
@@ -985,7 +988,7 @@ input:focus, select:focus {
 }
 .account-balance:active { background: #f0f0f0; }
 .account-balance-input {
-  font-size: 17px !important;
+  font-size: 16px !important; /* iOSズーム防止 */
   font-weight: bold;
   color: var(--theme);
   width: 110px !important;
@@ -995,6 +998,7 @@ input:focus, select:focus {
   border-radius: 6px;
   padding: 4px 6px !important;
   background: #fff !important;
+  touch-action: manipulation;
 }
 .account-edit-btn {
   flex-shrink: 0;
@@ -1145,12 +1149,13 @@ input:focus, select:focus {
 .budget-input {
   width: 110px !important;
   height: 36px !important;
-  font-size: 14px !important;
+  font-size: 16px !important; /* iOSズーム防止 */
   text-align: right;
   padding: 4px 8px !important;
   margin: 0 !important;
   border: 1px solid #ddd;
   border-radius: 8px;
+  touch-action: manipulation;
 }
 .budget-input:focus { border-color: var(--theme); }
 .budget-bar-wrap { height: 8px; background: #eee; border-radius: 4px; overflow: hidden; }
