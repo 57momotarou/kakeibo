@@ -37,7 +37,7 @@
 html, body { height: 100%; }
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif;
-  background: var(--theme);
+  background: #f5f5f5;
   overflow-x: hidden;
   overflow-y: auto;
 }
@@ -46,8 +46,7 @@ body {
    ページラッパー
 =================================== */
 #pageWrapper {
-  max-width: 430px;
-  margin: 0 auto;
+  width: 100%;
   background: #f5f5f5;
   min-height: 100dvh;
   display: flex;
@@ -480,7 +479,7 @@ input:focus, select:focus {
 .fab-add {
   position: fixed;
   bottom: 72px;
-  right: max(16px, calc(50vw - 430px/2 + 16px));
+  right: 16px;
   width: 52px !important;
   height: 52px !important;
   background: var(--theme);
