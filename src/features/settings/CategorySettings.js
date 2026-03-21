@@ -23,12 +23,46 @@ export function renderCategoryView() {
     const childCount = (childCategories[parent.id] || []).length;
     const li = document.createElement("li");
     li.className = "parent-category-item";
-    li.innerHTML = `
-      <span class="parent-cat-icon">${parent.icon}</span>
-      <span class="parent-cat-name">${parent.name}</span>
-      <span class="parent-cat-count">${childCount}個</span>
-      <span class="parent-cat-arrow">›</span>
-    `;
+
+    // アイコン（円形背景）
+    const iconEl = document.createElement("span");
+    iconEl.className = "parent-cat-icon";
+    if (parent.color) {
+      // 通常：塗りつぶし円
+      iconEl.style.cssText = `background:${parent.color};`;
+      iconEl.textContent = parent.icon;
+    } else {
+      // 未分類：背景透過・線のみ
+      iconEl.classList.add("parent-cat-icon--outline");
+      iconEl.textContent = parent.icon;
+    }
+
+    const nameEl = document.createElement("span");
+    nameEl.className = "parent-cat-name";
+    nameEl.textContent = parent.name;
+
+    // 未分類は個数と矢印を表示しない・タップ無効
+    if (parent.id === "unclassified") {
+      li.appendChild(iconEl);
+      li.appendChild(nameEl);
+      li.style.cursor = "default";
+      ul.appendChild(li);
+      return;
+    }
+
+    const countEl = document.createElement("span");
+    countEl.className = "parent-cat-count";
+    countEl.textContent = `${childCount}個`;
+
+    const arrowEl = document.createElement("span");
+    arrowEl.className = "parent-cat-arrow";
+    arrowEl.textContent = "›";
+
+    li.appendChild(iconEl);
+    li.appendChild(nameEl);
+    li.appendChild(countEl);
+    li.appendChild(arrowEl);
+
     li.addEventListener("click", () => {
       setCurrentCategoryParentId(parent.id);
       navigate("categoryDetail");

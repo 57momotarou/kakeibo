@@ -14,15 +14,15 @@ export const VIEW_CONFIG = {
   calendar:       { el: null, title: null,               showTabs: true  },
   graph:          { el: null, title: null,               showTabs: true  },
   account:        { el: null, title: null,               showTabs: true  },
-  settings:       { el: null, title: "設定",             showTabs: false },
-  category:       { el: null, title: "カテゴリ変更",     showTabs: false },
-  categoryDetail: { el: null, title: "",                 showTabs: false },
-  theme:          { el: null, title: "テーマカラー",     showTabs: false },
-  period:         { el: null, title: "集計期間",         showTabs: false },
-  budget:         { el: null, title: "予算設定",         showTabs: false },
-  apiKey:         { el: null, title: "Gemini APIキー",   showTabs: false },
-  reset:          { el: null, title: "データのリセット", showTabs: false },
-  visibility:     { el: null, title: "表示 / 非表示",    showTabs: false },
+  settings:       { el: null, title: "設定",             showTabs: true  },
+  category:       { el: null, title: "カテゴリ変更",     showTabs: true  },
+  categoryDetail: { el: null, title: "",                 showTabs: true  },
+  theme:          { el: null, title: "テーマカラー",     showTabs: true  },
+  period:         { el: null, title: "集計期間",         showTabs: true  },
+  budget:         { el: null, title: "予算設定",         showTabs: true  },
+  apiKey:         { el: null, title: "Gemini APIキー",   showTabs: true  },
+  reset:          { el: null, title: "データのリセット", showTabs: true  },
+  visibility:     { el: null, title: "表示 / 非表示",    showTabs: true  },
 };
 
 export let viewStack = ["home"];
@@ -119,7 +119,8 @@ export function showCurrentView() {
   }
 
   document.getElementById("tabBar").classList.toggle("hidden", !config.showTabs);
-  openAddBtn.classList.toggle("hidden", !config.showTabs);
+  // FABはメイン画面のみ表示
+  openAddBtn.classList.toggle("hidden", !isMain);
 
   // コールバック経由で各機能の描画を呼ぶ
   if (_onShowView) _onShowView(name);

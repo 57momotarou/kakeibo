@@ -32,7 +32,7 @@ export function openAddModal(prefill, onAdded) {
   });
 
   const { parentId, childName } = parseCategoryField(prefill?.category || "", childCategories);
-  const defaultParent = type === "income" ? "income_sal" : "food";
+  const defaultParent = type === "income" ? "income" : "food";
   const pid = parentId !== "unclassified" ? parentId : defaultParent;
   updateParentSelect(document.getElementById("addParentCat"), type, pid);
   updateChildSelect(document.getElementById("addChildCat"), pid, childName);
@@ -61,7 +61,7 @@ export function initAddModal(onAdded) {
     addTypeToggle.querySelectorAll(".type-toggle-btn").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
     addTypeHidden.value = val;
-    const defaultParent = val === "income" ? "income_sal" : "food";
+    const defaultParent = val === "income" ? "income" : "food";
     updateParentSelect(document.getElementById("addParentCat"), val, defaultParent);
     updateChildSelect(document.getElementById("addChildCat"), defaultParent, "");
   });
@@ -128,7 +128,7 @@ export function initEditModal(onEdited) {
     editTypeToggle.querySelectorAll(".type-toggle-btn").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
     editTypeInput.value = val;
-    const defaultParent = val === "income" ? "income_sal" : "food";
+    const defaultParent = val === "income" ? "income" : "food";
     updateParentSelect(document.getElementById("editParentCat"), val, defaultParent);
     updateChildSelect(document.getElementById("editChildCat"), defaultParent, "");
   });

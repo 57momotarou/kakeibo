@@ -1,27 +1,28 @@
 // ===================================
 // 大分類マスターデータ
+// color: 円形背景の色
 // ===================================
 export const PARENT_CATEGORIES = [
-  { id: "food",        name: "食費",         icon: "🍽️",  type: "expense" },
-  { id: "daily",       name: "日用品",        icon: "🛒",  type: "expense" },
-  { id: "hobby",       name: "趣味・娯楽",    icon: "🎮",  type: "expense" },
-  { id: "social",      name: "交際費",        icon: "🥂",  type: "expense" },
-  { id: "transport",   name: "交通費",        icon: "🚃",  type: "expense" },
-  { id: "fashion",     name: "衣服・美容",    icon: "👗",  type: "expense" },
-  { id: "health",      name: "健康・医療",    icon: "💊",  type: "expense" },
-  { id: "car",         name: "自動車",        icon: "🚗",  type: "expense" },
-  { id: "education",   name: "教養・教育",    icon: "📚",  type: "expense" },
-  { id: "special",     name: "特別な支出",    icon: "💸",  type: "expense" },
-  { id: "cash",        name: "現金・カード",  icon: "💳",  type: "expense" },
-  { id: "utility",     name: "水道・光熱費",  icon: "💡",  type: "expense" },
-  { id: "telecom",     name: "通信費",        icon: "📱",  type: "expense" },
-  { id: "housing",     name: "住宅",          icon: "🏠",  type: "expense" },
-  { id: "tax",         name: "税・社会保障",  icon: "🏛️",  type: "expense" },
-  { id: "insurance",   name: "保険",          icon: "🛡️",  type: "expense" },
-  { id: "other",       name: "その他",        icon: "📦",  type: "both"    },
-  { id: "unclassified",name: "未分類",        icon: "❓",  type: "both"    },
-  { id: "income_sal",  name: "給与",          icon: "💰",  type: "income"  },
-  { id: "income_other",name: "その他収入",    icon: "💹",  type: "income"  },
+  { id: "food",        name: "食費",        icon: "🍴",  type: "expense", color: "#e05c5c" },
+  { id: "daily",       name: "日用品",       icon: "🪥",  type: "expense", color: "#4caf7d" },
+  { id: "hobby",       name: "趣味・娯楽",   icon: "⭐",  type: "expense", color: "#e05ca0" },
+  { id: "social",      name: "交際費",       icon: "👥",  type: "expense", color: "#5b8ed6" },
+  { id: "transport",   name: "交通費",       icon: "🚃",  type: "expense", color: "#7b6ec6" },
+  { id: "fashion",     name: "衣服・美容",   icon: "👕",  type: "expense", color: "#e8a030" },
+  { id: "health",      name: "健康・医療",   icon: "➕",  type: "expense", color: "#e06840" },
+  { id: "car",         name: "自動車",       icon: "🚗",  type: "expense", color: "#888888" },
+  { id: "education",   name: "教養・教育",   icon: "📖",  type: "expense", color: "#5b8ed6" },
+  { id: "special",     name: "特別な支出",   icon: "❗",  type: "expense", color: "#4caf7d" },
+  { id: "cash",        name: "現金・カード", icon: "🎞️", type: "expense", color: "#c87d3a" },
+  { id: "utility",     name: "水道・光熱費", icon: "🚿",  type: "expense", color: "#40aacc" },
+  { id: "telecom",     name: "通信費",       icon: "📡",  type: "expense", color: "#8860c0" },
+  { id: "housing",     name: "住宅",         icon: "🏠",  type: "expense", color: "#4caf7d" },
+  { id: "tax",         name: "税・社会保障", icon: "¥",   type: "expense", color: "#c8b040" },
+  { id: "insurance",   name: "保険",         icon: "➕",  type: "expense", color: "#e05ca0" },
+  { id: "other",       name: "その他",       icon: "···", type: "both",    color: "#888888" },
+  { id: "unclassified",name: "未分類",       icon: "?",   type: "both",    color: null },
+  // 収入（給与・その他収入を統合）
+  { id: "income",      name: "収入",         icon: "¥",   type: "income",  color: "#40aacc" },
 ];
 
 // ===================================
@@ -46,8 +47,11 @@ export const DEFAULT_CHILD_CATEGORIES = {
   insurance:    ["生命保険","医療保険","その他保険"],
   other:        ["仕送り","事業経費","事業原価","事業投資","寄付金","雑費"],
   unclassified: [],
-  income_sal:   ["給与","賞与","残業代","その他給与"],
-  income_other: ["副業","投資","ポイント還元","その他収入"],
+  // 収入（統合）
+  income:       ["給与","一時所得","事業・副業","年金","配当所得","不動産所得","不明な入金","その他入金"],
+  // 旧キーとの互換性（既存データが壊れないよう残す）
+  income_sal:   [],
+  income_other: [],
 };
 
 // ===================================

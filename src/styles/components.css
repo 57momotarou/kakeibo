@@ -662,7 +662,24 @@ body.back-gesture-active #pageWrapper { z-index: 1; }
   border-bottom: 1px solid #e8e8e8; transition: background 0.12s;
 }
 .parent-category-item:active { background: #f5f5f5; }
-.parent-cat-icon  { font-size: 22px; flex-shrink: 0; width: 28px; text-align: center; }
+.parent-cat-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: bold;
+}
+/* 未分類：背景透過・線のみ */
+.parent-cat-icon--outline {
+  background: transparent !important;
+  border: 2px solid #aaa;
+  color: #aaa;
+}
 .parent-cat-name  { font-size: 15px; font-weight: bold; color: #222; flex: 1; }
 .parent-cat-count { font-size: 12px; color: #aaa; flex-shrink: 0; }
 .parent-cat-arrow { font-size: 20px; color: #ccc; flex-shrink: 0; }
