@@ -2,17 +2,14 @@
    リセット・ベース
 =================================== */
 * { box-sizing: border-box; }
-html {
+html, body {
   height: 100%;
   margin: 0;
   padding: 0;
 }
 body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif;
-  /* Safe Area上部（TopBar背景）をテーマカラーで埋める */
+  /* Safe Area上部をTopBarと同色に */
   background: var(--theme);
 }
 

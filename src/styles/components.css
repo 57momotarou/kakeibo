@@ -46,9 +46,9 @@ body.back-gesture-active #pageWrapper { z-index: 1; }
 .back-gesture-prev {
   display: block !important;
   position: absolute !important;
-  inset: 52px 0 0 0 !important;
+  inset: 0 !important;
   width: 100% !important;
-  height: calc(100% - 52px) !important;
+  height: 100% !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
   padding: 0 !important;
@@ -60,16 +60,19 @@ body.back-gesture-active #pageWrapper { z-index: 1; }
    上部バー
 =================================== */
 .top-bar {
-  position: sticky;
+  position: fixed;
   top: 0;
-  height: 52px;
+  left: 0;
+  right: 0;
+  padding-top: env(safe-area-inset-top);
+  height: calc(52px + env(safe-area-inset-top));
   background: var(--theme);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
-  z-index: 100;
-  flex-shrink: 0;
+  padding-left: 0;
+  padding-right: 0;
+  z-index: 200;
 }
 .top-bar-title {
   color: #fff;
