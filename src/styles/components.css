@@ -42,7 +42,7 @@
   z-index: 1;
 }
 body.back-gesture-active #backLayer { display: block; }
-body.back-gesture-active #pageWrapper { position: relative; z-index: 1; }
+body.back-gesture-active #pageWrapper { z-index: 1; }
 .back-gesture-prev {
   display: block !important;
   position: absolute !important;
