@@ -206,6 +206,7 @@ export function initSwipeGesture(addModal, editModal, monthSelector, onMonthChan
   const pageWrapper = document.getElementById("pageWrapper");
   const backLayer   = document.getElementById("backLayer");
   const backDim     = document.getElementById("backLayerDim");
+  const topBar      = document.getElementById("topBar");
 
   function canGoBack() {
     const cur = viewStack[viewStack.length - 1];
@@ -256,6 +257,8 @@ export function initSwipeGesture(addModal, editModal, monthSelector, onMonthChan
     pageWrapper.style.boxShadow  = "";
     backDim.style.transition     = "";
     backDim.style.opacity        = "";
+    topBar.style.transition      = "";
+    topBar.style.opacity         = "";
   }
 
   document.addEventListener("touchstart", e => {
@@ -293,6 +296,9 @@ export function initSwipeGesture(addModal, editModal, monthSelector, onMonthChan
       pageWrapper.style.boxShadow  = `-6px 0 16px rgba(0,0,0,${0.15 * (1 - progress)})`;
       backDim.style.transition = "none";
       backDim.style.opacity    = String(0.35 * (1 - progress));
+      // TopBarをスライド量に応じてフェードアウト
+      topBar.style.transition = "none";
+      topBar.style.opacity    = String(Math.max(0, 1 - progress * 2));
     }
   }, { passive: true });
 
@@ -311,6 +317,8 @@ export function initSwipeGesture(addModal, editModal, monthSelector, onMonthChan
         pageWrapper.style.boxShadow  = "none";
         backDim.style.transition     = "opacity 0.22s";
         backDim.style.opacity        = "0";
+        topBar.style.transition      = "opacity 0.22s";
+        topBar.style.opacity         = "0";
         setTimeout(() => {
           doGoBack();
           requestAnimationFrame(() => { cleanupBackLayer(); });
@@ -321,7 +329,8 @@ export function initSwipeGesture(addModal, editModal, monthSelector, onMonthChan
         pageWrapper.style.boxShadow  = "none";
         backDim.style.transition     = "opacity 0.28s";
         backDim.style.opacity        = "0.35";
-
+        topBar.style.transition      = "opacity 0.28s";
+        topBar.style.opacity         = "1";
         setTimeout(() => { cleanupBackLayer(); }, 300);
       }
       isBackGesture = false;
