@@ -22,18 +22,23 @@ export let tabVisibility = JSON.parse(localStorage.getItem("tabVisibility")) || 
 // ===================================
 // 小分類の初期化（localStorageから読み込み、なければデフォルト）
 // ===================================
-function loadChildCategories() {
-  const saved = localStorage.getItem("childCategories");
-  const obj = saved ? JSON.parse(saved) : {};
+// カテゴリ定義を変更したら必ずバージョンを上げる
+const CATEGORY_VERSION = "2";
 
-  let changed = false;
+function loadChildCategories() {
+  const saved        = localStorage.getItem("childCategories");
+  const savedVersion = localStorage.getItem("categoryVersion");
+  const obj          = saved ? JSON.parse(saved) : {};
+
+  // バージョンが変わっていたら全キーをチェックして不足分を補完
+  let changed = !saved || savedVersion !== CATEGORY_VERSION;
+
   Object.keys(DEFAULT_CHILD_CATEGORIES).forEach(pid => {
     if (!obj[pid]) {
-      // キー自体がない場合はデフォルトで初期化
       obj[pid] = DEFAULT_CHILD_CATEGORIES[pid].map(name => ({ name }));
       changed = true;
     } else {
-      // キーはあるが、デフォルトにある小分類が不足している場合は末尾に追加
+      // デフォルトにあって既存データにない小分類を末尾に追加
       const existingNames = obj[pid].map(c => c.name);
       DEFAULT_CHILD_CATEGORIES[pid].forEach(name => {
         if (!existingNames.includes(name)) {
@@ -44,8 +49,9 @@ function loadChildCategories() {
     }
   });
 
-  if (!saved || changed) {
+  if (changed) {
     localStorage.setItem("childCategories", JSON.stringify(obj));
+    localStorage.setItem("categoryVersion", CATEGORY_VERSION);
   }
   return obj;
 }

@@ -243,6 +243,8 @@ export function initSwipeGesture(addModal, editModal, monthSelector, onMonthChan
     const prevEl = backLayer.querySelector(".back-gesture-prev");
     if (prevEl) {
       prevEl.classList.remove("back-gesture-prev");
+      // インラインスタイルを完全にリセット
+      prevEl.style.cssText = "";
       if (prevEl._originalParent) {
         if (prevEl._originalNextSibling) {
           prevEl._originalParent.insertBefore(prevEl, prevEl._originalNextSibling);
@@ -253,9 +255,14 @@ export function initSwipeGesture(addModal, editModal, monthSelector, onMonthChan
         prevEl._originalNextSibling = null;
       }
     }
+    // transformを確実に消してリフロー強制
+    pageWrapper.style.transition = "none";
+    pageWrapper.style.transform  = "none";
+    pageWrapper.style.boxShadow  = "";
+    // 強制リフロー（transformの残留を確実に消す）
+    void pageWrapper.offsetHeight;
     pageWrapper.style.transition = "";
     pageWrapper.style.transform  = "";
-    pageWrapper.style.boxShadow  = "";
     backDim.style.transition     = "";
     backDim.style.opacity        = "";
     topBar.querySelectorAll(".top-bar-normal, .top-bar-settings").forEach(el => {
