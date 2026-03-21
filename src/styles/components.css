@@ -489,8 +489,8 @@ body.back-gesture-active #pageWrapper { z-index: 1; }
 /* 全ビューの左右paddingはbase.cssの.view.activeで0に設定済み */
 #accountView > ul,
 #accountView > button {
-  margin-left: 12px;
-  margin-right: 12px;
+  margin-left: 0;
+  margin-right: 0;
 }
 #graphView .graph-toggle-wrap,
 #graphView .chart-section {
