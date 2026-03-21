@@ -11,9 +11,6 @@ export function applyThemeColor(color) {
   setThemeColor(color);
   document.documentElement.style.setProperty("--theme", color);
   document.documentElement.style.setProperty("--theme-dark", darkenColor(color, 20));
-  // ステータスバーの色も同時に更新
-  const metaTheme = document.querySelector('meta[name="theme-color"]');
-  if (metaTheme) metaTheme.setAttribute("content", color);
   const bar = document.getElementById("themePreviewBar");
   if (bar) bar.style.background = color;
   document.querySelectorAll(".color-swatch").forEach(sw => {
