@@ -72,7 +72,6 @@ export function appendGroupsToEl(container, groups, onClickRecord) {
       leftEl.className = "mf-row-left";
       leftEl.innerHTML = `
         <span class="mf-title">${record.title || catLabel}</span>
-        <span class="mf-cat-label">${catLabel}</span>
       `;
 
       // 金額

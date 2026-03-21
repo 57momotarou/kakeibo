@@ -9,11 +9,15 @@ import { childCategories } from "../store.js";
 /** 大分類セレクト更新 */
 export function updateParentSelect(selectEl, type, currentParentId) {
   selectEl.innerHTML = "";
-  const filtered = PARENT_CATEGORIES.filter(p => p.type === type || p.type === "both");
+  const filtered = PARENT_CATEGORIES.filter(p => {
+    // unclassified・otherは選択肢に出さない
+    if (p.id === "unclassified" || p.id === "other") return false;
+    return p.type === type || (p.type === "both" && type !== "income");
+  });
   filtered.forEach(p => {
     const opt = document.createElement("option");
     opt.value = p.id;
-    opt.textContent = `${p.icon} ${p.name}`;
+    opt.textContent = p.name;  // アイコンなし
     if (p.id === currentParentId) opt.selected = true;
     selectEl.appendChild(opt);
   });

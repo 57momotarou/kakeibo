@@ -5,8 +5,8 @@
 
 import { records, childCategories } from "../../store.js";
 import { getPeriodRange } from "../../utils/calendar.js";
-import { displayCategory } from "../../utils/category.js";
-import { CHART_COLORS } from "../../constants/categories.js";
+import { displayCategory, parseCategoryField } from "../../utils/category.js";
+import { CHART_COLORS, PARENT_CATEGORIES } from "../../constants/categories.js";
 
 function filterByPeriod(yearMonth) {
   const periodStartDay = Number(localStorage.getItem("periodStartDay")) || 1;
@@ -17,11 +17,24 @@ function filterByPeriod(yearMonth) {
 function aggregateByCategory(type, month) {
   const filtered = filterByPeriod(month).filter(r => r.type === type);
   const map = {};
+  const colorMap = {};
   filtered.forEach(r => {
     const label = displayCategory(r.category, childCategories);
     map[label] = (map[label] || 0) + r.amount;
+    // 大分類のcolorを記録（未設定はCHART_COLORSにフォールバック）
+    if (!colorMap[label]) {
+      const { parentId } = parseCategoryField(r.category, childCategories);
+      const parent = PARENT_CATEGORIES.find(p => p.id === parentId);
+      colorMap[label] = parent?.color || null;
+    }
   });
-  return Object.entries(map).sort((a,b) => b[1]-a[1]).map(([name,amount]) => ({name,amount}));
+  return Object.entries(map)
+    .sort((a,b) => b[1]-a[1])
+    .map(([name, amount], i) => ({
+      name,
+      amount,
+      color: colorMap[name] || CHART_COLORS[i % CHART_COLORS.length],
+    }));
 }
 
 function drawPieChart(canvasId, data, totalElId) {
@@ -45,7 +58,7 @@ function drawPieChart(canvasId, data, totalElId) {
     const slice = (d.amount / total) * Math.PI * 2;
     ctx.beginPath(); ctx.moveTo(cx, cy);
     ctx.arc(cx, cy, R, angle, angle + slice); ctx.closePath();
-    ctx.fillStyle = CHART_COLORS[i % CHART_COLORS.length]; ctx.fill();
+    ctx.fillStyle = d.color || CHART_COLORS[i % CHART_COLORS.length]; ctx.fill();
     angle += slice;
   });
   ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.fillStyle="#fff"; ctx.fill();
@@ -57,7 +70,7 @@ function renderLegend(data) {
   const total = data.reduce((s, d) => s + d.amount, 0);
   data.forEach((d, i) => {
     const pct   = total > 0 ? Math.round(d.amount / total * 100) : 0;
-    const color = CHART_COLORS[i % CHART_COLORS.length];
+    const color = d.color || CHART_COLORS[i % CHART_COLORS.length];
     const li    = document.createElement("li");
     li.className = "legend-item";
     li.innerHTML =
