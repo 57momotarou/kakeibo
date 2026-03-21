@@ -484,19 +484,7 @@ body.back-gesture-active #pageWrapper { position: relative; z-index: 1; }
    ホーム・ビュー / 出入金 / カレンダー / 口座 / グラフ
    （左右paddingなし）
 =================================== */
-#homeView,
-#transactionView,
-#calendarView,
-#accountView,
-#graphView,
-#settingsView,
-#categoryView,
-#categoryDetailView,
-#visibilityView,
-#resetView {
-  padding-left: 0 !important;
-  padding-right: 0 !important;
-}
+/* 全ビューの左右paddingはbase.cssの.view.activeで0に設定済み */
 #accountView > ul,
 #accountView > button {
   margin-left: 12px;
@@ -717,7 +705,7 @@ body.back-gesture-active #pageWrapper { position: relative; z-index: 1; }
 =================================== */
 .period-card {
   background: #fff; border-top: 1px solid #e8e8e8; border-bottom: 1px solid #e8e8e8;
-  padding: 20px 16px; margin-top: 8px;
+  padding: 20px 16px; margin-top: 8px; margin-left: 0; margin-right: 0;
 }
 .period-desc { font-size: 13px; color: #666; line-height: 1.7; margin: 0 0 16px; }
 .period-preview {
@@ -729,9 +717,9 @@ body.back-gesture-active #pageWrapper { position: relative; z-index: 1; }
 /* ===================================
    テーマカラー設定
 =================================== */
-.theme-desc          { font-size: 13px; color: #666; margin: 0 0 16px; }
-.theme-section-title { font-size: 13px; font-weight: bold; color: #444; margin: 0 0 10px; }
-.color-presets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+.theme-desc          { font-size: 13px; color: #666; margin: 8px 16px 16px; }
+.theme-section-title { font-size: 13px; font-weight: bold; color: #444; margin: 0 16px 10px; }
+.color-presets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 0 16px 20px; }
 .color-swatch {
   width: 100% !important; height: 60px !important;
   border: 3px solid transparent; border-radius: 8px; cursor: pointer;
@@ -743,12 +731,12 @@ body.back-gesture-active #pageWrapper { position: relative; z-index: 1; }
 .swatch-check  { color: #fff; font-size: 16px; font-weight: bold; opacity: 0; line-height: 1; }
 .color-swatch.selected .swatch-check { opacity: 1; }
 .swatch-label  { color: #fff; font-size: 10px; font-weight: bold; text-shadow: 0 1px 2px rgba(0,0,0,0.4); line-height: 1; }
-.custom-color-row { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; }
+.custom-color-row { display: flex; gap: 10px; align-items: center; margin: 0 16px 20px; }
 .custom-color-row input[type="color"] {
   width: 56px !important; height: 44px !important; padding: 2px; border-radius: 8px; cursor: pointer; flex-shrink: 0;
 }
 .custom-color-row .btn-blue { flex: 1; margin: 0; }
-.theme-preview { border: 1px solid #e8e8e8; border-radius: 8px; overflow: hidden; }
+.theme-preview { border: 1px solid #e8e8e8; border-radius: 8px; overflow: hidden; margin: 0 16px; }
 .theme-preview-label { font-size: 12px; color: #888; padding: 8px 12px 4px; margin: 0; }
 #themePreviewBar { height: 40px; transition: background 0.3s; margin: 4px 12px 12px; border-radius: 6px; }
 
