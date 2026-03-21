@@ -4,8 +4,17 @@
  */
 
 import { records, childCategories } from "../../store.js";
-import { displayCategory } from "../../utils/category.js";
+import { displayCategory, parseCategoryField } from "../../utils/category.js";
 import { WEEKDAY_NAMES } from "../../utils/calendar.js";
+import { PARENT_CATEGORIES } from "../../constants/categories.js";
+
+/**
+ * 大分類IDからアイコンを取得
+ */
+function getParentIcon(parentId) {
+  const p = PARENT_CATEGORIES.find(p => p.id === parentId);
+  return p ? p.icon : "📦";
+}
 
 /**
  * レコードを日付グループに変換（新しい順）
@@ -41,10 +50,14 @@ export function appendGroupsToEl(container, groups, onClickRecord) {
       row.className = "mf-record-row";
       const isExpense = record.type === "expense";
       const catLabel  = displayCategory(record.category, childCategories);
+      const { parentId } = parseCategoryField(record.category, childCategories);
+      const icon = getParentIcon(parentId);
       row.innerHTML = `
         <div class="mf-row-left">
-          <span class="mf-title">${record.title || catLabel}</span>
-          <span class="mf-cat-label">${catLabel}</span>
+          <span class="mf-cat-icon">${icon}</span>
+          <div class="mf-row-text">
+            <span class="mf-title">${record.title || catLabel}</span>
+          </div>
         </div>
         <span class="mf-amount ${isExpense ? "mf-amount-expense" : "mf-amount-income"}">${isExpense ? "-" : "+"}¥${record.amount.toLocaleString()}</span>
       `;
