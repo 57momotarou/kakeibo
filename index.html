@@ -9,6 +9,13 @@
   <link rel="stylesheet" href="./src/styles/components.css">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#4CAF50">
+  <!-- theme-colorをlocalStorageの保存値で即時反映（スプラッシュのちらつき防止） -->
+  <script>
+    (function() {
+      var c = localStorage.getItem("themeColor") || "#4caf50";
+      document.querySelector('meta[name="theme-color"]').setAttribute("content", c);
+    })();
+  </script>
   <link rel="apple-touch-icon" href="icon.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 </head>
