@@ -115,12 +115,8 @@ export function renderCategoryDetailView() {
     const childIconEl = document.createElement("span");
     childIconEl.className = "child-cat-icon";
     if (child.name === "未分類") {
-      // 未分類：親の色背景 + ?
-      if (parent?.color) {
-        childIconEl.style.background = parent.color;
-      } else {
-        childIconEl.classList.add("child-cat-icon--outline");
-      }
+      // 未分類：支出・収入問わず背景透過・枠線のみ
+      childIconEl.classList.add("child-cat-icon--outline");
       childIconEl.textContent = "?";
     } else if (parent?.color) {
       childIconEl.style.background = parent.color;

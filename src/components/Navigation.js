@@ -61,6 +61,9 @@ export function navigate(viewName) {
   VIEW_CONFIG[viewStack[viewStack.length - 1]].el.classList.remove("active");
   viewStack.push(viewName);
   showCurrentView();
+  // ビュー切り替え時にスクロール位置をリセット
+  const pw = document.getElementById("pageWrapper");
+  if (pw) pw.scrollTop = 0;
 }
 
 export function goBack() {
@@ -74,6 +77,9 @@ export function switchToTab(name) {
   viewStack.forEach(v => VIEW_CONFIG[v].el.classList.remove("active"));
   viewStack = [name];
   showCurrentView();
+  // タブ切り替え時にスクロール位置をリセット
+  const pw = document.getElementById("pageWrapper");
+  if (pw) pw.scrollTop = 0;
 }
 
 export function showCurrentView() {
