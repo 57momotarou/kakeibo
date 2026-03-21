@@ -6,20 +6,6 @@
 import { DEFAULT_CHILD_CATEGORIES } from "./constants/categories.js";
 
 // ===================================
-// State
-// ===================================
-export let records        = JSON.parse(localStorage.getItem("records"))     || [];
-export let periodStartDay = Number(localStorage.getItem("periodStartDay"))  || 1;
-export let themeColor     = localStorage.getItem("themeColor")              || "#4caf50";
-export let budgets        = JSON.parse(localStorage.getItem("budgets"))     || {};
-export let accounts       = JSON.parse(localStorage.getItem("accounts"))    || [];
-export let childCategories = loadChildCategories();
-
-// タブ表示設定
-const DEFAULT_TAB_VISIBILITY = { calendar: false, account: true };
-export let tabVisibility = JSON.parse(localStorage.getItem("tabVisibility")) || DEFAULT_TAB_VISIBILITY;
-
-// ===================================
 // 小分類の初期化（localStorageから読み込み、なければデフォルト）
 // ===================================
 // カテゴリ定義を変更したら必ずバージョンを上げる
@@ -55,6 +41,20 @@ function loadChildCategories() {
   }
   return obj;
 }
+
+// ===================================
+// State
+// ===================================
+export let records        = JSON.parse(localStorage.getItem("records"))     || [];
+export let periodStartDay = Number(localStorage.getItem("periodStartDay"))  || 1;
+export let themeColor     = localStorage.getItem("themeColor")              || "#4caf50";
+export let budgets        = JSON.parse(localStorage.getItem("budgets"))     || {};
+export let accounts       = JSON.parse(localStorage.getItem("accounts"))    || [];
+export let childCategories = loadChildCategories();
+
+// タブ表示設定
+const DEFAULT_TAB_VISIBILITY = { calendar: false, account: true };
+export let tabVisibility = JSON.parse(localStorage.getItem("tabVisibility")) || DEFAULT_TAB_VISIBILITY;
 
 // ===================================
 // 保存関数
