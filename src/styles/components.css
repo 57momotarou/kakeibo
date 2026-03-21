@@ -668,11 +668,13 @@ body.back-gesture-active #pageWrapper { z-index: 1; }
   width: 42px;
   height: 42px;
   border-radius: 50%;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
   font-weight: bold;
+  line-height: 1;
 }
 /* 未分類：背景透過・線のみ */
 .parent-cat-icon--outline {

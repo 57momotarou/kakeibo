@@ -41,15 +41,26 @@ export function getParentId(cat, childCategories) {
  * "parentId/childName" 形式の文字列をパース
  * 旧形式（文字列のみ）との互換性あり
  */
+// 旧parentIdを新parentIdに変換するマップ
+const PARENT_ID_MIGRATION = {
+  income_sal:   "income",
+  income_other: "income",
+};
+
 export function parseCategoryField(cat, childCategories) {
   if (!cat) return { parentId: "unclassified", childName: "" };
   if (cat.includes("/")) {
-    const [parentId, ...rest] = cat.split("/");
+    const [rawId, ...rest] = cat.split("/");
+    // 旧IDを新IDに変換
+    const parentId = PARENT_ID_MIGRATION[rawId] || rawId;
     return { parentId, childName: rest.join("/") };
   }
   // 旧形式：小分類名から大分類を推測
   for (const [pid, arr] of Object.entries(childCategories)) {
-    if (arr.some(c => c.name === cat)) return { parentId: pid, childName: cat };
+    if (arr.some(c => c.name === cat)) {
+      const parentId = PARENT_ID_MIGRATION[pid] || pid;
+      return { parentId, childName: cat };
+    }
   }
   return { parentId: "unclassified", childName: cat };
 }

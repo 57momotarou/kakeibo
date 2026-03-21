@@ -3,7 +3,7 @@
 //    ここのバージョン番号を 1つ増やしてください
 //    例: "kakeibo-v2" → "kakeibo-v3"
 // =============================================
-const CACHE_NAME = "kakeibo-v121";
+const CACHE_NAME = "kakeibo-v122";
 
 const urlsToCache = [
   "./",
