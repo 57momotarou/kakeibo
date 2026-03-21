@@ -8,7 +8,8 @@ html, body {
 }
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif;
-  background: #f5f5f5;
+  /* Safe Area（ノッチ・Dynamic Island上部）をTopBarと同色にする */
+  background: var(--theme);
 }
 
 /* ===================================
