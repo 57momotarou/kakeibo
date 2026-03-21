@@ -4,16 +4,29 @@
  */
 
 import { records, childCategories } from "../../store.js";
-import { displayCategory, parseCategoryField } from "../../utils/category.js";
+import { displayCategory, parseCategoryField, getParentIcon, getParentColor } from "../../utils/category.js";
 import { WEEKDAY_NAMES } from "../../utils/calendar.js";
-import { PARENT_CATEGORIES } from "../../constants/categories.js";
 
 /**
- * 大分類IDからアイコンを取得
+ * カテゴリの大分類アイコンHTML（円形背景つき）を生成
  */
-function getParentIcon(parentId) {
-  const p = PARENT_CATEGORIES.find(p => p.id === parentId);
-  return p ? p.icon : "📦";
+function buildIconEl(record) {
+  const { parentId } = parseCategoryField(record.category, childCategories);
+  const icon  = getParentIcon(parentId);
+  const color = getParentColor(parentId);
+
+  const el = document.createElement("span");
+  el.className = "mf-cat-icon";
+
+  if (color) {
+    el.style.background = color;
+    el.textContent = icon;
+  } else {
+    // 未分類：背景透過・枠線のみ
+    el.classList.add("mf-cat-icon--outline");
+    el.textContent = icon;
+  }
+  return el;
 }
 
 /**
@@ -50,17 +63,27 @@ export function appendGroupsToEl(container, groups, onClickRecord) {
       row.className = "mf-record-row";
       const isExpense = record.type === "expense";
       const catLabel  = displayCategory(record.category, childCategories);
-      const { parentId } = parseCategoryField(record.category, childCategories);
-      const icon = getParentIcon(parentId);
-      row.innerHTML = `
-        <div class="mf-row-left">
-          <span class="mf-cat-icon">${icon}</span>
-          <div class="mf-row-text">
-            <span class="mf-title">${record.title || catLabel}</span>
-          </div>
-        </div>
-        <span class="mf-amount ${isExpense ? "mf-amount-expense" : "mf-amount-income"}">${isExpense ? "-" : "+"}¥${record.amount.toLocaleString()}</span>
+
+      // アイコン
+      const iconEl = buildIconEl(record);
+
+      // 左側テキスト
+      const leftEl = document.createElement("div");
+      leftEl.className = "mf-row-left";
+      leftEl.innerHTML = `
+        <span class="mf-title">${record.title || catLabel}</span>
+        <span class="mf-cat-label">${catLabel}</span>
       `;
+
+      // 金額
+      const amountEl = document.createElement("span");
+      amountEl.className = `mf-amount ${isExpense ? "mf-amount-expense" : "mf-amount-income"}`;
+      amountEl.textContent = `${isExpense ? "-" : "+"}¥${record.amount.toLocaleString()}`;
+
+      row.appendChild(iconEl);
+      row.appendChild(leftEl);
+      row.appendChild(amountEl);
+
       row.addEventListener("click", () => onClickRecord(record));
       container.appendChild(row);
     });

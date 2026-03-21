@@ -15,6 +15,29 @@ export function getParentName(parentId) {
 }
 
 /**
+ * 大分類IDからアイコンを取得
+ */
+export function getParentIcon(parentId) {
+  const p = PARENT_CATEGORIES.find(p => p.id === parentId);
+  return p ? p.icon : "?";
+}
+
+/**
+ * 大分類IDから色を取得
+ */
+export function getParentColor(parentId) {
+  const p = PARENT_CATEGORIES.find(p => p.id === parentId);
+  return p ? p.color : null;
+}
+
+/**
+ * カテゴリフィールドから大分類IDを取得
+ */
+export function getParentId(cat, childCategories) {
+  return parseCategoryField(cat, childCategories).parentId;
+}
+
+/**
  * "parentId/childName" 形式の文字列をパース
  * 旧形式（文字列のみ）との互換性あり
  */

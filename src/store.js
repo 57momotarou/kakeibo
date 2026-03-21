@@ -24,12 +24,20 @@ export let tabVisibility = JSON.parse(localStorage.getItem("tabVisibility")) || 
 // ===================================
 function loadChildCategories() {
   const saved = localStorage.getItem("childCategories");
-  if (saved) return JSON.parse(saved);
-  const obj = {};
+  const obj = saved ? JSON.parse(saved) : {};
+
+  // 新しいキーが存在しない場合はデフォルトで補完（マイグレーション）
+  let changed = false;
   Object.keys(DEFAULT_CHILD_CATEGORIES).forEach(pid => {
-    obj[pid] = DEFAULT_CHILD_CATEGORIES[pid].map(name => ({ name }));
+    if (!obj[pid]) {
+      obj[pid] = DEFAULT_CHILD_CATEGORIES[pid].map(name => ({ name }));
+      changed = true;
+    }
   });
-  localStorage.setItem("childCategories", JSON.stringify(obj));
+
+  if (!saved || changed) {
+    localStorage.setItem("childCategories", JSON.stringify(obj));
+  }
   return obj;
 }
 
