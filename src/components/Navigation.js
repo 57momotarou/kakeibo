@@ -257,8 +257,11 @@ export function initSwipeGesture(addModal, editModal, monthSelector, onMonthChan
     pageWrapper.style.boxShadow  = "";
     backDim.style.transition     = "";
     backDim.style.opacity        = "";
-    topBar.style.transition      = "";
-    topBar.style.opacity         = "";
+    topBar.querySelectorAll(".top-bar-normal, .top-bar-settings").forEach(el => {
+      el.style.transition = "";
+      el.style.transform  = "";
+      el.style.opacity    = "";
+    });
   }
 
   document.addEventListener("touchstart", e => {
@@ -296,9 +299,14 @@ export function initSwipeGesture(addModal, editModal, monthSelector, onMonthChan
       pageWrapper.style.boxShadow  = `-6px 0 16px rgba(0,0,0,${0.15 * (1 - progress)})`;
       backDim.style.transition = "none";
       backDim.style.opacity    = String(0.35 * (1 - progress));
-      // TopBarをスライド量に応じてフェードアウト
-      topBar.style.transition = "none";
-      topBar.style.opacity    = String(Math.max(0, 1 - progress * 2));
+      // TopBar内部要素をスライド量に応じて右にずらしながらフェードアウト
+      const shift   = move * 0.25; // pageWrapperの1/4の速さで右にずれる
+      const opacity = Math.max(0, 1 - progress * 2);
+      topBar.querySelectorAll(".top-bar-normal, .top-bar-settings").forEach(el => {
+        el.style.transition = "none";
+        el.style.transform  = `translateX(${shift}px)`;
+        el.style.opacity    = String(opacity);
+      });
     }
   }, { passive: true });
 
@@ -317,8 +325,11 @@ export function initSwipeGesture(addModal, editModal, monthSelector, onMonthChan
         pageWrapper.style.boxShadow  = "none";
         backDim.style.transition     = "opacity 0.22s";
         backDim.style.opacity        = "0";
-        topBar.style.transition      = "opacity 0.22s";
-        topBar.style.opacity         = "0";
+        topBar.querySelectorAll(".top-bar-normal, .top-bar-settings").forEach(el => {
+          el.style.transition = "transform 0.22s cubic-bezier(0.4,0,0.2,1), opacity 0.22s";
+          el.style.transform  = `translateX(${window.innerWidth * 0.25}px)`;
+          el.style.opacity    = "0";
+        });
         setTimeout(() => {
           doGoBack();
           requestAnimationFrame(() => { cleanupBackLayer(); });
@@ -329,8 +340,11 @@ export function initSwipeGesture(addModal, editModal, monthSelector, onMonthChan
         pageWrapper.style.boxShadow  = "none";
         backDim.style.transition     = "opacity 0.28s";
         backDim.style.opacity        = "0.35";
-        topBar.style.transition      = "opacity 0.28s";
-        topBar.style.opacity         = "1";
+        topBar.querySelectorAll(".top-bar-normal, .top-bar-settings").forEach(el => {
+          el.style.transition = "transform 0.28s cubic-bezier(0.4,0,0.2,1), opacity 0.28s";
+          el.style.transform  = "translateX(0)";
+          el.style.opacity    = "1";
+        });
         setTimeout(() => { cleanupBackLayer(); }, 300);
       }
       isBackGesture = false;
