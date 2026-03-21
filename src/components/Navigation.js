@@ -333,7 +333,11 @@ export function initSwipeGesture(addModal, editModal, monthSelector, onMonthChan
         });
         setTimeout(() => {
           doGoBack();
-          requestAnimationFrame(() => { cleanupBackLayer(); });
+          // transformを即座にリセットしてからcleanup（スクロール不能防止）
+          pageWrapper.style.transition = "";
+          pageWrapper.style.transform  = "";
+          pageWrapper.style.boxShadow  = "";
+          cleanupBackLayer();
         }, 220);
       } else {
         pageWrapper.style.transition = "transform 0.28s cubic-bezier(0.4,0,0.2,1), box-shadow 0.28s";

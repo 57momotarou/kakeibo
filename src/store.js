@@ -26,12 +26,21 @@ function loadChildCategories() {
   const saved = localStorage.getItem("childCategories");
   const obj = saved ? JSON.parse(saved) : {};
 
-  // 新しいキーが存在しない場合はデフォルトで補完（マイグレーション）
   let changed = false;
   Object.keys(DEFAULT_CHILD_CATEGORIES).forEach(pid => {
     if (!obj[pid]) {
+      // キー自体がない場合はデフォルトで初期化
       obj[pid] = DEFAULT_CHILD_CATEGORIES[pid].map(name => ({ name }));
       changed = true;
+    } else {
+      // キーはあるが、デフォルトにある小分類が不足している場合は末尾に追加
+      const existingNames = obj[pid].map(c => c.name);
+      DEFAULT_CHILD_CATEGORIES[pid].forEach(name => {
+        if (!existingNames.includes(name)) {
+          obj[pid].push({ name });
+          changed = true;
+        }
+      });
     }
   });
 
