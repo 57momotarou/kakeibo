@@ -25,17 +25,7 @@ export function renderCategoryView() {
     li.className = "parent-category-item";
 
     // アイコン（円形背景）
-    const iconEl = document.createElement("span");
-    iconEl.className = "parent-cat-icon";
-    if (parent.color) {
-      // 通常：塗りつぶし円
-      iconEl.style.cssText = `background:${parent.color};`;
-      iconEl.textContent = parent.icon;
-    } else {
-      // 未分類：背景透過・線のみ
-      iconEl.classList.add("parent-cat-icon--outline");
-      iconEl.textContent = parent.icon;
-    }
+    const iconEl = buildParentIconEl(parent);
 
     const nameEl = document.createElement("span");
     nameEl.className = "parent-cat-name";
@@ -71,6 +61,20 @@ export function renderCategoryView() {
   });
 }
 
+// 大分類アイコン要素を生成
+function buildParentIconEl(parent) {
+  const el = document.createElement("span");
+  el.className = "parent-cat-icon";
+  if (parent.color) {
+    el.style.background = parent.color;
+    el.textContent = parent.icon;
+  } else {
+    el.classList.add("parent-cat-icon--outline");
+    el.textContent = parent.icon;
+  }
+  return el;
+}
+
 // ===================================
 // 小分類一覧
 // ===================================
@@ -78,6 +82,9 @@ export function renderCategoryDetailView() {
   const pid = currentCategoryParentId;
   if (!pid) return;
   if (!childCategories[pid]) childCategories[pid] = [];
+
+  // 現在の大分類情報を取得（アイコン・色）
+  const parent = PARENT_CATEGORIES.find(p => p.id === pid);
 
   const ul = document.getElementById("childCategoryList");
   ul.innerHTML = "";
@@ -103,13 +110,35 @@ export function renderCategoryDetailView() {
   children.forEach((child, idx) => {
     const li = document.createElement("li");
     li.className = "child-category-item";
-    li.innerHTML = `
-      <span class="child-cat-name">${child.name}</span>
-      <button class="child-cat-del-btn" data-idx="${idx}">削除</button>
-    `;
+
+    // 小分類アイコン（親の色・アイコンを継承。「未分類」は?アイコン）
+    const childIconEl = document.createElement("span");
+    childIconEl.className = "child-cat-icon";
+    if (child.name === "未分類") {
+      // 未分類：親の色背景 + ?
+      if (parent?.color) {
+        childIconEl.style.background = parent.color;
+      } else {
+        childIconEl.classList.add("child-cat-icon--outline");
+      }
+      childIconEl.textContent = "?";
+    } else if (parent?.color) {
+      childIconEl.style.background = parent.color;
+      childIconEl.textContent = parent.icon;
+    } else {
+      childIconEl.classList.add("child-cat-icon--outline");
+      childIconEl.textContent = parent?.icon || "?";
+    }
+
+    const nameSpan = document.createElement("span");
+    nameSpan.className = "child-cat-name";
+    nameSpan.textContent = child.name;
+
+    const delBtn = document.createElement("button");
+    delBtn.className = "child-cat-del-btn";
+    delBtn.textContent = "削除";
 
     // 名前タップ → インライン編集
-    const nameSpan = li.querySelector(".child-cat-name");
     nameSpan.addEventListener("click", () => {
       const input = document.createElement("input");
       input.type  = "text";
@@ -133,7 +162,7 @@ export function renderCategoryDetailView() {
     });
 
     // 削除ボタン
-    li.querySelector(".child-cat-del-btn").addEventListener("click", () => {
+    delBtn.addEventListener("click", () => {
       const usedCount = records.filter(r => {
         const parts = r.category?.split("/");
         return parts?.[0] === pid && parts?.[1] === child.name;
@@ -144,6 +173,9 @@ export function renderCategoryDetailView() {
       renderCategoryDetailView();
     });
 
+    li.appendChild(childIconEl);
+    li.appendChild(nameSpan);
+    li.appendChild(delBtn);
     ul.appendChild(li);
   });
 
