@@ -3,19 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <title>自分用家計簿</title>
+  <!--
+    CSSより先にインラインスクリプトを実行。
+    localStorageのテーマカラーをCSS変数とmeta theme-colorに即時反映することで、
+    スプラッシュ画面がデフォルトの緑で一瞬表示されるちらつきを防ぐ。
+  -->
+  <script>
+    (function() {
+      var c = localStorage.getItem("themeColor") || "#4caf50";
+      // CSS変数を即時上書き（variables.cssより先に実行されるため確実に効く）
+      document.documentElement.style.setProperty("--theme", c);
+      // ステータスバーの色も設定（metaタグはまだないのでdocument.writeで埋め込む）
+      document.write('<meta name="theme-color" content="' + c + '">');
+    })();
+  </script>
   <!-- CSSを役割ごとに分割して読み込み -->
   <link rel="stylesheet" href="./src/styles/variables.css">
   <link rel="stylesheet" href="./src/styles/base.css">
   <link rel="stylesheet" href="./src/styles/components.css">
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#4CAF50">
-  <!-- theme-colorをlocalStorageの保存値で即時反映（スプラッシュのちらつき防止） -->
-  <script>
-    (function() {
-      var c = localStorage.getItem("themeColor") || "#4caf50";
-      document.querySelector('meta[name="theme-color"]').setAttribute("content", c);
-    })();
-  </script>
   <link rel="apple-touch-icon" href="icon.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 </head>
