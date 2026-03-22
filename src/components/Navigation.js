@@ -275,10 +275,10 @@ export function initSwipeGesture(addModal, editModal, monthSelector, onMonthChan
     pageWrapper.style.transition = "none";
     pageWrapper.style.transform  = "none";
     pageWrapper.style.boxShadow  = "";
-    // 強制リフロー（transformの残留を確実に消す）
-    void pageWrapper.offsetHeight;
+    void pageWrapper.offsetWidth;  // 強制リフロー①
     pageWrapper.style.transition = "";
     pageWrapper.style.transform  = "";
+    void pageWrapper.offsetWidth;  // 強制リフロー②（transform=""の反映を保証）
     backDim.style.transition     = "";
     backDim.style.opacity        = "";
     topBar.querySelectorAll(".top-bar-normal, .top-bar-settings").forEach(el => {
@@ -344,6 +344,8 @@ export function initSwipeGesture(addModal, editModal, monthSelector, onMonthChan
     if (isBackGesture) {
       if (dx >= BACK_THRESHOLD) {
         const trans = "transform 0.22s cubic-bezier(0.4,0,0.2,1)";
+        // アニメーション中はタッチを無効化（誤操作防止）
+        pageWrapper.style.pointerEvents = "none";
         pageWrapper.style.transition = trans;
         pageWrapper.style.transform  = `translateX(${window.innerWidth}px)`;
         pageWrapper.style.boxShadow  = "none";
@@ -355,13 +357,22 @@ export function initSwipeGesture(addModal, editModal, monthSelector, onMonthChan
           el.style.opacity    = "0";
         });
         setTimeout(() => {
-          doGoBack();
-          // transformを即座にリセットしてからcleanup（スクロール不能防止）
-          pageWrapper.style.transition = "";
+          // ★ transform を先に消してからdoGoBack（タッチ座標のズレを防ぐ）
+          pageWrapper.style.transition = "none";
           pageWrapper.style.transform  = "";
           pageWrapper.style.boxShadow  = "";
+          void pageWrapper.offsetWidth; // 強制リフロー
+          // ビュー遷移
+          doGoBack();
+          // cleanup
           cleanupBackLayer();
-          requestAnimationFrame(() => { pageWrapper.scrollTop = 0; });
+          pageWrapper.style.pointerEvents = "";
+          // 描画完了後にscrollTopをリセット
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              pageWrapper.scrollTop = 0;
+            });
+          });
         }, 220);
       } else {
         pageWrapper.style.transition = "transform 0.28s cubic-bezier(0.4,0,0.2,1), box-shadow 0.28s";
