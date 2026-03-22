@@ -46,9 +46,13 @@ body.back-gesture-active #pageWrapper { z-index: 1; }
 .back-gesture-prev {
   display: block !important;
   position: absolute !important;
-  inset: 0 !important;
+  /* TopBarの高さ分下げることで前のページが上にずれないようにする */
+  top: calc(52px + env(safe-area-inset-top)) !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
   width: 100% !important;
-  height: 100% !important;
+  height: auto !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
   padding: 0 !important;

@@ -71,6 +71,8 @@ export function goBack() {
   VIEW_CONFIG[viewStack[viewStack.length - 1]].el.classList.remove("active");
   viewStack.pop();
   showCurrentView();
+  const pw = document.getElementById("pageWrapper");
+  if (pw) pw.scrollTop = 0;
 }
 
 export function switchToTab(name) {
@@ -351,6 +353,7 @@ export function initSwipeGesture(addModal, editModal, monthSelector, onMonthChan
           pageWrapper.style.transform  = "";
           pageWrapper.style.boxShadow  = "";
           cleanupBackLayer();
+          pageWrapper.scrollTop = 0;
         }, 220);
       } else {
         pageWrapper.style.transition = "transform 0.28s cubic-bezier(0.4,0,0.2,1), box-shadow 0.28s";

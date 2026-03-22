@@ -11,20 +11,22 @@ import { WEEKDAY_NAMES } from "../../utils/calendar.js";
  * カテゴリの大分類アイコンHTML（円形背景つき）を生成
  */
 function buildIconEl(record) {
-  const { parentId } = parseCategoryField(record.category, childCategories);
+  const { parentId, childName } = parseCategoryField(record.category, childCategories);
   const icon  = getParentIcon(parentId);
   const color = getParentColor(parentId);
 
   const el = document.createElement("span");
   el.className = "mf-cat-icon";
 
-  if (color) {
+  // 小分類名または大分類が「未分類」の場合は枠線のみ
+  const isUnclassified = parentId === "unclassified" || childName === "未分類";
+
+  if (!isUnclassified && color) {
     el.style.background = color;
     el.textContent = icon;
   } else {
-    // 未分類：背景透過・枠線のみ
     el.classList.add("mf-cat-icon--outline");
-    el.textContent = icon;
+    el.textContent = "?";
   }
   return el;
 }
