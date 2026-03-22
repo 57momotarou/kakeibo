@@ -61,9 +61,10 @@ export function navigate(viewName) {
   VIEW_CONFIG[viewStack[viewStack.length - 1]].el.classList.remove("active");
   viewStack.push(viewName);
   showCurrentView();
-  // ビュー切り替え時にスクロール位置をリセット
-  const pw = document.getElementById("pageWrapper");
-  if (pw) pw.scrollTop = 0;
+  requestAnimationFrame(() => {
+    const pw = document.getElementById("pageWrapper");
+    if (pw) pw.scrollTop = 0;
+  });
 }
 
 export function goBack() {
@@ -71,23 +72,30 @@ export function goBack() {
   VIEW_CONFIG[viewStack[viewStack.length - 1]].el.classList.remove("active");
   viewStack.pop();
   showCurrentView();
-  const pw = document.getElementById("pageWrapper");
-  if (pw) pw.scrollTop = 0;
+  // 描画完了後にscrollTopをリセット（描画がDOMを書き換えた後に確実に実行）
+  requestAnimationFrame(() => {
+    const pw = document.getElementById("pageWrapper");
+    if (pw) pw.scrollTop = 0;
+  });
 }
 
 export function switchToTab(name) {
   viewStack.forEach(v => VIEW_CONFIG[v].el.classList.remove("active"));
   viewStack = [name];
   showCurrentView();
-  // タブ切り替え時にスクロール位置をリセット
-  const pw = document.getElementById("pageWrapper");
-  if (pw) pw.scrollTop = 0;
+  requestAnimationFrame(() => {
+    const pw = document.getElementById("pageWrapper");
+    if (pw) pw.scrollTop = 0;
+  });
 }
 
 export function showCurrentView() {
   const name   = viewStack[viewStack.length - 1];
   const config = VIEW_CONFIG[name];
   config.el.classList.add("active");
+  // ビュー表示時点でスクロールを先頭にリセット
+  const _pw = document.getElementById("pageWrapper");
+  if (_pw) _pw.scrollTop = 0;
 
   const topBarNormal   = document.getElementById("topBarNormal");
   const topBarSettings = document.getElementById("topBarSettings");
@@ -353,7 +361,7 @@ export function initSwipeGesture(addModal, editModal, monthSelector, onMonthChan
           pageWrapper.style.transform  = "";
           pageWrapper.style.boxShadow  = "";
           cleanupBackLayer();
-          pageWrapper.scrollTop = 0;
+          requestAnimationFrame(() => { pageWrapper.scrollTop = 0; });
         }, 220);
       } else {
         pageWrapper.style.transition = "transform 0.28s cubic-bezier(0.4,0,0.2,1), box-shadow 0.28s";
