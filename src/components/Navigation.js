@@ -105,15 +105,23 @@ export function showCurrentView() {
   const isMain = ["home","transaction","calendar","graph","account"].includes(name);
   topBarNormal.classList.toggle("hidden", !isMain);
   topBarSettings.classList.toggle("hidden", isMain);
+  // TopBar編集ボタン制御
+  const topBarEditBtn = document.getElementById("topBarEditBtn");
+
   if (!isMain) {
     if (name === "categoryDetail" && currentCategoryParentId) {
       import("../constants/categories.js").then(({ PARENT_CATEGORIES }) => {
         const p = PARENT_CATEGORIES.find(p => p.id === currentCategoryParentId);
         settingsBarTitle.textContent = p ? `${p.icon} ${p.name}` : "小分類";
       });
+      // 小分類画面のみ編集ボタン表示
+      if (topBarEditBtn) topBarEditBtn.classList.remove("hidden");
     } else {
       settingsBarTitle.textContent = config.title;
+      if (topBarEditBtn) topBarEditBtn.classList.add("hidden");
     }
+  } else {
+    if (topBarEditBtn) topBarEditBtn.classList.add("hidden");
   }
 
   const monthNav       = document.getElementById("topBarMonthNav");
@@ -132,9 +140,7 @@ export function showCurrentView() {
     monthNav.style.display       = showNav       ? "" : "none";
     homeTitleEl.style.display    = isHome        ? "" : "none";
     spacer.style.display         = !showNav      ? "" : "none";
-    // ホーム時：左右対称のためダミーを表示
-    const homeDummy = document.getElementById("topBarHomeDummy");
-    if (homeDummy) homeDummy.style.display = isHome ? "" : "none";
+
   }
 
   document.getElementById("tabBar").classList.toggle("hidden", !config.showTabs);

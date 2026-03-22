@@ -101,16 +101,21 @@ function _renderCategoryDetail() {
   titleSpan.className = "child-cat-section-title";
   titleSpan.textContent = "小分類";
 
-  const editBtn = document.createElement("button");
-  editBtn.className = "child-cat-edit-mode-btn";
-  editBtn.textContent = isEditMode ? "完了" : "編集";
-  editBtn.addEventListener("click", () => {
-    isEditMode = !isEditMode;
-    _renderCategoryDetail();
-  });
+  // TopBarの編集ボタンと同期
+  const topBarEditBtn = document.getElementById("topBarEditBtn");
+  if (topBarEditBtn) {
+    topBarEditBtn.textContent = isEditMode ? "完了" : "編集";
+    // イベントを毎回再設定（重複防止のためクローンで差し替え）
+    const newBtn = topBarEditBtn.cloneNode(true);
+    topBarEditBtn.parentNode.replaceChild(newBtn, topBarEditBtn);
+    newBtn.addEventListener("click", () => {
+      isEditMode = !isEditMode;
+      _renderCategoryDetail();
+    });
+  }
 
   headerLi.appendChild(titleSpan);
-  headerLi.appendChild(editBtn);
+  // ヘッダー内の編集ボタンは不要（TopBarに移動）
   ul.appendChild(headerLi);
 
   const children = childCategories[pid] || [];
