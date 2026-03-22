@@ -576,7 +576,7 @@ body.back-gesture-active #pageWrapper { z-index: 1; }
   gap: 12px;
   padding: 13px 16px;
   background: #fff;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid #e8e8e8;
   cursor: pointer;
 }
 .graph-parent-item:active { background: #f5f5f5; }
@@ -611,7 +611,7 @@ body.back-gesture-active #pageWrapper { z-index: 1; }
   gap: 12px;
   padding: 10px 16px 10px 68px;
   background: #fafafa;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid #e8e8e8;
 }
 .graph-child-dot {
   flex-shrink: 0;
@@ -749,6 +749,49 @@ body.back-gesture-active #pageWrapper { z-index: 1; }
   padding: 10px 16px 6px; margin-bottom: 4px;
 }
 .child-cat-section-title { font-size: 13px; font-weight: bold; color: #888; }
+
+/* 小分類ヘッダーの「編集」ボタン */
+.child-cat-edit-mode-btn {
+  background: none;
+  border: none;
+  color: var(--theme);
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 4px 8px;
+  height: auto !important;
+  width: auto !important;
+  margin: 0;
+}
+.child-cat-edit-mode-btn:active { opacity: 0.7; }
+
+/* 編集モード時末尾の「＋ 小分類を追加」行 */
+.child-cat-add-row {
+  background: #fff;
+  border-bottom: 1px solid #e8e8e8;
+  padding: 0;
+}
+.child-cat-add-inline-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 52px;
+  background: none;
+  border: none;
+  font-size: 15px;
+  color: var(--theme);
+  cursor: pointer;
+  padding: 0 14px;
+  text-align: left;
+}
+.child-cat-add-inline-btn:active { background: #f5f5f5; }
+.child-cat-add-plus {
+  font-size: 20px;
+  font-weight: bold;
+  line-height: 1;
+}
+
 .child-cat-add-btn {
   width: 32px !important; height: 32px !important;
   border-radius: 50%; border: none; background: var(--theme); color: #fff;

@@ -24,14 +24,13 @@ export function renderCategoryView() {
     const li = document.createElement("li");
     li.className = "parent-category-item";
 
-    // アイコン（円形背景）
     const iconEl = buildParentIconEl(parent);
 
     const nameEl = document.createElement("span");
     nameEl.className = "parent-cat-name";
     nameEl.textContent = parent.name;
 
-    // 未分類は個数と矢印を表示しない・タップ無効
+    // 未分類はタップ無効・個数/矢印なし
     if (parent.id === "unclassified") {
       li.appendChild(iconEl);
       li.appendChild(nameEl);
@@ -61,7 +60,6 @@ export function renderCategoryView() {
   });
 }
 
-// 大分類アイコン要素を生成
 function buildParentIconEl(parent) {
   const el = document.createElement("span");
   el.className = "parent-cat-icon";
@@ -78,44 +76,61 @@ function buildParentIconEl(parent) {
 // ===================================
 // 小分類一覧
 // ===================================
+// 編集モード状態（ページを開くたびにリセット）
+let isEditMode = false;
+
 export function renderCategoryDetailView() {
+  isEditMode = false; // 画面を開くたびにリセット
+  _renderCategoryDetail();
+}
+
+function _renderCategoryDetail() {
   const pid = currentCategoryParentId;
   if (!pid) return;
   if (!childCategories[pid]) childCategories[pid] = [];
 
-  // 現在の大分類情報を取得（アイコン・色）
   const parent = PARENT_CATEGORIES.find(p => p.id === pid);
-
   const ul = document.getElementById("childCategoryList");
   ul.innerHTML = "";
 
-  // ヘッダー行
+  // ===== ヘッダー行：「小分類」 ＋ 「編集」ボタン =====
   const headerLi = document.createElement("li");
   headerLi.className = "child-cat-section-header";
-  headerLi.innerHTML = `
-    <span class="child-cat-section-title">小分類</span>
-    <button class="child-cat-add-btn" id="addChildCatBtn">＋</button>
-  `;
+
+  const titleSpan = document.createElement("span");
+  titleSpan.className = "child-cat-section-title";
+  titleSpan.textContent = "小分類";
+
+  const editBtn = document.createElement("button");
+  editBtn.className = "child-cat-edit-mode-btn";
+  editBtn.textContent = isEditMode ? "完了" : "編集";
+  editBtn.addEventListener("click", () => {
+    isEditMode = !isEditMode;
+    _renderCategoryDetail();
+  });
+
+  headerLi.appendChild(titleSpan);
+  headerLi.appendChild(editBtn);
   ul.appendChild(headerLi);
 
   const children = childCategories[pid] || [];
 
-  if (children.length === 0) {
+  if (children.length === 0 && !isEditMode) {
     const emptyLi = document.createElement("li");
     emptyLi.className = "child-cat-empty";
-    emptyLi.textContent = "小分類がありません。＋から追加してください。";
+    emptyLi.textContent = "「編集」を押して小分類を追加してください。";
     ul.appendChild(emptyLi);
   }
 
+  // ===== 小分類行 =====
   children.forEach((child, idx) => {
     const li = document.createElement("li");
     li.className = "child-category-item";
 
-    // 小分類アイコン（親の色・アイコンを継承。「未分類」は?アイコン）
+    // アイコン
     const childIconEl = document.createElement("span");
     childIconEl.className = "child-cat-icon";
     if (child.name === "未分類") {
-      // 未分類：支出・収入問わず背景透過・枠線のみ
       childIconEl.classList.add("child-cat-icon--outline");
       childIconEl.textContent = "?";
     } else if (parent?.color) {
@@ -130,55 +145,68 @@ export function renderCategoryDetailView() {
     nameSpan.className = "child-cat-name";
     nameSpan.textContent = child.name;
 
-    const delBtn = document.createElement("button");
-    delBtn.className = "child-cat-del-btn";
-    delBtn.textContent = "削除";
+    // 編集モードのみ：名前タップ→インライン編集・削除ボタン表示
+    if (isEditMode) {
+      nameSpan.addEventListener("click", () => {
+        const input = document.createElement("input");
+        input.type = "text";
+        input.value = child.name;
+        input.className = "child-cat-edit-input";
+        const save = () => {
+          const newName = input.value.trim();
+          if (!newName) { _renderCategoryDetail(); return; }
+          const oldField = makeCategoryField(pid, child.name);
+          const newField = makeCategoryField(pid, newName);
+          records.forEach(r => { if (r.category === oldField) r.category = newField; });
+          child.name = newName;
+          saveChildCategories();
+          saveRecords();
+          _renderCategoryDetail();
+        };
+        input.addEventListener("blur", save);
+        input.addEventListener("keydown", e => { if (e.key === "Enter") save(); });
+        li.replaceChild(input, nameSpan);
+        input.focus();
+      });
 
-    // 名前タップ → インライン編集
-    nameSpan.addEventListener("click", () => {
-      const input = document.createElement("input");
-      input.type  = "text";
-      input.value = child.name;
-      input.className = "child-cat-edit-input";
-      const save = () => {
-        const newName = input.value.trim();
-        if (!newName) { renderCategoryDetailView(); return; }
-        const oldField = makeCategoryField(pid, child.name);
-        const newField = makeCategoryField(pid, newName);
-        records.forEach(r => { if (r.category === oldField) r.category = newField; });
-        child.name = newName;
+      const delBtn = document.createElement("button");
+      delBtn.className = "child-cat-del-btn";
+      delBtn.textContent = "削除";
+      delBtn.addEventListener("click", () => {
+        const usedCount = records.filter(r => {
+          const parts = r.category?.split("/");
+          return parts?.[0] === pid && parts?.[1] === child.name;
+        }).length;
+        if (usedCount > 0 && !confirm(`「${child.name}」は${usedCount}件の記録で使用中です。削除しますか？`)) return;
+        childCategories[pid].splice(idx, 1);
         saveChildCategories();
-        saveRecords();
-        renderCategoryDetailView();
-      };
-      input.addEventListener("blur",    save);
-      input.addEventListener("keydown", e => { if (e.key === "Enter") save(); });
-      li.replaceChild(input, nameSpan);
-      input.focus();
-    });
+        _renderCategoryDetail();
+      });
 
-    // 削除ボタン
-    delBtn.addEventListener("click", () => {
-      const usedCount = records.filter(r => {
-        const parts = r.category?.split("/");
-        return parts?.[0] === pid && parts?.[1] === child.name;
-      }).length;
-      if (usedCount > 0 && !confirm(`「${child.name}」は${usedCount}件の記録で使用中です。削除しますか？`)) return;
-      childCategories[pid].splice(idx, 1);
-      saveChildCategories();
-      renderCategoryDetailView();
-    });
+      li.appendChild(childIconEl);
+      li.appendChild(nameSpan);
+      li.appendChild(delBtn);
+    } else {
+      li.appendChild(childIconEl);
+      li.appendChild(nameSpan);
+    }
 
-    li.appendChild(childIconEl);
-    li.appendChild(nameSpan);
-    li.appendChild(delBtn);
     ul.appendChild(li);
   });
 
-  // ＋ボタン
-  document.getElementById("addChildCatBtn").addEventListener("click", () => {
-    showAddChildDialog(pid);
-  });
+  // ===== 編集モード時：末尾に「＋ 小分類を追加」行 =====
+  if (isEditMode) {
+    const addLi = document.createElement("li");
+    addLi.className = "child-cat-add-row";
+
+    const addBtn = document.createElement("button");
+    addBtn.className = "child-cat-add-inline-btn";
+    addBtn.innerHTML = `<span class="child-cat-add-plus">＋</span> 小分類を追加`;
+    addBtn.addEventListener("click", () => showAddChildDialog(pid));
+
+    addLi.appendChild(addBtn);
+    ul.appendChild(addLi);
+  }
 }
 
 // ===================================
@@ -219,7 +247,7 @@ function showAddChildDialog(pid) {
     childCategories[pid].push({ name });
     saveChildCategories();
     overlay.remove();
-    renderCategoryDetailView();
+    _renderCategoryDetail();
   };
 
   dialog.querySelector("#cancelChildCat").addEventListener("click", () => overlay.remove());
