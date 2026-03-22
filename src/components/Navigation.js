@@ -132,6 +132,9 @@ export function showCurrentView() {
     monthNav.style.display       = showNav       ? "" : "none";
     homeTitleEl.style.display    = isHome        ? "" : "none";
     spacer.style.display         = !showNav      ? "" : "none";
+    // ホーム時：左右対称のためダミーを表示
+    const homeDummy = document.getElementById("topBarHomeDummy");
+    if (homeDummy) homeDummy.style.display = isHome ? "" : "none";
   }
 
   document.getElementById("tabBar").classList.toggle("hidden", !config.showTabs);
