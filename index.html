@@ -37,6 +37,8 @@
     <div class="top-bar-normal" id="topBarNormal">
       <button class="top-bar-btn" id="calendarShortcutBtn" style="display:none">🗓</button>
       <button class="top-bar-btn" id="calendarBackBtn" style="display:none">←</button>
+      <!-- ホーム時に左右対称にするためのダミー（openSettingsBtnと同幅） -->
+      <div id="topBarHomeDummy" style="display:none;width:40px;flex-shrink:0;"></div>
       <div class="top-bar-month-nav" id="topBarMonthNav">
         <button class="top-bar-btn month-nav-btn" id="prevMonthBtn">◀</button>
         <span class="top-bar-title" id="monthLabel">2025年3月</span>
@@ -49,7 +51,7 @@
     <div class="top-bar-settings hidden" id="topBarSettings">
       <button class="top-bar-btn" id="backBtn">←</button>
       <span class="top-bar-title" id="settingsBarTitle">設定</span>
-      <div style="width:40px"></div>
+      <button class="top-bar-edit-btn hidden" id="topBarEditBtn">編集</button>
     </div>
   </header>
 
