@@ -139,7 +139,10 @@ export function showCurrentView() {
     calBackBtn.style.display     = isCalendar    ? "" : "none";
     monthNav.style.display       = showNav       ? "" : "none";
     homeTitleEl.style.display    = isHome        ? "" : "none";
-    spacer.style.display         = !showNav      ? "" : "none";
+    // ホーム時はspacerを非表示にしてダミーで左右対称にする
+    spacer.style.display         = (!showNav && !isHome) ? "" : "none";
+    const homeDummy = document.getElementById("topBarHomeDummy");
+    if (homeDummy) homeDummy.style.display = isHome ? "" : "none";
 
   }
 
