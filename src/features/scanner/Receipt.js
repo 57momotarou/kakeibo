@@ -37,7 +37,7 @@ export function initScannerEvents(onAdded) {
         alert("商品を読み取れませんでした。手動で入力してください。");
         return;
       }
-      showItemSelector(parsed.items, parsed.date, parsed.category, onAdded);
+      showItemSelector(parsed.items, parsed.discounts, parsed.date, parsed.category, onAdded);
     } catch (err) {
       scanOverlay.classList.add("hidden");
       console.error(err);
@@ -71,6 +71,9 @@ async function callGeminiReceiptAPI(base64Image, mimeType, apiKey) {
   "category": "以下のカテゴリから最も適切なもの1つ：${allChildNames.join("・")}",
   "items": [
     { "title": "商品名（簡潔に）", "amount": 金額の数値（税込・円・整数） }
+  ],
+  "discounts": [
+    { "title": "割引名（例：ポイント値引き・クーポン値引き）", "amount": 割引額の数値（正の整数・円） }
   ]
 }
 
@@ -81,8 +84,10 @@ async function callGeminiReceiptAPI(base64Image, mimeType, apiKey) {
   ・食料品・飲料（酒類除く）・新聞 → 軽減税率8%：税抜 × 1.08 を切り捨て（小数点以下切り捨て）
   ・上記以外（外食・日用品・衣類・家電など） → 標準税率10%：税抜 × 1.10 を切り捨て（小数点以下切り捨て）
   ・同一レシートに「※」「★」「軽」等の軽減税率マークがある場合はその商品に8%を適用
-- 合計・小計・税額・ポイント・お釣り・値引き行はitemsに含めない
-- 値引きがある商品は値引き後の税込金額を使う
+- 合計・小計・税額・お釣りはitemsにもdiscountsにも含めない
+- 値引きがある商品は値引き後の税込金額をitemsに使う
+- ポイント値引き・クーポン・割引など「金額が減る行」はdiscountsに入れる（amountは正の整数）
+- discountsが1件もない場合は空配列 [] を返す
 - 商品名は20文字以内。カタカナ略称は正式な日本語名に変換する`;
 
   const res = await fetch(
@@ -111,15 +116,27 @@ async function callGeminiReceiptAPI(base64Image, mimeType, apiKey) {
   let text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
   text = text.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
   const parsed = JSON.parse(text);
-  if (!Array.isArray(parsed.items)) parsed.items = [];
+  if (!Array.isArray(parsed.items))     parsed.items     = [];
+  if (!Array.isArray(parsed.discounts)) parsed.discounts = [];
   parsed.items = parsed.items.filter(item =>
     typeof item.amount === "number" && item.amount >= 1 && item.amount <= 1000000
+  );
+  parsed.discounts = parsed.discounts.filter(d =>
+    typeof d.amount === "number" && d.amount >= 1 && d.amount <= 1000000
   );
   // 各itemにcategoryを持たせる（個別編集できるように）
   parsed.items = parsed.items.map(item => ({
     title:    item.title,
     amount:   item.amount,
     category: parsed.category,
+    isIncome: false,
+  }));
+  // 割引はその他入金として追加
+  parsed.discounts = parsed.discounts.map(d => ({
+    title:    d.title,
+    amount:   d.amount,
+    category: "その他入金",
+    isIncome: true,
   }));
   return parsed;
 }
@@ -127,16 +144,25 @@ async function callGeminiReceiptAPI(base64Image, mimeType, apiKey) {
 // ===================================
 // 品目選択シート
 // ===================================
-function showItemSelector(items, date, defaultCategory, onAdded) {
+function showItemSelector(items, discounts, date, defaultCategory, onAdded) {
   const existing = document.getElementById("itemSelectorOverlay");
   if (existing) existing.remove();
 
-  // 各品目の編集可能データを管理（参照渡しで編集反映）
-  const itemData = items.map(item => ({
-    title:    item.title,
-    amount:   item.amount,
-    category: item.category || defaultCategory,
-  }));
+  // 支出品目 + 割引（収入）を1つの配列で管理
+  const itemData = [
+    ...items.map(item => ({
+      title:    item.title,
+      amount:   item.amount,
+      category: item.category || defaultCategory,
+      isIncome: false,
+    })),
+    ...(discounts || []).map(d => ({
+      title:    d.title,
+      amount:   d.amount,
+      category: "その他入金",
+      isIncome: true,
+    })),
+  ];
 
   const overlay = document.createElement("div");
   overlay.id = "itemSelectorOverlay";
@@ -184,21 +210,28 @@ function showItemSelector(items, date, defaultCategory, onAdded) {
 
     const label = document.createElement("div");
     label.style.cssText = "flex:1;min-width:0;cursor:pointer;";
+
+    // 割引行はラベルに「収入」バッジを表示
+    const badge = item.isIncome
+      ? `<span style="display:inline-block;font-size:10px;background:#e8f5e9;color:#2e7d32;border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:middle;">収入</span>`
+      : "";
     label.innerHTML = `
-      <div style="font-size:14px;font-weight:bold;color:#222;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item.title}</div>
+      <div style="font-size:14px;font-weight:bold;color:#222;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item.title}${badge}</div>
       <div style="font-size:12px;color:#999;margin-top:2px;">${item.category}</div>
     `;
 
+    // 収入は緑、支出は赤
+    const amountColor = item.isIncome ? "var(--theme,#4caf50)" : "#c62828";
+    const amountPrefix = item.isIncome ? "+" : "";
     const amountSpan = document.createElement("span");
-    amountSpan.style.cssText = "font-size:15px;font-weight:bold;color:#c62828;white-space:nowrap;flex-shrink:0;cursor:pointer;";
-    amountSpan.textContent = `¥${item.amount.toLocaleString()}`;
+    amountSpan.style.cssText = `font-size:15px;font-weight:bold;color:${amountColor};white-space:nowrap;flex-shrink:0;cursor:pointer;`;
+    amountSpan.textContent = `${amountPrefix}¥${item.amount.toLocaleString()}`;
 
     // チェックボックスのクリック
     cb.addEventListener("click", e => { e.stopPropagation(); updateTotal(); });
 
     // 品目行タップ → 編集モーダルを開く
     const openEdit = () => showItemEditModal(idx, itemData, () => {
-      // 編集後に行を再描画
       const newLi = buildItemRow(idx);
       ul.replaceChild(newLi, liEls[idx]);
       liEls[idx] = newLi;
@@ -207,11 +240,8 @@ function showItemSelector(items, date, defaultCategory, onAdded) {
 
     label.addEventListener("click", openEdit);
     amountSpan.addEventListener("click", openEdit);
-    // チェックボックス以外の行タップはチェック切り替え
     li.addEventListener("click", e => {
       if (e.target === cb) return;
-      // ラベル・金額タップは編集モーダル（上で処理済み）
-      // li自体（余白部分）タップはチェック切り替え
       if (e.target === li) { cb.checked = !cb.checked; updateTotal(); }
     });
 
@@ -221,7 +251,16 @@ function showItemSelector(items, date, defaultCategory, onAdded) {
     return li;
   }
 
+  // 支出と収入（割引）の間にセクション区切りを入れる
+  const expenseCount = items.length;
   itemData.forEach((_, idx) => {
+    // 割引セクションの区切り
+    if (idx === expenseCount && discounts && discounts.length > 0) {
+      const divider = document.createElement("li");
+      divider.style.cssText = `padding:6px 20px;background:#f0f0f0;font-size:12px;color:#888;font-weight:bold;border-bottom:1px solid #e0e0e0;`;
+      divider.textContent = "割引・ポイント還元（収入として記録）";
+      ul.appendChild(divider);
+    }
     const li = buildItemRow(idx);
     liEls.push(li);
     ul.appendChild(li);
@@ -231,10 +270,20 @@ function showItemSelector(items, date, defaultCategory, onAdded) {
   sheet.appendChild(listWrap);
 
   function updateTotal() {
-    const total = itemData.reduce((s, item, i) => s + (checkboxes[i]?.checked ? item.amount : 0), 0);
-    const count = checkboxes.filter(c => c?.checked).length;
+    // 支出合計から収入（割引）を引いた実質負担額を表示
+    let expense = 0, income = 0, count = 0;
+    itemData.forEach((item, i) => {
+      if (!checkboxes[i]?.checked) return;
+      count++;
+      if (item.isIncome) income += item.amount;
+      else               expense += item.amount;
+    });
+    const net = expense - income;
     const totalEl = document.getElementById("selectedTotal");
-    if (totalEl) totalEl.textContent = `¥${total.toLocaleString()}（${count}点）`;
+    if (totalEl) {
+      totalEl.textContent = `¥${net.toLocaleString()}（${count}点）`;
+      totalEl.style.color = net < 0 ? "var(--theme,#4caf50)" : "#222";
+    }
     const toggleBtn = document.getElementById("toggleAllCheck");
     if (toggleBtn) toggleBtn.textContent = checkboxes.every(c => c?.checked) ? "全解除" : "全選択";
   }
@@ -254,12 +303,28 @@ function showItemSelector(items, date, defaultCategory, onAdded) {
     const selected = itemData.filter((_, i) => checkboxes[i]?.checked);
     if (selected.length === 0) { alert("商品を1つ以上選択してください"); return; }
     selected.forEach(item => {
-      const catField = makeCategoryFieldFromChildName(item.category, childCategories);
-      records.push({ date, amount: item.amount, type: "expense", category: catField, title: item.title });
+      if (item.isIncome) {
+        // 割引・ポイントは収入として保存
+        records.push({
+          date,
+          amount:   item.amount,
+          type:     "income",
+          category: "income/その他入金",
+          title:    item.title,
+        });
+      } else {
+        const catField = makeCategoryFieldFromChildName(item.category, childCategories);
+        records.push({ date, amount: item.amount, type: "expense", category: catField, title: item.title });
+      }
     });
     saveRecords();
     overlay.remove();
-    showToast(`${selected.length}件を追加しました`);
+    const expenseCount = selected.filter(i => !i.isIncome).length;
+    const incomeCount  = selected.filter(i =>  i.isIncome).length;
+    const msg = incomeCount > 0
+      ? `${expenseCount}件の支出・${incomeCount}件の割引を追加しました`
+      : `${expenseCount}件を追加しました`;
+    showToast(msg);
     onAdded();
   });
 
@@ -348,6 +413,11 @@ function showItemEditModal(idx, itemData, onSaved) {
     itemData[idx].title    = newTitle;
     itemData[idx].amount   = newAmount;
     itemData[idx].category = newCat;
+    // 収入カテゴリに変更された場合はisIncomeを更新
+    const parent = PARENT_CATEGORIES.find(p =>
+      (childCategories[p.id] || []).some(c => c.name === newCat)
+    );
+    if (parent) itemData[idx].isIncome = (parent.type === "income");
 
     overlay.remove();
     onSaved();
