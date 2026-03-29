@@ -4,7 +4,7 @@
  */
 
 import { records, saveRecords, childCategories, getGeminiApiKey } from "../../store.js";
-import { getAllChildNames, makeCategoryFieldFromChildName, parseCategoryField } from "../../utils/category.js";
+import { getAllChildNames, makeCategoryFieldFromChildName, parseCategoryField, getParentName } from "../../utils/category.js";
 import { PARENT_CATEGORIES } from "../../constants/categories.js";
 import { showToast } from "../../components/Modal.js";
 import { updateParentSelect, updateChildSelect } from "../../components/CategorySelector.js";
@@ -87,11 +87,18 @@ async function callGeminiReceiptAPI(base64Image, mimeType, apiKey) {
     + "- itemDiscountがない商品は必ず 0 を返す\n"
     + "- discountsが1件もない場合は空配列 [] を返す\n\n"
     + "【amountの計算ルール】\n"
-    + "- itemDiscount がある場合のamountは値引き前の税込金額（値引きを引かない）\n"
+    + "- amountは必ず税込の整数（円）で返すこと\n"
+    + "- itemDiscount がある場合のamountは値引き前の税込金額\n"
     + "- レシートに税込価格が明記されている場合 → そのまま使用\n"
-    + "- 税抜価格しかない場合：食料品・飲料（酒類除く）・新聞 → ×1.08切り捨て、それ以外 → ×1.10切り捨て\n"
-    + "- 「※」「★」「軽」等の軽減税率マークがある場合はその商品に8%を適用\n"
-    + "- 合計・小計・税額・お釣りはitemsにもdiscountsにも含めない\n"
+    + "- 税抜価格の場合は以下のルールで税込に換算する（小数点以下切り捨て）\n"
+    + "  ・商品名の前に「*」「＊」がある → 軽減税率8%対象：税抜 × 1.08\n"
+    + "  ・商品名の前に「★」「☆」がある → 標準税率10%対象：税抜 × 1.10\n"
+    + "  ・「※」「軽」「(軽)」等のマークがある → 軽減税率8%：税抜 × 1.08\n"
+    + "  ・マークがなく食料品・飲料（酒類除く）・新聞 → 8%：税抜 × 1.08\n"
+    + "  ・マークがなく外食・日用品・衣類・家電など → 10%：税抜 × 1.10\n"
+    + "- レシートに「外税」「税抜」「＋税」等の記載があれば税抜価格と判断する\n"
+    + "- ポイント支払い・プリカ支払いはdiscountsに含めない（支払い手段のため）\n"
+    + "- 合計・小計・税額・税合計・お釣りはitemsにもdiscountsにも含めない\n"
     + "- カタカナ略称は正式な日本語名に変換する";
 
   const res = await fetch(
@@ -229,10 +236,17 @@ function showItemSelector(items, discounts, date, defaultCategory, onAdded) {
       ? '<span style="font-size:11px;color:#2e7d32;margin-left:6px;">（値引 -¥' + item.itemDiscount.toLocaleString() + ' 適用済）</span>'
       : "";
 
+    // 「大分類 › 小分類」形式で表示
+    const catField2 = makeCategoryFieldFromChildName(item.category, childCategories);
+    const { parentId: catParentId, childName: catChildName } = parseCategoryField(catField2, childCategories);
+    const catLabel = catChildName
+      ? getParentName(catParentId) + ' › ' + catChildName
+      : getParentName(catParentId);
+
     label.innerHTML =
       '<div style="font-size:14px;font-weight:bold;color:#222;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'
       + item.title + badge + '</div>'
-      + '<div style="font-size:12px;color:#999;margin-top:2px;">' + item.category + discountNote + '</div>';
+      + '<div style="font-size:12px;color:#999;margin-top:2px;">' + catLabel + discountNote + '</div>';
 
     const amountColor  = item.isIncome ? "var(--theme,#4caf50)" : "#c62828";
     const amountPrefix = item.isIncome ? "+" : "";
