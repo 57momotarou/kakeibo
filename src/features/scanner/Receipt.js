@@ -195,7 +195,7 @@ function showItemSelector(items, discounts, date, defaultCategory, onAdded) {
   const header = document.createElement("div");
   header.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:16px 20px 12px;border-bottom:1px solid #e0e0e0;background:#fff;border-radius:20px 20px 0 0;flex-shrink:0;";
   header.innerHTML =
-    '<button id="toggleAllCheck" style="font-size:13px;color:var(--theme,#4caf50);background:none;border:none;cursor:pointer;padding:0;font-weight:bold;">全選択</button>'
+    '<div style="width:32px;"></div>'
     + '<span style="font-size:16px;font-weight:bold;">レシートの品目一覧</span>'
     + '<button id="closeItemSelector" style="width:32px;height:32px;border-radius:50%;border:none;background:#f0f0f0;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>';
   sheet.appendChild(header);
@@ -210,24 +210,15 @@ function showItemSelector(items, discounts, date, defaultCategory, onAdded) {
 
   const ul = document.createElement("ul");
   ul.style.cssText = "list-style:none;padding:0;margin:0;";
-  const checkboxes = [];
   const liEls = [];
 
   function buildItemRow(idx) {
     const item = itemData[idx];
     const li = document.createElement("li");
-    li.style.cssText = "display:flex;align-items:center;gap:12px;padding:13px 20px;background:#fff;border-bottom:1px solid #f0f0f0;";
-
-    const cb = checkboxes[idx] || document.createElement("input");
-    if (!checkboxes[idx]) {
-      cb.type    = "checkbox";
-      cb.checked = true;
-      cb.style.cssText = "width:20px;height:20px;flex-shrink:0;accent-color:var(--theme,#4caf50);cursor:pointer;";
-      checkboxes[idx] = cb;
-    }
+    li.style.cssText = "display:flex;align-items:center;gap:12px;padding:13px 20px;background:#fff;border-bottom:1px solid #f0f0f0;cursor:pointer;";
 
     const label = document.createElement("div");
-    label.style.cssText = "flex:1;min-width:0;cursor:pointer;";
+    label.style.cssText = "flex:1;min-width:0;";
 
     const badge = item.isIncome
       ? '<span style="display:inline-block;font-size:10px;background:#e8f5e9;color:#2e7d32;border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:middle;">収入</span>'
@@ -251,26 +242,33 @@ function showItemSelector(items, discounts, date, defaultCategory, onAdded) {
     const amountColor  = item.isIncome ? "var(--theme,#4caf50)" : "#c62828";
     const amountPrefix = item.isIncome ? "+" : "";
     const amountSpan = document.createElement("span");
-    amountSpan.style.cssText = "font-size:15px;font-weight:bold;color:" + amountColor + ";white-space:nowrap;flex-shrink:0;cursor:pointer;";
+    amountSpan.style.cssText = "font-size:15px;font-weight:bold;color:" + amountColor + ";white-space:nowrap;flex-shrink:0;";
     amountSpan.textContent = amountPrefix + "¥" + item.amount.toLocaleString();
 
-    cb.addEventListener("click", e => { e.stopPropagation(); updateTotal(); });
+    // 行全体タップで編集モーダルを開く
+    li.addEventListener("click", () => showItemEditModal(idx, itemData, {
+      onSaved: () => {
+        const newLi = buildItemRow(idx);
+        ul.replaceChild(newLi, liEls[idx]);
+        liEls[idx] = newLi;
+        updateTotal();
+      },
+      onDeleted: () => {
+        itemData.splice(idx, 1);
+        liEls.splice(idx, 1);
+        // ul全体を再描画
+        ul.innerHTML = "";
+        itemData.forEach((_, i) => {
+          const newLi = buildItemRow(i);
+          liEls[i] = newLi;
+          ul.appendChild(newLi);
+        });
+        updateTotal();
+      },
+    }));
+    li.addEventListener("touchstart", () => { li.style.background = "#f5f5f5"; }, { passive: true });
+    li.addEventListener("touchend",   () => { li.style.background = "#fff"; },     { passive: true });
 
-    const openEdit = () => showItemEditModal(idx, itemData, () => {
-      const newLi = buildItemRow(idx);
-      ul.replaceChild(newLi, liEls[idx]);
-      liEls[idx] = newLi;
-      updateTotal();
-    });
-
-    label.addEventListener("click", openEdit);
-    amountSpan.addEventListener("click", openEdit);
-    li.addEventListener("click", e => {
-      if (e.target === cb) return;
-      if (e.target === li) { cb.checked = !cb.checked; updateTotal(); }
-    });
-
-    li.appendChild(cb);
     li.appendChild(label);
     li.appendChild(amountSpan);
     return li;
@@ -293,21 +291,17 @@ function showItemSelector(items, discounts, date, defaultCategory, onAdded) {
   sheet.appendChild(listWrap);
 
   function updateTotal() {
-    let expense = 0, income = 0, count = 0;
-    itemData.forEach((item, i) => {
-      if (!checkboxes[i]?.checked) return;
-      count++;
+    let expense = 0, income = 0;
+    itemData.forEach(item => {
       if (item.isIncome) income += item.amount;
       else               expense += item.amount;
     });
     const net = expense - income;
     const totalEl = document.getElementById("selectedTotal");
     if (totalEl) {
-      totalEl.textContent = "¥" + net.toLocaleString() + "（" + count + "点）";
+      totalEl.textContent = "¥" + net.toLocaleString() + "（" + itemData.length + "点）";
       totalEl.style.color = net < 0 ? "var(--theme,#4caf50)" : "#222";
     }
-    const toggleBtn = document.getElementById("toggleAllCheck");
-    if (toggleBtn) toggleBtn.textContent = checkboxes.every(c => c?.checked) ? "全解除" : "全選択";
   }
 
   const saveBtn = document.createElement("button");
@@ -315,16 +309,9 @@ function showItemSelector(items, discounts, date, defaultCategory, onAdded) {
   saveBtn.textContent = "保存する";
   sheet.appendChild(saveBtn);
 
-  header.querySelector("#toggleAllCheck").addEventListener("click", () => {
-    const allChecked = checkboxes.every(c => c?.checked);
-    checkboxes.forEach(c => { if (c) c.checked = !allChecked; });
-    updateTotal();
-  });
-
   saveBtn.addEventListener("click", () => {
-    const selected = itemData.filter((_, i) => checkboxes[i]?.checked);
-    if (selected.length === 0) { alert("商品を1つ以上選択してください"); return; }
-    selected.forEach(item => {
+    if (itemData.length === 0) { alert("品目がありません"); return; }
+    itemData.forEach(item => {
       if (item.isIncome) {
         records.push({
           date,
@@ -340,8 +327,8 @@ function showItemSelector(items, discounts, date, defaultCategory, onAdded) {
     });
     saveRecords();
     overlay.remove();
-    const savedExpense = selected.filter(i => !i.isIncome).length;
-    const savedIncome  = selected.filter(i =>  i.isIncome).length;
+    const savedExpense = itemData.filter(i => !i.isIncome).length;
+    const savedIncome  = itemData.filter(i =>  i.isIncome).length;
     const msg = savedIncome > 0
       ? savedExpense + "件の支出・" + savedIncome + "件の割引を追加しました"
       : savedExpense + "件を追加しました";
@@ -359,7 +346,7 @@ function showItemSelector(items, discounts, date, defaultCategory, onAdded) {
 // ===================================
 // 品目編集モーダル
 // ===================================
-function showItemEditModal(idx, itemData, onSaved) {
+function showItemEditModal(idx, itemData, { onSaved, onDeleted }) {
   const item = itemData[idx];
 
   const existing = document.getElementById("itemEditModalOverlay");
@@ -377,9 +364,10 @@ function showItemEditModal(idx, itemData, onSaved) {
   const currentType = item.isIncome ? "income" : "expense";
 
   modal.innerHTML =
-    '<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 12px;border-bottom:1px solid #eee;">'
-    + '<span style="font-size:16px;font-weight:bold;">品目を編集</span>'
-    + '<button id="closeItemEdit" style="width:32px;height:32px;border-radius:50%;border:none;background:#f0f0f0;font-size:14px;cursor:pointer;">✕</button>'
+    '<div class="edit-modal-header" style="border-radius:20px 20px 0 0;border-bottom:1px solid #eee;">'
+    + '<button id="deleteItemBtn" class="modal-delete-btn">🗑️ 削除</button>'
+    + '<span class="modal-title">品目を編集</span>'
+    + '<button id="closeItemEdit" class="modal-close">✕</button>'
     + '</div>'
     + '<div style="padding:12px 20px;">'
     + '<label class="field-label">商品名</label>'
@@ -408,6 +396,11 @@ function showItemEditModal(idx, itemData, onSaved) {
 
   modal.querySelector("#closeItemEdit").addEventListener("click", () => overlay.remove());
   overlay.addEventListener("click", e => { if (e.target === overlay) overlay.remove(); });
+
+  modal.querySelector("#deleteItemBtn").addEventListener("click", () => {
+    overlay.remove();
+    onDeleted();
+  });
 
   modal.querySelector("#saveItemEdit").addEventListener("click", () => {
     const newTitle     = modal.querySelector("#editItemTitle").value.trim();
