@@ -192,7 +192,7 @@
       </li>
       <li class="settings-menu-item" id="goApiKey">
         <span class="settings-menu-icon">🔑</span>
-        <span class="settings-menu-label">Gemini APIキー</span>
+        <span class="settings-menu-label">レシート読み取り設定</span>
         <span class="settings-menu-arrow">›</span>
       </li>
       <li class="settings-menu-item" id="goReset">
@@ -286,6 +286,28 @@
           <li>作成したキー（AIza...）をコピー</li>
           <li>ここに貼り付けて保存</li>
         </ol>
+      </div>
+      <div class="api-key-help" style="margin-top:16px;">
+        <p class="api-key-help-title">🧾 読み取りモード</p>
+        <p style="font-size:13px;color:#666;margin:0 0 12px;line-height:1.6;">
+          レシートの価格をどのように記録するか選択してください。
+        </p>
+        <div id="taxModeSelector" style="display:flex;flex-direction:column;gap:8px;">
+          <label id="taxModeLabelInclusive" style="display:flex;align-items:flex-start;gap:10px;padding:12px;border:2px solid #ddd;border-radius:10px;cursor:pointer;">
+            <input type="radio" name="taxMode" value="inclusive" style="width:18px;height:18px;flex-shrink:0;margin-top:2px;accent-color:var(--theme);">
+            <span>
+              <span style="display:block;font-size:14px;font-weight:bold;color:#222;">税込で記録</span>
+              <span style="display:block;font-size:12px;color:#888;margin-top:2px;">税抜価格を税込に換算して記録します。合計金額がレシートと一致します。</span>
+            </span>
+          </label>
+          <label id="taxModeLabelExclusive" style="display:flex;align-items:flex-start;gap:10px;padding:12px;border:2px solid #ddd;border-radius:10px;cursor:pointer;">
+            <input type="radio" name="taxMode" value="exclusive" style="width:18px;height:18px;flex-shrink:0;margin-top:2px;accent-color:var(--theme);">
+            <span>
+              <span style="display:block;font-size:14px;font-weight:bold;color:#222;">レシートどおりに記録</span>
+              <span style="display:block;font-size:12px;color:#888;margin-top:2px;">商品は税抜価格で記録し、消費税を別品目として追加します。</span>
+            </span>
+          </label>
+        </div>
       </div>
     </div>
   </div>

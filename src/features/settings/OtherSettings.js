@@ -168,6 +168,22 @@ export function renderApiKeyView() {
     statusEl.className   = "api-key-status api-key-status-warn";
     deleteBtn.style.display = "none";
   }
+
+  // 税モード選択UIの初期状態を反映
+  const currentMode = localStorage.getItem("receiptTaxMode") || "inclusive";
+  const radios = document.querySelectorAll('input[name="taxMode"]');
+  radios.forEach(r => { r.checked = (r.value === currentMode); });
+  _applyTaxModeStyle(currentMode);
+}
+
+function _applyTaxModeStyle(mode) {
+  const labelInclusive  = document.getElementById("taxModeLabelInclusive");
+  const labelExclusive  = document.getElementById("taxModeLabelExclusive");
+  if (!labelInclusive || !labelExclusive) return;
+  labelInclusive.style.borderColor  = mode === "inclusive"  ? "var(--theme)" : "#ddd";
+  labelExclusive.style.borderColor  = mode === "exclusive"  ? "var(--theme)" : "#ddd";
+  labelInclusive.style.background   = mode === "inclusive"  ? "var(--theme-bg, #f0f9f0)" : "#fff";
+  labelExclusive.style.background   = mode === "exclusive"  ? "var(--theme-bg, #f0f9f0)" : "#fff";
 }
 
 export function initApiKeyEvents(onKeyChanged) {
@@ -194,6 +210,15 @@ export function initApiKeyEvents(onKeyChanged) {
     showToast("APIキーを削除しました");
     renderApiKeyView();
     onKeyChanged();
+  });
+
+  // 税モード切り替え
+  document.querySelectorAll('input[name="taxMode"]').forEach(radio => {
+    radio.addEventListener("change", () => {
+      localStorage.setItem("receiptTaxMode", radio.value);
+      _applyTaxModeStyle(radio.value);
+      showToast(radio.value === "inclusive" ? "税込モードに切り替えました" : "レシートどおりモードに切り替えました");
+    });
   });
 }
 

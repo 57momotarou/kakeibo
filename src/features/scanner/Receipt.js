@@ -65,18 +65,19 @@ function fileToBase64(file) {
 async function callGeminiReceiptAPI(base64Image, mimeType, apiKey) {
   const today = new Date().toISOString().slice(0, 10);
   const allChildNames = getAllChildNames(childCategories);
+  const taxMode = localStorage.getItem("receiptTaxMode") || "inclusive";
+  const isInclusive = taxMode === "inclusive";
 
-  const prompt = "あなたはレシート解析AIです。添付画像のレシートを読み取り、以下のJSON形式のみで回答してください。余分なテキストや```は不要です。\n\n"
+  // ── 共通部分 ──
+  const commonHeader = "あなたはレシート解析AIです。添付画像のレシートを読み取り、以下のJSON形式のみで回答してください。余分なテキストや```は不要です.\n\n"
     + "{\n"
     + '  "date": "YYYY-MM-DD形式の購入日（不明な場合は' + today + '）",\n'
     + '  "category": "以下のカテゴリから最も適切なもの1つ：' + allChildNames.join("・") + '",\n'
     + '  "items": [\n'
     + '    {\n'
-    + '      "title": "商品名（簡潔に20文字以内）",\n'
-    + '      "amount": 税込の定価（整数・円）,\n'
-    + '      "itemDiscount": 商品個別の値引き額（整数・円、なければ0）\n'
-    + '    }\n'
-    + '  ],\n'
+    + '      "title": "商品名（簡潔に20文字以内）",\n';
+
+  const commonDiscounts = '  ],\n'
     + '  "discounts": [\n'
     + '    { "title": "割引名（例：ポイント値引き・クーポン）", "amount": 割引額（正の整数・円） }\n'
     + '  ]\n'
@@ -85,27 +86,60 @@ async function callGeminiReceiptAPI(base64Image, mimeType, apiKey) {
     + "- 「商品個別の値引き」：商品行の直下・隣などその商品専用の割引 → itemDiscount に金額を入れる\n"
     + "- 「合計への値引き」：小計の下にまとめて書かれるポイント値引き・クーポン・まとめ割引など → discounts に入れる\n"
     + "- itemDiscountがない商品は必ず 0 を返す\n"
-    + "- discountsが1件もない場合は空配列 [] を返す\n\n"
-    + "【amountの計算ルール】\n"
-    + "- amountは必ず税込の整数（円）で返すこと\n"
-    + "- itemDiscount がある場合のamountは値引き前の税込金額\n"
-    + "- レシートに税込価格が明記されている場合 → そのまま使用\n"
-    + "- 税抜価格の場合は以下のルールで税率を判定する\n"
-    + "  ・商品名の前に「*」「＊」がある → 軽減税率8%対象\n"
-    + "  ・商品名の前に「★」「☆」がある → 標準税率10%対象\n"
-    + "  ・「※」「軽」「(軽)」等のマークがある → 軽減税率8%\n"
-    + "  ・マークがなく食料品・飲料（酒類除く）・新聞 → 8%\n"
-    + "  ・マークがなく外食・日用品・衣類・家電など → 10%\n"
-    + "- 税込金額の計算方法（優先順）\n"
-    + "  1. レシートに税率ごとの税額合計（例：「8%外税 ¥208」「10%外税 ¥26」）が記載されている場合\n"
-    + "     → 同じ税率の商品の税抜合計に税額合計を按分して各商品の税込金額を求める\n"
-    + "     → 具体的には：商品税込 = 税抜価格 + round(税抜価格 / 同税率の税抜合計 × 税率ごとの税額合計)\n"
-    + "     → ただし端数調整により合計が合わない場合は、最も金額の大きい商品で±1円調整してよい\n"
-    + "  2. 税額合計の記載がない場合 → 税抜 × 1.08 または × 1.10 を切り捨て\n"
-    + "- レシートに「外税」「税抜」「＋税」等の記載があれば税抜価格と判断する\n"
+    + "- discountsが1件もない場合は空配列 [] を返す\n\n";
+
+  const commonFooter = "- レシートに「外税」「税抜」「＋税」等の記載があれば税抜価格と判断する\n"
     + "- ポイント支払い・プリカ支払いはdiscountsに含めない（支払い手段のため）\n"
     + "- 合計・小計・税額・税合計・お釣りはitemsにもdiscountsにも含めない\n"
     + "- カタカナ略称は正式な日本語名に変換する";
+
+  // ── モード別プロンプト ──
+  let prompt;
+  if (isInclusive) {
+    // 税込モード：税抜→税込に換算して返す
+    prompt = commonHeader
+      + '      "amount": 税込の定価（整数・円）,\n'
+      + '      "itemDiscount": 商品個別の値引き額（整数・円、なければ0）\n'
+      + '    }\n'
+      + commonDiscounts
+      + "【amountの計算ルール】\n"
+      + "- amountは必ず税込の整数（円）で返すこと\n"
+      + "- itemDiscount がある場合のamountは値引き前の税込金額\n"
+      + "- レシートに税込価格が明記されている場合 → そのまま使用\n"
+      + "- 税抜価格の場合は以下のルールで税率を判定する\n"
+      + "  ・商品名の前に「*」「＊」がある → 軽減税率8%対象\n"
+      + "  ・商品名の前に「★」「☆」がある → 標準税率10%対象\n"
+      + "  ・「※」「軽」「(軽)」等のマークがある → 軽減税率8%\n"
+      + "  ・マークがなく食料品・飲料（酒類除く）・新聞 → 8%\n"
+      + "  ・マークがなく外食・日用品・衣類・家電など → 10%\n"
+      + "- 税込金額の計算方法（優先順）\n"
+      + "  1. レシートに税率ごとの税額合計（例：「8%外税 ¥208」「10%外税 ¥26」）が記載されている場合\n"
+      + "     → 同じ税率の商品の税抜合計に税額合計を按分して各商品の税込金額を求める\n"
+      + "     → 具体的には：商品税込 = 税抜価格 + round(税抜価格 / 同税率の税抜合計 × 税率ごとの税額合計)\n"
+      + "     → ただし端数調整により合計が合わない場合は、最も金額の大きい商品で±1円調整してよい\n"
+      + "  2. 税額合計の記載がない場合 → 税抜 × 1.08 または × 1.10 を切り捨て\n"
+      + commonFooter;
+  } else {
+    // レシートどおりモード：税抜価格をそのまま返す＋消費税を taxes に格納
+    prompt = commonHeader
+      + '      "amount": レシートに記載の価格をそのまま（税抜なら税抜・税込なら税込）,\n'
+      + '      "itemDiscount": 商品個別の値引き額（整数・円、なければ0）,\n'
+      + '      "taxRate": この商品の消費税率（8 または 10。税込価格の場合は0）\n'
+      + '    }\n'
+      + commonDiscounts
+      + "【amountの計算ルール】\n"
+      + "- amountはレシートに記載の価格をそのまま整数（円）で返す（税込・税抜どちらでも記載どおり）\n"
+      + "- itemDiscount がある場合のamountは値引き前の価格\n"
+      + "- taxRate：税抜価格の場合は適用される消費税率（8 or 10）を入れる。税込価格の場合は 0\n"
+      + "  ・商品名の前に「*」「＊」→ 8、「★」「☆」→ 10\n"
+      + "  ・「※」「軽」「(軽)」等のマーク → 8\n"
+      + "  ・マークがなく食料品・飲料（酒類除く）・新聞 → 8\n"
+      + "  ・マークがなく外食・日用品・衣類・家電など → 10\n"
+      + "- レシートに税率ごとの税額合計（例：「8%外税 ¥208」「10%外税 ¥26」）が記載されている場合\n"
+      + "  → taxes フィールドにその情報を入れる\n"
+      + '- taxes: { "rate8": 8%分の税額合計（整数・なければ0）, "rate10": 10%分の税額合計（整数・なければ0）}\n'
+      + commonFooter;
+  }
 
   const res = await fetch(
     "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + apiKey,
@@ -137,31 +171,77 @@ async function callGeminiReceiptAPI(base64Image, mimeType, apiKey) {
   if (!Array.isArray(parsed.items))     parsed.items     = [];
   if (!Array.isArray(parsed.discounts)) parsed.discounts = [];
 
-  // 商品：itemDiscountがあれば値引き後の金額をamountにする
-  parsed.items = parsed.items
-    .filter(item => typeof item.amount === "number" && item.amount >= 1 && item.amount <= 1000000)
-    .map(item => {
-      const discount = (typeof item.itemDiscount === "number" && item.itemDiscount > 0)
-        ? item.itemDiscount : 0;
-      return {
-        title:        item.title,
-        amount:       Math.max(1, item.amount - discount),
-        itemDiscount: discount,
-        category:     parsed.category,
-        isIncome:     false,
-      };
-    });
+  if (isInclusive) {
+    // 税込モード：値引き後の税込金額をamountにする
+    parsed.items = parsed.items
+      .filter(item => typeof item.amount === "number" && item.amount >= 1 && item.amount <= 1000000)
+      .map(item => {
+        const discount = (typeof item.itemDiscount === "number" && item.itemDiscount > 0)
+          ? item.itemDiscount : 0;
+        return {
+          title:        item.title,
+          amount:       Math.max(1, item.amount - discount),
+          itemDiscount: discount,
+          category:     parsed.category,
+          isIncome:     false,
+        };
+      });
+  } else {
+    // レシートどおりモード：税抜価格そのまま＋消費税品目を追加
+    const taxes = parsed.taxes || { rate8: 0, rate10: 0 };
+    parsed.items = parsed.items
+      .filter(item => typeof item.amount === "number" && item.amount >= 1 && item.amount <= 1000000)
+      .map(item => {
+        const discount = (typeof item.itemDiscount === "number" && item.itemDiscount > 0)
+          ? item.itemDiscount : 0;
+        return {
+          title:        item.title,
+          amount:       Math.max(1, item.amount - discount),
+          itemDiscount: discount,
+          taxRate:      item.taxRate || 0,
+          category:     parsed.category,
+          isIncome:     false,
+        };
+      });
 
-  // 合計割引：その他入金として扱う
+    // 消費税品目を追加（税額合計が取れた場合はそれを使い、なければ計算）
+    const tax8Total  = taxes.rate8  > 0 ? taxes.rate8
+      : parsed.items.filter(i => i.taxRate === 8).reduce((s, i) => s + Math.floor(i.amount * 0.08), 0);
+    const tax10Total = taxes.rate10 > 0 ? taxes.rate10
+      : parsed.items.filter(i => i.taxRate === 10).reduce((s, i) => s + Math.floor(i.amount * 0.10), 0);
+
+    if (tax8Total > 0) {
+      parsed.discounts.push({
+        title:        "消費税（8%）",
+        amount:       tax8Total,
+        itemDiscount: 0,
+        category:     "税・社会保障",
+        isIncome:     false,
+        isTax:        true,
+      });
+    }
+    if (tax10Total > 0) {
+      parsed.discounts.push({
+        title:        "消費税（10%）",
+        amount:       tax10Total,
+        itemDiscount: 0,
+        category:     "税・社会保障",
+        isIncome:     false,
+        isTax:        true,
+      });
+    }
+  }
+
+  // 合計割引（ポイント等）：その他入金として扱う
   parsed.discounts = parsed.discounts
     .filter(d => typeof d.amount === "number" && d.amount >= 1 && d.amount <= 1000000)
-    .map(d => ({
+    .map(d => d.isTax ? d : {
       title:        d.title,
       amount:       d.amount,
       itemDiscount: 0,
       category:     "その他入金",
       isIncome:     true,
-    }));
+    });
 
   return parsed;
 }
@@ -173,7 +253,7 @@ function showItemSelector(items, discounts, date, defaultCategory, onAdded) {
   const existing = document.getElementById("itemSelectorOverlay");
   if (existing) existing.remove();
 
-  // 支出品目 + 合計割引（収入）を1つの配列で管理
+  // 支出品目 + 消費税品目 + 割引（収入）を1つの配列で管理
   const itemData = [
     ...items.map(item => ({
       title:        item.title,
@@ -181,13 +261,23 @@ function showItemSelector(items, discounts, date, defaultCategory, onAdded) {
       itemDiscount: item.itemDiscount || 0,
       category:     item.category || defaultCategory,
       isIncome:     false,
+      isTax:        false,
     })),
-    ...(discounts || []).map(d => ({
+    ...(discounts || []).filter(d => d.isTax).map(d => ({
+      title:        d.title,
+      amount:       d.amount,
+      itemDiscount: 0,
+      category:     d.category || "税・社会保障",
+      isIncome:     false,
+      isTax:        true,
+    })),
+    ...(discounts || []).filter(d => !d.isTax).map(d => ({
       title:        d.title,
       amount:       d.amount,
       itemDiscount: 0,
       category:     "その他入金",
       isIncome:     true,
+      isTax:        false,
     })),
   ];
 
@@ -226,7 +316,9 @@ function showItemSelector(items, discounts, date, defaultCategory, onAdded) {
     const label = document.createElement("div");
     label.style.cssText = "flex:1;min-width:0;";
 
-    const badge = item.isIncome
+    const badge = item.isTax
+      ? '<span style="display:inline-block;font-size:10px;background:#fff3e0;color:#e65100;border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:middle;">消費税</span>'
+      : item.isIncome
       ? '<span style="display:inline-block;font-size:10px;background:#e8f5e9;color:#2e7d32;border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:middle;">収入</span>'
       : "";
     const discountNote = (!item.isIncome && item.itemDiscount > 0)
@@ -281,8 +373,20 @@ function showItemSelector(items, discounts, date, defaultCategory, onAdded) {
   }
 
   const expenseCount = items.length;
-  itemData.forEach((_, idx) => {
-    if (idx === expenseCount && discounts && discounts.length > 0) {
+  // discountsの中でisTax（消費税品目）とそれ以外（ポイント等）を分類
+  const taxItems      = (discounts || []).filter(d => d.isTax);
+  const incomeItems   = (discounts || []).filter(d => !d.isTax);
+
+  itemData.forEach((item, idx) => {
+    // 消費税セクションの区切り（レシートどおりモード）
+    if (idx === expenseCount && taxItems.length > 0) {
+      const divider = document.createElement("li");
+      divider.style.cssText = "padding:6px 20px;background:#f0f0f0;font-size:12px;color:#888;font-weight:bold;border-bottom:1px solid #e0e0e0;";
+      divider.textContent = "消費税（支出として記録）";
+      ul.appendChild(divider);
+    }
+    // 割引・ポイントセクションの区切り
+    if (idx === expenseCount + taxItems.length && incomeItems.length > 0) {
       const divider = document.createElement("li");
       divider.style.cssText = "padding:6px 20px;background:#f0f0f0;font-size:12px;color:#888;font-weight:bold;border-bottom:1px solid #e0e0e0;";
       divider.textContent = "割引・ポイント還元（収入として記録）";
@@ -331,6 +435,7 @@ function showItemSelector(items, discounts, date, defaultCategory, onAdded) {
         records.push({ date, amount: item.amount, type: "expense", category: catField, title: item.title });
       }
     });
+    // ↑ isTax品目も isIncome:false なので上のelse側で tax/所得税カテゴリとして保存される
     saveRecords();
     overlay.remove();
     const savedExpense = itemData.filter(i => !i.isIncome).length;
