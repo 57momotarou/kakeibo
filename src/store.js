@@ -49,7 +49,15 @@ export let records        = JSON.parse(localStorage.getItem("records"))     || [
 export let periodStartDay = Number(localStorage.getItem("periodStartDay"))  || 1;
 export let themeColor     = localStorage.getItem("themeColor")              || "#4caf50";
 export let budgets        = JSON.parse(localStorage.getItem("budgets"))     || {};
-export let accounts       = JSON.parse(localStorage.getItem("accounts"))    || [];
+// 初回起動時は「財布」をデフォルト口座として追加
+function loadAccounts() {
+  const saved = localStorage.getItem("accounts");
+  if (saved) return JSON.parse(saved);
+  const defaults = [{ id: 1, name: "財布", balance: 0, memo: "" }];
+  localStorage.setItem("accounts", JSON.stringify(defaults));
+  return defaults;
+}
+export let accounts = loadAccounts();
 export let childCategories = loadChildCategories();
 
 // タブ表示設定
