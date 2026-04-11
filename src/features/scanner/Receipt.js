@@ -32,7 +32,6 @@ export function initScannerEvents(onAdded) {
       const base64   = await fileToBase64(file);
       const mimeType = file.type || "image/jpeg";
       const parsed   = await callGeminiReceiptAPI(base64, mimeType, apiKey);
-      scanOverlay.classList.add("hidden");
 
       if (!parsed || parsed.items.length === 0) {
         alert("商品を読み取れませんでした。手動で入力してください。");
@@ -40,9 +39,48 @@ export function initScannerEvents(onAdded) {
       }
       showItemSelector(parsed.items, parsed.discounts, parsed.date, parsed.category, onAdded);
     } catch (err) {
-      scanOverlay.classList.add("hidden");
       console.error(err);
       alert("読み取りエラー:\n" + err.message);
+    } finally {
+      scanOverlay.classList.add("hidden");
+    }
+  });
+}
+
+// ===================================
+// 画像ファイルからの読み取りイベント初期化
+// ===================================
+export function initImageScannerEvents(onAdded) {
+  const imageInput  = document.getElementById("imageInput");
+  const scanOverlay = document.getElementById("scanOverlay");
+
+  imageInput.addEventListener("change", async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    imageInput.value = "";
+
+    const apiKey = getGeminiApiKey();
+    if (!apiKey) {
+      alert("Gemini APIキーが設定されていません。\n設定 → Gemini APIキー から登録してください。");
+      return;
+    }
+
+    scanOverlay.classList.remove("hidden");
+    try {
+      const base64   = await fileToBase64(file);
+      const mimeType = file.type || "image/jpeg";
+      const parsed   = await callGeminiImageAPI(base64, mimeType, apiKey);
+
+      if (!parsed || parsed.items.length === 0) {
+        alert("収支情報を読み取れませんでした。手動で入力してください。");
+        return;
+      }
+      showItemSelector(parsed.items, parsed.discounts, parsed.date, parsed.category, onAdded);
+    } catch (err) {
+      console.error(err);
+      alert("読み取りエラー:\n" + err.message);
+    } finally {
+      scanOverlay.classList.add("hidden");
     }
   });
 }
@@ -79,10 +117,12 @@ async function callGeminiReceiptAPI(base64Image, mimeType, apiKey) {
 
   const commonDiscounts = '  ],\n'
     + '  "discounts": [\n'
-    + '    { "title": "割引名（例：ポイント値引き・クーポン）", "amount": 割引額（正の整数・円） }\n'
+    + '    { "title": "string", "amount": 0 }\n'
     + '  ]\n'
     + "}\n\n"
     + "【割引の分類ルール】\n"
+    + "- discounts[].title：割引名（例：ポイント値引き・クーポン）\n"
+    + "- discounts[].amount：割引額（正の整数・円）\n"
     + "- 「商品個別の値引き」：商品行の直下・隣などその商品専用の割引 → itemDiscount に金額を入れる\n"
     + "- 「合計への値引き」：小計の下にまとめて書かれるポイント値引き・クーポン・まとめ割引など → discounts に入れる\n"
     + "- itemDiscountがない商品は必ず 0 を返す\n"
@@ -98,8 +138,8 @@ async function callGeminiReceiptAPI(base64Image, mimeType, apiKey) {
   if (isInclusive) {
     // 税込モード：税抜→税込に換算して返す
     prompt = commonHeader
-      + '      "amount": 税込の定価（整数・円）,\n'
-      + '      "itemDiscount": 商品個別の値引き額（整数・円、なければ0）\n'
+      + '      "amount": 0,\n'
+      + '      "itemDiscount": 0\n'
       + '    }\n'
       + commonDiscounts
       + "【amountの計算ルール】\n"
@@ -122,11 +162,23 @@ async function callGeminiReceiptAPI(base64Image, mimeType, apiKey) {
   } else {
     // レシートどおりモード：税抜価格をそのまま返す＋消費税を taxes に格納
     prompt = commonHeader
-      + '      "amount": レシートに記載の価格をそのまま（税抜なら税抜・税込なら税込）,\n'
-      + '      "itemDiscount": 商品個別の値引き額（整数・円、なければ0）,\n'
-      + '      "taxRate": この商品の消費税率（8 または 10。税込価格の場合は0）\n'
+      + '      "amount": 0,\n'
+      + '      "itemDiscount": 0,\n'
+      + '      "taxRate": 0\n'
       + '    }\n'
-      + commonDiscounts
+      + '  ],\n'
+      + '  "taxes": { "rate8": 0, "rate10": 0 },\n'
+      + '  "discounts": [\n'
+      + '    { "title": "string", "amount": 0 }\n'
+      + '  ]\n'
+      + "}\n\n"
+      + "【割引の分類ルール】\n"
+      + "- discounts[].title：割引名（例：ポイント値引き・クーポン）\n"
+      + "- discounts[].amount：割引額（正の整数・円）\n"
+      + "- 「商品個別の値引き」：商品行の直下・隣などその商品専用の割引 → itemDiscount に金額を入れる\n"
+      + "- 「合計への値引き」：小計の下にまとめて書かれるポイント値引き・クーポン・まとめ割引など → discounts に入れる\n"
+      + "- itemDiscountがない商品は必ず 0 を返す\n"
+      + "- discountsが1件もない場合は空配列 [] を返す\n\n"
       + "【amountの計算ルール】\n"
       + "- amountはレシートに記載の価格をそのまま整数（円）で返す（税込・税抜どちらでも記載どおり）\n"
       + "- itemDiscount がある場合のamountは値引き前の価格\n"
@@ -137,7 +189,8 @@ async function callGeminiReceiptAPI(base64Image, mimeType, apiKey) {
       + "  ・マークがなく外食・日用品・衣類・家電など → 10\n"
       + "- レシートに税率ごとの税額合計（例：「8%外税 ¥208」「10%外税 ¥26」）が記載されている場合\n"
       + "  → taxes フィールドにその情報を入れる\n"
-      + '- taxes: { "rate8": 8%分の税額合計（整数・なければ0）, "rate10": 10%分の税額合計（整数・なければ0）}\n'
+      + '- taxes.rate8：8%分の税額合計（整数・なければ0）\n'
+      + '- taxes.rate10：10%分の税額合計（整数・なければ0）\n'
       + commonFooter;
   }
 
@@ -242,6 +295,79 @@ async function callGeminiReceiptAPI(base64Image, mimeType, apiKey) {
       category:     "その他入金",
       isIncome:     true,
     });
+
+  return parsed;
+}
+
+// ===================================
+// 汎用画像解析 Gemini API（家計簿メモ・手書き・スクショ等）
+// ===================================
+async function callGeminiImageAPI(base64Image, mimeType, apiKey) {
+  const today = new Date().toISOString().slice(0, 10);
+  const allChildNames = getAllChildNames(childCategories);
+
+  const prompt = "あなたは家計簿AIです。添付画像から収支情報を読み取り、以下のJSON形式のみで回答してください。余分なテキストや```は不要です.\n\n"
+    + "{\n"
+    + '  "date": "YYYY-MM-DD形式の日付（不明な場合は' + today + '）",\n'
+    + '  "category": "以下のカテゴリから最も適切なもの1つ：' + allChildNames.join("・") + '",\n'
+    + '  "items": [\n'
+    + '    { "title": "品目名（20文字以内）", "amount": 0, "itemDiscount": 0 }\n'
+    + '  ],\n'
+    + '  "discounts": [\n'
+    + '    { "title": "割引名", "amount": 0 }\n'
+    + '  ]\n'
+    + "}\n\n"
+    + "【読み取りルール】\n"
+    + "- レシート・手書きメモ・スクリーンショット・家計簿画像など収支情報を含む画像に対応\n"
+    + "- 金額は税込の整数（円）で返す\n"
+    + "- 支出か収入かは内容から判断し、収入は isIncome: true を items に追加\n"
+    + "- 合計・小計・税額はitemsに含めない\n"
+    + "- 値引き・ポイント値引きはdiscountsに入れる（amountは正の整数）\n"
+    + "- discountsが1件もない場合は空配列 [] を返す\n"
+    + "- itemDiscountがない商品は 0 を返す\n"
+    + "- カタカナ略称は正式な日本語名に変換する";
+
+  const res = await fetch(
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + apiKey,
+    {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: mimeType, data: base64Image } }] }],
+        generationConfig: { temperature: 0 },
+      }),
+    }
+  );
+
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}));
+    throw new Error("Gemini API error: " + (errBody?.error?.message || res.status));
+  }
+
+  const data = await res.json();
+  let text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+  text = text.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
+  const parsed = JSON.parse(text);
+
+  if (!Array.isArray(parsed.items))     parsed.items     = [];
+  if (!Array.isArray(parsed.discounts)) parsed.discounts = [];
+
+  parsed.items = parsed.items
+    .filter(item => typeof item.amount === "number" && item.amount >= 1 && item.amount <= 1000000)
+    .map(item => {
+      const discount = (typeof item.itemDiscount === "number" && item.itemDiscount > 0) ? item.itemDiscount : 0;
+      return {
+        title:        item.title,
+        amount:       Math.max(1, item.amount - discount),
+        itemDiscount: discount,
+        category:     parsed.category,
+        isIncome:     !!item.isIncome,
+      };
+    });
+
+  parsed.discounts = parsed.discounts
+    .filter(d => typeof d.amount === "number" && d.amount >= 1 && d.amount <= 1000000)
+    .map(d => ({ title: d.title, amount: d.amount, itemDiscount: 0, category: "その他入金", isIncome: true }));
 
   return parsed;
 }

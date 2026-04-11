@@ -89,6 +89,9 @@
         </div>
       </div>
 
+      <label class="field-label">口座</label>
+      <select id="addAccount"></select>
+
       <button id="addButton" class="btn-primary">追加する</button>
     </div>
   </div>
@@ -124,6 +127,9 @@
           <select id="editChildCat"  class="cat-select-child"></select>
         </div>
       </div>
+
+      <label class="field-label">口座</label>
+      <select id="editAccount"></select>
 
       <button id="saveEditButton" class="btn-primary">保存する</button>
     </div>
@@ -405,6 +411,10 @@
       <span class="fab-sub-label">レシートを読み取る</span>
       <button class="fab-sub-btn fab-camera" id="fabCameraBtn">📷</button>
     </div>
+    <div class="fab-sub-item" id="fabImageItem">
+      <span class="fab-sub-label">画像から読み取る</span>
+      <button class="fab-sub-btn fab-camera" id="fabImageBtn">🖼️</button>
+    </div>
     <div class="fab-sub-item" id="fabManualItem">
       <span class="fab-sub-label">手動で入力</span>
       <button class="fab-sub-btn fab-manual" id="fabManualBtn">✏️</button>
@@ -412,6 +422,7 @@
   </div>
   <button class="fab-add" id="openAddBtn">＋</button>
   <input type="file" id="receiptInput" accept="image/*" capture="environment" style="display:none">
+  <input type="file" id="imageInput" accept="image/*" style="display:none">
   <div id="scanOverlay" class="scan-overlay hidden">
     <div class="scan-box">
       <div class="scan-spinner"></div>

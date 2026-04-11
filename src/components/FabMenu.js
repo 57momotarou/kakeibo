@@ -10,6 +10,7 @@ let fabOpen = false;
 export function applyFabVisibility() {
   const hasKey = !!getGeminiApiKey();
   document.getElementById("fabCameraItem").style.display = hasKey ? "" : "none";
+  document.getElementById("fabImageItem").style.display  = hasKey ? "" : "none";
 }
 
 export function openFabMenu() {
@@ -30,7 +31,7 @@ export function closeFabMenu() {
   setTimeout(() => fabOverlay.classList.add("hidden"), 200);
 }
 
-export function initFabEvents(onOpenAddModal, onOpenCamera) {
+export function initFabEvents(onOpenAddModal, onOpenCamera, onOpenImage) {
   const openAddBtn = document.getElementById("openAddBtn");
   const fabOverlay = document.getElementById("fabOverlay");
 
@@ -50,5 +51,10 @@ export function initFabEvents(onOpenAddModal, onOpenCamera) {
   document.getElementById("fabCameraBtn").addEventListener("click", () => {
     closeFabMenu();
     setTimeout(() => onOpenCamera(), 200);
+  });
+
+  document.getElementById("fabImageBtn").addEventListener("click", () => {
+    closeFabMenu();
+    setTimeout(() => onOpenImage(), 200);
   });
 }

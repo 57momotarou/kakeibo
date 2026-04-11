@@ -3,12 +3,28 @@
  * 収支の追加・編集・削除モーダル
  */
 
-import { records, saveRecords, childCategories } from "../../store.js";
+import { records, saveRecords, childCategories, accounts } from "../../store.js";
 import { showModal, hideModal } from "../../components/Modal.js";
 import { updateParentSelect, updateChildSelect } from "../../components/CategorySelector.js";
 import { parseCategoryField, makeCategoryField, getParentName, displayCategory } from "../../utils/category.js";
 
 let editingRecord = null;
+
+// ===================================
+// 口座セレクトを更新
+// ===================================
+function updateAccountSelect(selectId, currentAccountId) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  sel.innerHTML = '<option value="">なし</option>';
+  accounts.forEach(a => {
+    const opt = document.createElement("option");
+    opt.value = a.id;
+    opt.textContent = a.name;
+    if (String(a.id) === String(currentAccountId)) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
 
 // ===================================
 // 追加モーダル
@@ -37,6 +53,7 @@ export function openAddModal(prefill, onAdded) {
   updateParentSelect(document.getElementById("addParentCat"), type, pid);
   updateChildSelect(document.getElementById("addChildCat"), pid, childName);
 
+  updateAccountSelect("addAccount", prefill?.accountId || "");
   showModal(addModal, addOverlay);
 }
 
@@ -73,12 +90,15 @@ export function initAddModal(onAdded) {
     }
     const parentId  = document.getElementById("addParentCat").value;
     const childName = document.getElementById("addChildCat").value;
+    const addAccountSel = document.getElementById("addAccount");
+    const addAccountId  = addAccountSel?.value ? Number(addAccountSel.value) : null;
     records.push({
-      date:     dateInput.value,
-      amount:   Number(amountInput.value),
-      type:     addTypeHidden.value,
-      category: makeCategoryField(parentId, childName),
-      title:    memoInput.value.trim() || childName || getParentName(parentId),
+      date:      dateInput.value,
+      amount:    Number(amountInput.value),
+      type:      addTypeHidden.value,
+      category:  makeCategoryField(parentId, childName),
+      title:     memoInput.value.trim() || childName || getParentName(parentId),
+      accountId: addAccountId,
     });
     saveRecords();
     hideModal(addModal, addOverlay);
@@ -106,6 +126,7 @@ export function openEditModal(record, onEdited) {
   updateParentSelect(document.getElementById("editParentCat"), record.type, parentId);
   updateChildSelect(document.getElementById("editChildCat"), parentId, childName);
 
+  updateAccountSelect("editAccount", record.accountId || "");
   showModal(editModal, editOverlay);
 }
 
@@ -154,11 +175,13 @@ export function initEditModal(onEdited) {
     }
     const parentId  = document.getElementById("editParentCat").value;
     const childName = document.getElementById("editChildCat").value;
-    editingRecord.date     = editDateInput.value;
-    editingRecord.amount   = Number(editAmountInput.value);
-    editingRecord.type     = editTypeInput.value;
-    editingRecord.category = makeCategoryField(parentId, childName);
-    editingRecord.title    = editMemoInput.value.trim() || childName || getParentName(parentId);
+    const editAccountSel = document.getElementById("editAccount");
+    editingRecord.date      = editDateInput.value;
+    editingRecord.amount    = Number(editAmountInput.value);
+    editingRecord.type      = editTypeInput.value;
+    editingRecord.category  = makeCategoryField(parentId, childName);
+    editingRecord.title     = editMemoInput.value.trim() || childName || getParentName(parentId);
+    editingRecord.accountId = editAccountSel?.value ? Number(editAccountSel.value) : null;
     saveRecords();
     closeEdit();
     onEdited();

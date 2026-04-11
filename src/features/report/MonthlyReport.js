@@ -95,7 +95,7 @@ function buildReportImage(data) {
   const themeColor = getComputedStyle(document.documentElement)
     .getPropertyValue("--theme").trim() || "#4caf50";
 
-  const W = 750;
+  const W = 1320;
   const PADDING = 40;
   const COL = W - PADDING * 2;
 
@@ -111,7 +111,7 @@ function buildReportImage(data) {
 
   const canvas = document.createElement("canvas");
   canvas.width  = W;
-  canvas.height = estimatedH;
+  canvas.height = Math.max(estimatedH, 2868);
   const ctx = canvas.getContext("2d");
 
   // 背景

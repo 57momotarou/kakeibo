@@ -44,7 +44,7 @@ import {
   renderBudgetView, renderApiKeyView, initApiKeyEvents,
   renderResetView, initResetEvents,
 } from "./features/settings/OtherSettings.js";
-import { initScannerEvents } from "./features/scanner/Receipt.js";
+import { initScannerEvents, initImageScannerEvents } from "./features/scanner/Receipt.js";
 
 // ===================================
 // DOMContentLoaded
@@ -127,12 +127,14 @@ document.addEventListener("DOMContentLoaded", () => {
   // FAB
   initFabEvents(
     () => openAddModal(null, refresh),
-    () => document.getElementById("receiptInput").click()
+    () => document.getElementById("receiptInput").click(),
+    () => document.getElementById("imageInput").click()
   );
   applyFabVisibility();
 
   // スキャナー
   initScannerEvents(refresh);
+  initImageScannerEvents(refresh);
 
   // グラフトグル
   initGraphEvents(monthSelector);
