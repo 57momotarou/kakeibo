@@ -38,6 +38,7 @@ import { renderCalendar }                from "./features/calendar/CalendarView.
 import { renderGraph, initGraphEvents }  from "./features/graph/GraphView.js";
 import { renderAccountView, initAccountEvents } from "./features/account/AccountView.js";
 import { renderCategoryView, renderCategoryDetailView } from "./features/settings/CategorySettings.js";
+import { initShareReport } from "./features/report/MonthlyReport.js";
 import {
   renderPeriodView, renderVisibilityView, initVisibilityEvents,
   renderBudgetView, renderApiKeyView, initApiKeyEvents,
@@ -147,6 +148,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // リセット
   initResetEvents(refresh);
+
+  // 月次レポート共有
+  initShareReport(monthSelector);
 
   // スワイプジェスチャー
   const addModal  = document.getElementById("addModal");

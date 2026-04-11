@@ -141,8 +141,8 @@ export function showCurrentView() {
     homeTitleEl.style.display    = isHome        ? "" : "none";
     // ホーム時はspacerを非表示にしてダミーで左右対称にする
     spacer.style.display         = (!showNav && !isHome) ? "" : "none";
-    const homeDummy = document.getElementById("topBarHomeDummy");
-    if (homeDummy) homeDummy.style.display = isHome ? "" : "none";
+    const shareBtn = document.getElementById("shareReportBtn");
+    if (shareBtn) shareBtn.style.display = isHome ? "" : "none";
 
   }
 
