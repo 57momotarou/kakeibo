@@ -13,6 +13,7 @@ export const VIEW_CONFIG = {
   transaction:    { el: null, title: null,               showTabs: true  },
   calendar:       { el: null, title: null,               showTabs: true  },
   graph:          { el: null, title: null,               showTabs: true  },
+  payroll:        { el: null, title: null,               showTabs: true  },
   account:        { el: null, title: null,               showTabs: true  },
   settings:       { el: null, title: "設定",             showTabs: true  },
   category:       { el: null, title: "カテゴリ変更",     showTabs: true  },
@@ -38,6 +39,7 @@ export function initViewElements() {
   VIEW_CONFIG.transaction.el    = document.getElementById("transactionView");
   VIEW_CONFIG.calendar.el       = document.getElementById("calendarView");
   VIEW_CONFIG.graph.el          = document.getElementById("graphView");
+  VIEW_CONFIG.payroll.el        = document.getElementById("payrollView");
   VIEW_CONFIG.account.el        = document.getElementById("accountView");
   VIEW_CONFIG.settings.el       = document.getElementById("settingsView");
   VIEW_CONFIG.category.el       = document.getElementById("categoryView");
@@ -102,7 +104,7 @@ export function showCurrentView() {
   const settingsBarTitle = document.getElementById("settingsBarTitle");
   const openAddBtn     = document.getElementById("openAddBtn");
 
-  const isMain = ["home","transaction","calendar","graph","account"].includes(name);
+  const isMain = ["home","transaction","calendar","graph","payroll","account"].includes(name);
   topBarNormal.classList.toggle("hidden", !isMain);
   topBarSettings.classList.toggle("hidden", isMain);
   // TopBar編集ボタン制御
@@ -134,21 +136,25 @@ export function showCurrentView() {
     const isTransaction = (name === "transaction");
     const isHome        = (name === "home");
     const isCalendar    = (name === "calendar");
+    const isPayroll     = (name === "payroll");
     const showNav       = (name === "graph");
     calShortcutBtn.style.display = isTransaction ? "" : "none";
     calBackBtn.style.display     = isCalendar    ? "" : "none";
     monthNav.style.display       = showNav       ? "" : "none";
-    homeTitleEl.style.display    = isHome        ? "" : "none";
-    // ホーム時はspacerを非表示にしてダミーで左右対称にする
-    spacer.style.display         = (!showNav && !isHome) ? "" : "none";
+    homeTitleEl.style.display    = (isHome || isPayroll) ? "" : "none";
+    homeTitleEl.textContent      = isPayroll ? "給与明細" : "ホーム";
+    // 給与明細は左に40pxのダミーを置き、右の設定ボタンと釣り合わせる
+    spacer.style.display         = isPayroll || (!showNav && !isHome) ? "" : "none";
+    spacer.classList.toggle("payroll-spacer", isPayroll);
     const shareBtn = document.getElementById("shareReportBtn");
     if (shareBtn) shareBtn.style.display = isHome ? "" : "none";
 
   }
 
   document.getElementById("tabBar").classList.toggle("hidden", !config.showTabs);
-  // FABはメイン画面のみ表示
-  openAddBtn.classList.toggle("hidden", !isMain);
+  // 給与明細画面では専用の「写真から追加」ボタンを使うためFABは非表示
+  const showFab = ["home","transaction","calendar","graph","account"].includes(name);
+  openAddBtn.classList.toggle("hidden", !showFab);
 
   // コールバック経由で各機能の描画を呼ぶ
   if (_onShowView) _onShowView(name);
@@ -157,6 +163,7 @@ export function showCurrentView() {
   document.getElementById("homeTab").classList.toggle("active",        name === "home");
   document.getElementById("transactionTab").classList.toggle("active", name === "transaction");
   document.getElementById("graphTab").classList.toggle("active",       name === "graph");
+  document.getElementById("payrollTab").classList.toggle("active",     name === "payroll");
   document.getElementById("accountTab").classList.toggle("active",     name === "account");
 }
 
@@ -165,9 +172,12 @@ export function showCurrentView() {
 // ===================================
 export function applyTabVisibility() {
   const accTab = document.getElementById("accountTab");
+  const payrollTab = document.getElementById("payrollTab");
   accTab.style.display = tabVisibility.account ? "" : "none";
+  payrollTab.style.display = tabVisibility.payroll ? "" : "none";
   const cur = viewStack[viewStack.length - 1];
   if (cur === "account" && !tabVisibility.account) switchToTab("home");
+  if (cur === "payroll" && !tabVisibility.payroll) switchToTab("home");
 }
 
 // ===================================
@@ -189,6 +199,7 @@ export function initNavigationEvents() {
   document.getElementById("homeTab").addEventListener("click",        () => switchToTab("home"));
   document.getElementById("transactionTab").addEventListener("click", () => switchToTab("transaction"));
   document.getElementById("graphTab").addEventListener("click",       () => switchToTab("graph"));
+  document.getElementById("payrollTab").addEventListener("click",     () => switchToTab("payroll"));
   document.getElementById("accountTab").addEventListener("click",     () => switchToTab("account"));
 }
 

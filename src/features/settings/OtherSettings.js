@@ -9,6 +9,7 @@ import {
   periodStartDay, setPeriodStartDay,
   budgets, saveBudgets,
   accounts, setAccounts, saveAccounts,
+  setPayrollSlips, savePayrollSlips,
   childCategories,
   tabVisibility, saveTabVisibility,
   resetChildCategoriesToDefault,
@@ -59,6 +60,7 @@ function updatePeriodPreview(monthSelector) {
 // ===================================
 export function renderVisibilityView() {
   document.getElementById("toggleAccount").checked = !!tabVisibility.account;
+  document.getElementById("togglePayroll").checked = !!tabVisibility.payroll;
 }
 
 export function initVisibilityEvents() {
@@ -66,6 +68,12 @@ export function initVisibilityEvents() {
     tabVisibility.account = e.target.checked;
     saveTabVisibility();
     applyTabVisibility();
+  });
+  document.getElementById("togglePayroll").addEventListener("change", e => {
+    tabVisibility.payroll = e.target.checked;
+    saveTabVisibility();
+    applyTabVisibility();
+    showToast(e.target.checked ? "給与明細管理を表示しました" : "給与明細管理を非表示にしました");
   });
 }
 
@@ -164,7 +172,7 @@ export function renderApiKeyView() {
     statusEl.className   = "api-key-status api-key-status-ok";
     deleteBtn.style.display = "";
   } else {
-    statusEl.textContent = "⚠️ APIキーが未設定です。レシート読み取りを使うには設定が必要です。";
+    statusEl.textContent = "⚠️ APIキーが未設定です。レシート・給与明細の画像解析を使うには設定が必要です。";
     statusEl.className   = "api-key-status api-key-status-warn";
     deleteBtn.style.display = "none";
   }
@@ -225,7 +233,7 @@ export function initApiKeyEvents(onKeyChanged) {
 // ===================================
 // リセット機能
 // ===================================
-const RESET_IDS = ["resetTransactions", "resetAccounts", "resetBudgets", "resetCategories"];
+const RESET_IDS = ["resetTransactions", "resetAccounts", "resetBudgets", "resetCategories", "resetPayroll"];
 
 export function renderResetView() {
   ["resetAll", ...RESET_IDS].forEach(id => {
@@ -257,12 +265,14 @@ export function initResetEvents(onReset) {
     const doAccounts   = document.getElementById("resetAccounts").checked;
     const doBudgets    = document.getElementById("resetBudgets").checked;
     const doCategories = document.getElementById("resetCategories").checked;
+    const doPayroll    = document.getElementById("resetPayroll").checked;
 
     const targets = [];
     if (doRecords)    targets.push("出入金");
     if (doAccounts)   targets.push("口座");
     if (doBudgets)    targets.push("予算");
     if (doCategories) targets.push("カテゴリ");
+    if (doPayroll)    targets.push("給与明細");
 
     if (!confirm(`以下のデータを完全に削除します。\n\n・${targets.join("\n・")}\n\nこの操作は取り消せません。本当に実行しますか？`)) return;
 
@@ -270,6 +280,7 @@ export function initResetEvents(onReset) {
     if (doAccounts)   { setAccounts([]); saveAccounts(); }
     if (doBudgets)    { Object.keys(budgets).forEach(k => delete budgets[k]); saveBudgets(); }
     if (doCategories) { resetChildCategoriesToDefault(); }
+    if (doPayroll)    { setPayrollSlips([]); savePayrollSlips(); }
 
     showToast(`${targets.join("・")}をリセットしました`);
     renderResetView();

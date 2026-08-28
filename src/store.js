@@ -49,6 +49,7 @@ export let records        = JSON.parse(localStorage.getItem("records"))     || [
 export let periodStartDay = Number(localStorage.getItem("periodStartDay"))  || 1;
 export let themeColor     = localStorage.getItem("themeColor")              || "#4caf50";
 export let budgets        = JSON.parse(localStorage.getItem("budgets"))     || {};
+export let payrollSlips   = JSON.parse(localStorage.getItem("payrollSlips")) || [];
 // 初回起動時は「財布」をデフォルト口座として追加
 function loadAccounts() {
   const saved = localStorage.getItem("accounts");
@@ -61,8 +62,13 @@ export let accounts = loadAccounts();
 export let childCategories = loadChildCategories();
 
 // タブ表示設定
-const DEFAULT_TAB_VISIBILITY = { calendar: false, account: true };
-export let tabVisibility = JSON.parse(localStorage.getItem("tabVisibility")) || DEFAULT_TAB_VISIBILITY;
+// 給与明細は初期状態ではOFF。使いたい人だけ「表示 / 非表示」から有効化する。
+const DEFAULT_TAB_VISIBILITY = { calendar: false, account: true, payroll: false };
+function loadTabVisibility() {
+  const saved = JSON.parse(localStorage.getItem("tabVisibility")) || {};
+  return { ...DEFAULT_TAB_VISIBILITY, ...saved };
+}
+export let tabVisibility = loadTabVisibility();
 
 // ===================================
 // 保存関数
@@ -87,6 +93,10 @@ export function saveAccounts() {
   localStorage.setItem("accounts", JSON.stringify(accounts));
 }
 
+export function savePayrollSlips() {
+  localStorage.setItem("payrollSlips", JSON.stringify(payrollSlips));
+}
+
 // ===================================
 // State更新関数
 // ===================================
@@ -106,6 +116,10 @@ export function setThemeColor(color) {
 
 export function setAccounts(newAccounts) {
   accounts = newAccounts;
+}
+
+export function setPayrollSlips(newSlips) {
+  payrollSlips = newSlips;
 }
 
 export function resetChildCategoriesToDefault() {

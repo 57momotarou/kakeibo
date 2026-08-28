@@ -231,6 +231,17 @@
           <span class="toggle-slider"></span>
         </label>
       </li>
+      <li class="visibility-item">
+        <span class="visibility-icon">📄</span>
+        <span class="visibility-label">
+          給与明細管理
+          <small class="visibility-sub-label">オンにすると下部に「給与」タブを表示</small>
+        </span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="togglePayroll">
+          <span class="toggle-slider"></span>
+        </label>
+      </li>
     </ul>
   </div>
 
@@ -273,8 +284,8 @@
   <div id="apiKeyView" class="view">
     <div class="api-key-card">
       <p class="api-key-desc">
-        レシート読み取りに使用する Google Gemini API のキーを設定します。<br>
-        キーはこの端末のみに保存され、外部に送信されることはありません。
+        レシート・給与明細の画像解析に使用する Google Gemini API のキーを設定します。<br>
+        キーはこの端末に保存され、画像解析時の Gemini API 通信にのみ使用します。
       </p>
       <label class="field-label">APIキー</label>
       <div class="api-key-input-wrap">
@@ -342,9 +353,35 @@
             <span class="toggle-slider"></span>
           </label>
         </li>
+        <li class="reset-item reset-item-sub">
+          <span class="reset-item-icon">📄</span>
+          <span class="reset-item-label">給与明細</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="resetPayroll">
+            <span class="toggle-slider"></span>
+          </label>
+        </li>
       </ul>
       <button class="btn-danger reset-exec-btn" id="execResetBtn" disabled>リセット実行</button>
     </div>
+  </div>
+
+
+  <!-- 給与明細（表示/非表示設定で任意に有効化） -->
+  <div id="payrollView" class="view">
+    <div class="payroll-toolbar">
+      <div class="payroll-toolbar-top">
+        <div>
+          <div class="payroll-view-title">給与明細</div>
+          <div class="payroll-view-subtitle">写真をGeminiで解析して保存</div>
+        </div>
+        <select id="payrollYearSelect" class="payroll-year-select" aria-label="表示する年"></select>
+      </div>
+      <button class="btn-primary payroll-import-btn" id="payrollImportBtn">🖼️ 写真から給与明細を追加</button>
+      <p id="payrollApiHint" class="payroll-api-hint" style="display:none">⚠️ 先に「設定 → Gemini APIキー」を登録してください。</p>
+    </div>
+    <div id="payrollSummary" class="payroll-summary"></div>
+    <div id="payrollList" class="payroll-list"></div>
   </div>
 
   <!-- グラフ -->
@@ -423,6 +460,7 @@
   <button class="fab-add" id="openAddBtn">＋</button>
   <input type="file" id="receiptInput" accept="image/*" capture="environment" style="display:none">
   <input type="file" id="imageInput" accept="image/*" style="display:none">
+  <input type="file" id="payrollImageInput" accept="image/*" style="display:none">
   <div id="scanOverlay" class="scan-overlay hidden">
     <div class="scan-box">
       <div class="scan-spinner"></div>
@@ -437,6 +475,7 @@
     <button id="homeTab"        class="tab active">🏠<br><small>ホーム</small></button>
     <button id="transactionTab" class="tab">💴<br><small>出入金</small></button>
     <button id="graphTab"       class="tab">📊<br><small>グラフ</small></button>
+    <button id="payrollTab"     class="tab" style="display:none">📄<br><small>給与</small></button>
     <button id="accountTab"     class="tab">🏦<br><small>口座</small></button>
   </nav>
 
