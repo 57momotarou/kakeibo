@@ -38,26 +38,126 @@
   inset: 0;
   background: rgba(0,0,0,0.35);
   pointer-events: none;
-  opacity: 0.35;
-  z-index: 1;
+  opacity: 0.28;
+  z-index: 4;
 }
 body.back-gesture-active #backLayer { display: block; }
-body.back-gesture-active #pageWrapper { z-index: 1; }
+body.back-gesture-active #pageWrapper { z-index: 2; }
+
+/* 現在のページをTopBarからTabBarまで一枚の面として右へ動かす。
+   translateプロパティを使うので、タブバーの中央寄せtransformやFABの回転を壊さない。 */
+body.back-gesture-active #topBar,
+body.back-gesture-active #pageWrapper,
+body.back-gesture-active #tabBar,
+body.back-gesture-active #openAddBtn {
+  translate: var(--back-gesture-x, 0px) 0;
+  will-change: translate;
+}
+body.back-gesture-active #pageWrapper {
+  box-shadow: -10px 0 26px rgba(20,30,40,.16);
+}
+body.back-gesture-active #topBar {
+  border-radius: 18px 0 0 0;
+  overflow: hidden;
+}
+body.back-gesture-active #tabBar {
+  border-radius: 0 0 0 18px;
+  overflow: hidden;
+}
+body.back-gesture-animating #topBar,
+body.back-gesture-animating #pageWrapper,
+body.back-gesture-animating #tabBar,
+body.back-gesture-animating #openAddBtn {
+  transition: translate .22s cubic-bezier(.4,0,.2,1);
+}
+body.back-gesture-cancelling #topBar,
+body.back-gesture-cancelling #pageWrapper,
+body.back-gesture-cancelling #tabBar,
+body.back-gesture-cancelling #openAddBtn {
+  transition: translate .28s cubic-bezier(.4,0,.2,1);
+}
+
+/* 戻り先の実ビュー。上部・下部のプレビューChromeの間に表示する。 */
 .back-gesture-prev {
   display: block !important;
   position: absolute !important;
-  /* TopBarの高さ分下げることで前のページが上にずれないようにする */
-  top: calc(var(--app-top-bar-height) + env(safe-area-inset-top)) !important;
+  top: calc(var(--back-preview-top-height, 52px) + env(safe-area-inset-top)) !important;
   left: 0 !important;
   right: 0 !important;
-  bottom: 0 !important;
+  bottom: calc(64px + env(safe-area-inset-bottom)) !important;
   width: 100% !important;
   height: auto !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
   padding: 0 !important;
-  z-index: 0;
+  z-index: 1;
   pointer-events: none;
+  background: var(--mf-bg, #f5f5f5);
+}
+.back-gesture-top-preview {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: calc(var(--back-preview-top-height, 52px) + env(safe-area-inset-top));
+  padding-top: env(safe-area-inset-top);
+  z-index: 2;
+  background: #fff;
+  border-bottom: 1px solid var(--mf-border, #e6e8eb);
+  pointer-events: none;
+}
+.back-gesture-top-preview-inner {
+  height: var(--back-preview-top-height, 52px);
+  max-width: 520px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  padding: 0 8px;
+}
+.back-gesture-preview-side {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  line-height: 1;
+  color: #31363b;
+  background: #f5f6f7;
+}
+.back-gesture-preview-side:empty { background: transparent; }
+.back-gesture-preview-side--right {
+  justify-self: end;
+  font-size: 20px;
+}
+.back-gesture-preview-title {
+  min-width: 0;
+  text-align: center;
+  color: #20252a;
+  font-size: 16px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.back-gesture-tab-preview {
+  position: absolute !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  z-index: 2 !important;
+  pointer-events: none !important;
+  transform: none !important;
+}
+@media (min-width: 560px) {
+  .back-gesture-tab-preview {
+    left: 50% !important;
+    right: auto !important;
+    width: 520px !important;
+    transform: translateX(-50%) !important;
+  }
 }
 
 /* ===================================

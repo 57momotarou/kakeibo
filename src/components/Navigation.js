@@ -280,49 +280,137 @@ export function changeMonth(delta, direction, monthSelector, onMonthChange) {
 // ===================================
 export function initSwipeGesture(addModal, editModal, monthSelector, onMonthChange) {
   let startX = 0, startY = 0;
-  let isBackGesture = false, isMonthSwipe = false, decided = false;
+  let isBackGesture = false, isMonthSwipe = false, decided = false, gestureEnabled = false;
   const BACK_EDGE = 40, BACK_THRESHOLD = 80, MONTH_THRESHOLD = 50;
 
   const pageWrapper = document.getElementById("pageWrapper");
   const backLayer   = document.getElementById("backLayer");
   const backDim     = document.getElementById("backLayerDim");
-  const topBar      = document.getElementById("topBar");
+  const tabBar      = document.getElementById("tabBar");
+
+  function getBackTargetName() {
+    if (viewStack.length >= 2) return viewStack[viewStack.length - 2];
+    if (viewStack[viewStack.length - 1] === "calendar") return "transaction";
+    return null;
+  }
 
   function canGoBack() {
-    const cur = viewStack[viewStack.length - 1];
-    return viewStack.length > 1 || cur === "calendar";
+    return !!getBackTargetName();
   }
+
   function doGoBack() {
     const cur = viewStack[viewStack.length - 1];
     if (viewStack.length > 1) goBack();
     else if (cur === "calendar") switchToTab("transaction");
   }
 
+  function isGestureBlocked() {
+    if (!addModal.classList.contains("hidden")) return true;
+    if (!editModal.classList.contains("hidden")) return true;
+    if (document.getElementById("reportSheetOverlay")) return true;
+    if (document.querySelector(".scan-overlay:not(.hidden), .fab-overlay:not(.hidden), .overlay:not(.hidden)")) return true;
+    return false;
+  }
+
+  function stripIds(root) {
+    if (root.id) root.removeAttribute("id");
+    root.querySelectorAll("[id]").forEach(el => el.removeAttribute("id"));
+  }
+
+  function previewTitle(viewName) {
+    const mainTitles = {
+      home: "ホーム",
+      transaction: "入出金",
+      calendar: "カレンダー",
+      graph: "家計簿",
+      payroll: "給与明細",
+      account: "口座",
+    };
+    return mainTitles[viewName] || VIEW_CONFIG[viewName]?.title || "";
+  }
+
+  function createTopPreview(viewName) {
+    const isMain = ["home","transaction","calendar","graph","payroll","account"].includes(viewName);
+    const preview = document.createElement("div");
+    preview.className = "back-gesture-top-preview";
+
+    const inner = document.createElement("div");
+    inner.className = "back-gesture-top-preview-inner";
+
+    const left = document.createElement("span");
+    left.className = "back-gesture-preview-side";
+    left.textContent = isMain ? "" : "‹";
+
+    const title = document.createElement("strong");
+    title.className = "back-gesture-preview-title";
+    title.textContent = previewTitle(viewName);
+
+    const right = document.createElement("span");
+    right.className = "back-gesture-preview-side back-gesture-preview-side--right";
+    right.textContent = isMain ? "⚙︎" : "";
+
+    inner.append(left, title, right);
+    preview.appendChild(inner);
+    return preview;
+  }
+
+  function createTabPreview(viewName) {
+    const preview = tabBar.cloneNode(true);
+    preview.classList.add("back-gesture-tab-preview");
+    preview.classList.remove("hidden");
+
+    const targetId = {
+      home: "homeTab",
+      transaction: "transactionTab",
+      graph: "graphTab",
+      payroll: "payrollTab",
+      account: "accountTab",
+    }[viewName];
+
+    if (targetId) {
+      preview.querySelectorAll(".tab").forEach(el => el.classList.remove("active"));
+      const active = preview.querySelector(`#${targetId}`);
+      if (active) active.classList.add("active");
+    }
+    stripIds(preview);
+    return preview;
+  }
+
   function prepareBackLayer() {
-    let prevViewEl = null;
-    if (viewStack.length >= 2) {
-      const prevName = viewStack[viewStack.length - 2];
-      prevViewEl = VIEW_CONFIG[prevName]?.el;
-    } else if (viewStack[viewStack.length - 1] === "calendar") {
-      prevViewEl = VIEW_CONFIG["transaction"]?.el;
-    }
-    if (prevViewEl) {
-      prevViewEl._originalParent = prevViewEl.parentNode;
-      prevViewEl._originalNextSibling = prevViewEl.nextSibling;
-      backLayer.insertBefore(prevViewEl, backDim);
-      prevViewEl.classList.add("back-gesture-prev");
-    }
+    const prevName = getBackTargetName();
+    if (!prevName) return;
+
+    const prevViewEl = VIEW_CONFIG[prevName]?.el;
+    if (!prevViewEl) return;
+
+    // 戻り先を背景に実表示して、動画のように指の移動に合わせて露出させる。
+    prevViewEl._originalParent = prevViewEl.parentNode;
+    prevViewEl._originalNextSibling = prevViewEl.nextSibling;
+    backLayer.insertBefore(prevViewEl, backDim);
+    prevViewEl.classList.add("back-gesture-prev");
+
+    const previewTop = createTopPreview(prevName);
+    const previewTabs = createTabPreview(prevName);
+    backLayer.insertBefore(previewTop, prevViewEl);
+    backLayer.insertBefore(previewTabs, backDim);
+
+    document.body.style.setProperty("--back-preview-top-height", prevName === "graph" ? "86px" : "52px");
+    document.body.style.setProperty("--back-gesture-x", "0px");
     backDim.style.transition = "none";
-    backDim.style.opacity    = "0.35";
+    backDim.style.opacity = "0.28";
     document.body.classList.add("back-gesture-active");
   }
 
   function cleanupBackLayer() {
-    document.body.classList.remove("back-gesture-active");
+    document.body.classList.remove("back-gesture-active", "back-gesture-animating", "back-gesture-cancelling");
+    document.body.style.removeProperty("--back-gesture-x");
+    document.body.style.removeProperty("--back-preview-top-height");
+
+    backLayer.querySelectorAll(".back-gesture-top-preview, .back-gesture-tab-preview").forEach(el => el.remove());
+
     const prevEl = backLayer.querySelector(".back-gesture-prev");
     if (prevEl) {
       prevEl.classList.remove("back-gesture-prev");
-      // インラインスタイルを完全にリセット
       prevEl.style.cssText = "";
       if (prevEl._originalParent) {
         if (prevEl._originalNextSibling) {
@@ -334,41 +422,33 @@ export function initSwipeGesture(addModal, editModal, monthSelector, onMonthChan
         prevEl._originalNextSibling = null;
       }
     }
-    // transformを確実に消してリフロー強制
-    pageWrapper.style.transition = "none";
-    pageWrapper.style.transform  = "none";
-    pageWrapper.style.boxShadow  = "";
-    void pageWrapper.offsetWidth;  // 強制リフロー①
-    pageWrapper.style.transition = "";
-    pageWrapper.style.transform  = "";
-    void pageWrapper.offsetWidth;  // 強制リフロー②（transform=""の反映を保証）
-    backDim.style.transition     = "";
-    backDim.style.opacity        = "";
-    topBar.querySelectorAll(".top-bar-normal, .top-bar-settings").forEach(el => {
-      el.style.transition = "";
-      el.style.transform  = "";
-      el.style.opacity    = "";
-    });
+
+    pageWrapper.style.pointerEvents = "";
+    backDim.style.transition = "";
+    backDim.style.opacity = "";
   }
 
   document.addEventListener("touchstart", e => {
+    isBackGesture = false;
+    isMonthSwipe = false;
+    decided = false;
+    gestureEnabled = !isGestureBlocked();
+    if (!gestureEnabled) return;
     startX = e.touches[0].clientX;
     startY = e.touches[0].clientY;
-    isBackGesture = false;
-    isMonthSwipe  = false;
-    decided       = false;
   }, { passive: true });
 
   document.addEventListener("touchmove", e => {
-    if (!addModal.classList.contains("hidden")) return;
-    if (!editModal.classList.contains("hidden")) return;
+    if (!gestureEnabled) return;
     const curX = e.touches[0].clientX;
     const curY = e.touches[0].clientY;
     const dx = curX - startX;
     const dy = curY - startY;
+
     if (!decided) {
       if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
       if (Math.abs(dy) > Math.abs(dx)) { decided = true; return; }
+
       if (startX <= BACK_EDGE && dx > 0 && canGoBack()) {
         isBackGesture = true;
         prepareBackLayer();
@@ -378,81 +458,52 @@ export function initSwipeGesture(addModal, editModal, monthSelector, onMonthChan
       }
       decided = true;
     }
+
     if (isBackGesture) {
-      const move     = Math.max(0, dx);
+      const move = Math.max(0, Math.min(dx, window.innerWidth));
       const progress = Math.min(move / window.innerWidth, 1);
-      pageWrapper.style.transition = "none";
-      pageWrapper.style.transform  = `translateX(${move}px)`;
-      pageWrapper.style.boxShadow  = `-6px 0 16px rgba(0,0,0,${0.15 * (1 - progress)})`;
+      document.body.style.setProperty("--back-gesture-x", `${move}px`);
       backDim.style.transition = "none";
-      backDim.style.opacity    = String(0.35 * (1 - progress));
-      // TopBar内部要素をスライド量に応じて右にずらしながらフェードアウト
-      const shift   = move * 0.25; // pageWrapperの1/4の速さで右にずれる
-      const opacity = Math.max(0, 1 - progress * 2);
-      topBar.querySelectorAll(".top-bar-normal, .top-bar-settings").forEach(el => {
-        el.style.transition = "none";
-        el.style.transform  = `translateX(${shift}px)`;
-        el.style.opacity    = String(opacity);
-      });
+      backDim.style.opacity = String(0.28 * (1 - progress));
     }
   }, { passive: true });
 
   document.addEventListener("touchend", e => {
-    if (!addModal.classList.contains("hidden")) return;
-    if (!editModal.classList.contains("hidden")) return;
+    if (!gestureEnabled) return;
+    gestureEnabled = false;
+    if (!decided) return;
     const endX = e.changedTouches[0].clientX;
     const endY = e.changedTouches[0].clientY;
     const dx = endX - startX;
     const dy = endY - startY;
+
     if (isBackGesture) {
       if (dx >= BACK_THRESHOLD) {
-        const trans = "transform 0.22s cubic-bezier(0.4,0,0.2,1)";
-        // アニメーション中はタッチを無効化（誤操作防止）
         pageWrapper.style.pointerEvents = "none";
-        pageWrapper.style.transition = trans;
-        pageWrapper.style.transform  = `translateX(${window.innerWidth}px)`;
-        pageWrapper.style.boxShadow  = "none";
-        backDim.style.transition     = "opacity 0.22s";
-        backDim.style.opacity        = "0";
-        topBar.querySelectorAll(".top-bar-normal, .top-bar-settings").forEach(el => {
-          el.style.transition = "transform 0.22s cubic-bezier(0.4,0,0.2,1), opacity 0.22s";
-          el.style.transform  = `translateX(${window.innerWidth * 0.25}px)`;
-          el.style.opacity    = "0";
-        });
+        document.body.classList.add("back-gesture-animating");
+        document.body.style.setProperty("--back-gesture-x", `${window.innerWidth}px`);
+        backDim.style.transition = "opacity 0.22s cubic-bezier(0.4,0,0.2,1)";
+        backDim.style.opacity = "0";
+
         setTimeout(() => {
-          // ★ transform を先に消してからdoGoBack（タッチ座標のズレを防ぐ）
-          pageWrapper.style.transition = "none";
-          pageWrapper.style.transform  = "";
-          pageWrapper.style.boxShadow  = "";
-          void pageWrapper.offsetWidth; // 強制リフロー
-          // ビュー遷移
+          // 戻り先へ切り替えてから背景レイヤーを片付けると、画面が瞬間的に白くならない。
           doGoBack();
-          // cleanup
           cleanupBackLayer();
-          pageWrapper.style.pointerEvents = "";
-          // 描画完了後にscrollTopをリセット
           requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-              pageWrapper.scrollTop = 0;
-            });
+            requestAnimationFrame(() => { pageWrapper.scrollTop = 0; });
           });
-        }, 220);
+        }, 225);
       } else {
-        pageWrapper.style.transition = "transform 0.28s cubic-bezier(0.4,0,0.2,1), box-shadow 0.28s";
-        pageWrapper.style.transform  = "translateX(0)";
-        pageWrapper.style.boxShadow  = "none";
-        backDim.style.transition     = "opacity 0.28s";
-        backDim.style.opacity        = "0.35";
-        topBar.querySelectorAll(".top-bar-normal, .top-bar-settings").forEach(el => {
-          el.style.transition = "transform 0.28s cubic-bezier(0.4,0,0.2,1), opacity 0.28s";
-          el.style.transform  = "translateX(0)";
-          el.style.opacity    = "1";
-        });
-        setTimeout(() => { cleanupBackLayer(); }, 300);
+        document.body.classList.add("back-gesture-cancelling");
+        document.body.style.setProperty("--back-gesture-x", "0px");
+        backDim.style.transition = "opacity 0.28s cubic-bezier(0.4,0,0.2,1)";
+        backDim.style.opacity = "0.28";
+        setTimeout(cleanupBackLayer, 290);
       }
       isBackGesture = false;
       return;
     }
+
     if (isMonthSwipe) {
       if (Math.abs(dy) > Math.abs(dx)) return;
       const diffX = startX - endX;
@@ -460,5 +511,15 @@ export function initSwipeGesture(addModal, editModal, monthSelector, onMonthChan
       if (diffX > 0) changeMonth( 1, "left",  monthSelector, onMonthChange);
       else           changeMonth(-1, "right", monthSelector, onMonthChange);
     }
+  }, { passive: true });
+
+  document.addEventListener("touchcancel", () => {
+    if (!gestureEnabled) return;
+    gestureEnabled = false;
+    if (!isBackGesture) return;
+    document.body.classList.add("back-gesture-cancelling");
+    document.body.style.setProperty("--back-gesture-x", "0px");
+    setTimeout(cleanupBackLayer, 290);
+    isBackGesture = false;
   }, { passive: true });
 }

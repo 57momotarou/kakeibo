@@ -93,176 +93,170 @@ function buildReportText(data) {
 function buildReportImage(data) {
   const { period, income, expense, balance, topCategories, budgetStatus } = data;
   const themeColor = getComputedStyle(document.documentElement)
-    .getPropertyValue("--theme").trim() || "#4caf50";
+    .getPropertyValue("--theme").trim() || "#12b8d6";
 
-  const W = 1320;
-  const PADDING = 40;
+  // 保存画像は内容量に合わせた高さにする。
+  // 以前は2868px固定の透明領域が残り、iPhone上で下半分が黒く見えていた。
+  const W = 1080;
+  const PADDING = 34;
   const COL = W - PADDING * 2;
-
-  // 高さを先に計算
-  let estimatedH = 60 + 32 + 20   // タイトル行
-    + 20 + 130                     // サマリーカード
-    + 20 + 24;                     // 差額行
-  if (topCategories.length > 0)
-    estimatedH += 20 + 28 + topCategories.length * 52;
-  if (budgetStatus.length > 0)
-    estimatedH += 20 + 28 + budgetStatus.length * 58;
-  estimatedH += 60; // フッター余白
+  const HEADER_H = 112;
+  const GAP = 22;
+  const SUMMARY_H = 176;
+  const CATEGORY_ROW_H = 70;
+  const BUDGET_ROW_H = 78;
+  const categoryH = topCategories.length > 0 ? 62 + topCategories.length * CATEGORY_ROW_H + 20 : 0;
+  const budgetH = budgetStatus.length > 0 ? 62 + budgetStatus.length * BUDGET_ROW_H + 20 : 0;
+  const sectionsGap = (topCategories.length > 0 ? GAP : 0) + (budgetStatus.length > 0 ? GAP : 0);
+  const footerH = 58;
+  const H = HEADER_H + GAP + SUMMARY_H + sectionsGap + categoryH + budgetH + footerH;
 
   const canvas = document.createElement("canvas");
-  canvas.width  = W;
-  canvas.height = Math.max(estimatedH, 2868);
+  canvas.width = W;
+  canvas.height = H;
   const ctx = canvas.getContext("2d");
 
-  // 背景
-  ctx.fillStyle = "#f5f5f5";
-  ctx.fillRect(0, 0, W, estimatedH);
+  // 背景はcanvas全体を必ず塗る（透明な黒帯を残さない）
+  ctx.fillStyle = "#f3f5f7";
+  ctx.fillRect(0, 0, W, H);
 
-  // ヘッダーバー
+  // --- ヘッダー ---
   ctx.fillStyle = themeColor;
-  ctx.fillRect(0, 0, W, 72);
-
-  // タイトル
+  ctx.fillRect(0, 0, W, HEADER_H);
   ctx.fillStyle = "#fff";
-  ctx.font = "bold 28px -apple-system, 'Hiragino Sans', sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText(period.year + "年" + period.month + "月 家計簿レポート", W / 2, 46);
-  ctx.font = "16px -apple-system, 'Hiragino Sans', sans-serif";
-  ctx.fillText(period.start + " 〜 " + period.end, W / 2, 66);
+  ctx.font = "700 34px -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif";
+  ctx.fillText(`${period.year}年${period.month}月 家計簿レポート`, W / 2, 50);
+  ctx.font = "500 18px -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif";
+  ctx.globalAlpha = 0.92;
+  ctx.fillText(`${period.start.replaceAll("-", ".")} 〜 ${period.end.replaceAll("-", ".")}`, W / 2, 82);
+  ctx.globalAlpha = 1;
 
-  let y = 72 + 20;
+  let y = HEADER_H + GAP;
 
-  // --- サマリーカード ---
-  const cardH = 130;
-  roundRect(ctx, PADDING, y, COL, cardH, 12, "#fff");
-  y += 16;
-
-  // 収入・支出の2列
-  const halfW = (COL - 12) / 2;
-  roundRect(ctx, PADDING + 16, y, halfW, 66, 8, "#f5f5f5");
-  roundRect(ctx, PADDING + 16 + halfW + 12, y, halfW, 66, 8, "#f5f5f5");
+  // --- 収支サマリー ---
+  roundRect(ctx, PADDING, y, COL, SUMMARY_H, 18, "#fff");
+  const inner = 18;
+  const miniGap = 14;
+  const halfW = (COL - inner * 2 - miniGap) / 2;
+  const miniY = y + inner;
+  roundRect(ctx, PADDING + inner, miniY, halfW, 92, 12, "#f5f7f9");
+  roundRect(ctx, PADDING + inner + halfW + miniGap, miniY, halfW, 92, 12, "#f5f7f9");
 
   ctx.textAlign = "left";
-  ctx.font = "13px -apple-system, 'Hiragino Sans', sans-serif";
-  ctx.fillStyle = "#888";
-  ctx.fillText("収入", PADDING + 28, y + 22);
-  ctx.fillText("支出", PADDING + 28 + halfW + 12, y + 22);
+  ctx.font = "500 16px -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif";
+  ctx.fillStyle = "#8a9199";
+  ctx.fillText("収入", PADDING + inner + 16, miniY + 28);
+  ctx.fillText("支出", PADDING + inner + halfW + miniGap + 16, miniY + 28);
 
-  ctx.font = "bold 26px -apple-system, 'Hiragino Sans', sans-serif";
+  ctx.font = "700 31px -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif";
   ctx.fillStyle = themeColor;
-  ctx.fillText("¥" + income.toLocaleString(), PADDING + 28, y + 54);
-  ctx.fillStyle = "#e53935";
-  ctx.fillText("¥" + expense.toLocaleString(), PADDING + 28 + halfW + 12, y + 54);
+  ctx.fillText(`¥${income.toLocaleString()}`, PADDING + inner + 16, miniY + 68);
+  ctx.fillStyle = "#e84545";
+  ctx.fillText(`¥${expense.toLocaleString()}`, PADDING + inner + halfW + miniGap + 16, miniY + 68);
 
-  y += 66 + 12;
-
-  // 差額
-  ctx.strokeStyle = "#f0f0f0";
-  ctx.lineWidth = 1;
+  const balanceY = y + 128;
+  ctx.strokeStyle = "#edf0f2";
+  ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(PADDING + 16, y);
-  ctx.lineTo(PADDING + COL - 16, y);
+  ctx.moveTo(PADDING + inner, balanceY - 8);
+  ctx.lineTo(PADDING + COL - inner, balanceY - 8);
   ctx.stroke();
-  y += 12;
 
-  ctx.font = "14px -apple-system, 'Hiragino Sans', sans-serif";
-  ctx.fillStyle = "#666";
+  ctx.font = "500 17px -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif";
+  ctx.fillStyle = "#666d75";
   ctx.textAlign = "left";
-  ctx.fillText("収支差額", PADDING + 16, y + 20);
+  ctx.fillText("収支差額", PADDING + inner, balanceY + 24);
 
   const balSign = balance >= 0 ? "+" : "-";
-  const balColor = balance >= 0 ? themeColor : "#e53935";
-  ctx.font = "bold 28px -apple-system, 'Hiragino Sans', sans-serif";
-  ctx.fillStyle = balColor;
+  ctx.font = "700 31px -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif";
+  ctx.fillStyle = balance >= 0 ? themeColor : "#e84545";
   ctx.textAlign = "right";
-  ctx.fillText(balSign + "¥" + Math.abs(balance).toLocaleString(), PADDING + COL - 16, y + 22);
+  ctx.fillText(`${balSign}¥${Math.abs(balance).toLocaleString()}`, PADDING + COL - inner, balanceY + 25);
 
-  y += 40 + 20;
+  y += SUMMARY_H;
 
-  // --- カテゴリ TOP5 ---
+  // --- 支出カテゴリ TOP5 ---
   if (topCategories.length > 0) {
-    const sectionH = 28 + topCategories.length * 52 + 16;
-    roundRect(ctx, PADDING, y, COL, sectionH, 12, "#fff");
-    y += 16;
-
-    ctx.font = "bold 15px -apple-system, 'Hiragino Sans', sans-serif";
-    ctx.fillStyle = "#444";
+    y += GAP;
+    roundRect(ctx, PADDING, y, COL, categoryH, 18, "#fff");
     ctx.textAlign = "left";
-    ctx.fillText("支出カテゴリ TOP5", PADDING + 16, y + 18);
-    y += 28 + 4;
+    ctx.fillStyle = "#343a40";
+    ctx.font = "700 19px -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif";
+    ctx.fillText("支出カテゴリ TOP5", PADDING + 20, y + 38);
 
+    let rowY = y + 60;
     topCategories.forEach(([name, amount], i) => {
       const pct = expense > 0 ? Math.round(amount / expense * 100) : 0;
-      const barW = expense > 0 ? Math.floor((amount / expense) * (COL - 32)) : 0;
+      const availableBarW = COL - 40;
+      const barW = Math.max(0, Math.min(availableBarW, availableBarW * (amount / Math.max(expense, 1))));
 
-      ctx.font = "14px -apple-system, 'Hiragino Sans', sans-serif";
-      ctx.fillStyle = "#333";
       ctx.textAlign = "left";
-      ctx.fillText((i + 1) + ". " + name, PADDING + 16, y + 16);
+      ctx.font = "500 17px -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif";
+      ctx.fillStyle = "#343a40";
+      ctx.fillText(`${i + 1}. ${name}`, PADDING + 20, rowY + 22);
 
-      ctx.fillStyle = "#555";
-      ctx.font = "bold 14px -apple-system, 'Hiragino Sans', sans-serif";
       ctx.textAlign = "right";
-      ctx.fillText("¥" + amount.toLocaleString() + "  " + pct + "%", PADDING + COL - 16, y + 16);
+      ctx.font = "700 16px -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif";
+      ctx.fillStyle = "#50575e";
+      ctx.fillText(`¥${amount.toLocaleString()}  ${pct}%`, PADDING + COL - 20, rowY + 22);
 
-      // バー背景
-      roundRect(ctx, PADDING + 16, y + 22, COL - 32, 8, 4, "#eee");
-      // バー本体
-      if (barW > 0) roundRect(ctx, PADDING + 16, y + 22, barW, 8, 4, themeColor);
-
-      y += 52;
+      roundRect(ctx, PADDING + 20, rowY + 36, availableBarW, 8, 4, "#edf0f2");
+      if (barW > 0) roundRect(ctx, PADDING + 20, rowY + 36, barW, 8, 4, themeColor);
+      rowY += CATEGORY_ROW_H;
     });
-    y += 8;
+    y += categoryH;
   }
 
   // --- 予算達成状況 ---
   if (budgetStatus.length > 0) {
-    y += 12;
-    const sectionH = 28 + budgetStatus.length * 58 + 16;
-    roundRect(ctx, PADDING, y, COL, sectionH, 12, "#fff");
-    y += 16;
-
-    ctx.font = "bold 15px -apple-system, 'Hiragino Sans', sans-serif";
-    ctx.fillStyle = "#444";
+    y += GAP;
+    roundRect(ctx, PADDING, y, COL, budgetH, 18, "#fff");
     ctx.textAlign = "left";
-    ctx.fillText("予算達成状況", PADDING + 16, y + 18);
-    y += 28 + 4;
+    ctx.fillStyle = "#343a40";
+    ctx.font = "700 19px -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif";
+    ctx.fillText("予算達成状況", PADDING + 20, y + 38);
 
+    let rowY = y + 60;
     budgetStatus.forEach(({ catName, budget, spent, over }) => {
-      const pct     = Math.round(spent / budget * 100);
-      const warn    = !over && pct >= 80;
-      const barCol  = over ? "#e53935" : warn ? "#ff9800" : themeColor;
-      const barW    = Math.min(Math.floor((spent / budget) * (COL - 32)), COL - 32);
-      const dotCol  = over ? "#e53935" : warn ? "#ff9800" : themeColor;
+      const pct = Math.round(spent / budget * 100);
+      const warn = !over && pct >= 80;
+      const barColor = over ? "#e84545" : warn ? "#f5a623" : themeColor;
+      const availableBarW = COL - 40;
+      const barW = Math.min(availableBarW, Math.max(0, availableBarW * spent / budget));
 
-      // ドット
       ctx.beginPath();
-      ctx.arc(PADDING + 24, y + 10, 5, 0, Math.PI * 2);
-      ctx.fillStyle = dotCol;
+      ctx.arc(PADDING + 25, rowY + 20, 6, 0, Math.PI * 2);
+      ctx.fillStyle = barColor;
       ctx.fill();
 
-      ctx.font = "14px -apple-system, 'Hiragino Sans', sans-serif";
-      ctx.fillStyle = "#333";
       ctx.textAlign = "left";
-      ctx.fillText(catName, PADDING + 36, y + 16);
+      ctx.font = "500 17px -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif";
+      ctx.fillStyle = "#343a40";
+      ctx.fillText(catName, PADDING + 42, rowY + 25);
 
-      ctx.font = "bold 13px -apple-system, 'Hiragino Sans', sans-serif";
-      ctx.fillStyle = over ? "#e53935" : "#555";
       ctx.textAlign = "right";
-      ctx.fillText(pct + "%", PADDING + COL - 16, y + 16);
+      ctx.font = "700 16px -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif";
+      ctx.fillStyle = over ? "#e84545" : "#50575e";
+      ctx.fillText(`${pct}%`, PADDING + COL - 20, rowY + 25);
 
-      roundRect(ctx, PADDING + 16, y + 22, COL - 32, 8, 4, "#eee");
-      if (barW > 0) roundRect(ctx, PADDING + 16, y + 22, barW, 8, 4, barCol);
+      roundRect(ctx, PADDING + 20, rowY + 38, availableBarW, 8, 4, "#edf0f2");
+      if (barW > 0) roundRect(ctx, PADDING + 20, rowY + 38, barW, 8, 4, barColor);
 
-      ctx.font = "12px -apple-system, 'Hiragino Sans', sans-serif";
-      ctx.fillStyle = "#aaa";
       ctx.textAlign = "right";
-      ctx.fillText("¥" + spent.toLocaleString() + " / ¥" + budget.toLocaleString(), PADDING + COL - 16, y + 48);
-
-      y += 58;
+      ctx.font = "500 14px -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif";
+      ctx.fillStyle = "#9aa1a8";
+      ctx.fillText(`¥${spent.toLocaleString()} / ¥${budget.toLocaleString()}`, PADDING + COL - 20, rowY + 66);
+      rowY += BUDGET_ROW_H;
     });
-    y += 8;
+    y += budgetH;
   }
+
+  // フッター。余白だけで終わらず、レポート画像として自然に締める。
+  ctx.textAlign = "center";
+  ctx.font = "500 14px -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif";
+  ctx.fillStyle = "#a5abb1";
+  ctx.fillText("家計簿レポート", W / 2, H - 22);
 
   return canvas;
 }
