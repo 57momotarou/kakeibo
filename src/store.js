@@ -49,7 +49,6 @@ export let records        = JSON.parse(localStorage.getItem("records"))     || [
 export let periodStartDay = Number(localStorage.getItem("periodStartDay"))  || 1;
 export let themeColor     = localStorage.getItem("themeColor")              || "#4caf50";
 export let budgets        = JSON.parse(localStorage.getItem("budgets"))     || {};
-export let payrollSlips   = JSON.parse(localStorage.getItem("payrollSlips")) || [];
 // 初回起動時は「財布」をデフォルト口座として追加
 function loadAccounts() {
   const saved = localStorage.getItem("accounts");
@@ -62,13 +61,8 @@ export let accounts = loadAccounts();
 export let childCategories = loadChildCategories();
 
 // タブ表示設定
-// 給与明細は初期状態ではOFF。使いたい人だけ「表示 / 非表示」から有効化する。
-const DEFAULT_TAB_VISIBILITY = { calendar: false, account: true, payroll: false };
-function loadTabVisibility() {
-  const saved = JSON.parse(localStorage.getItem("tabVisibility")) || {};
-  return { ...DEFAULT_TAB_VISIBILITY, ...saved };
-}
-export let tabVisibility = loadTabVisibility();
+const DEFAULT_TAB_VISIBILITY = { calendar: false, account: true };
+export let tabVisibility = JSON.parse(localStorage.getItem("tabVisibility")) || DEFAULT_TAB_VISIBILITY;
 
 // ===================================
 // 保存関数
@@ -93,10 +87,6 @@ export function saveAccounts() {
   localStorage.setItem("accounts", JSON.stringify(accounts));
 }
 
-export function savePayrollSlips() {
-  localStorage.setItem("payrollSlips", JSON.stringify(payrollSlips));
-}
-
 // ===================================
 // State更新関数
 // ===================================
@@ -118,10 +108,6 @@ export function setAccounts(newAccounts) {
   accounts = newAccounts;
 }
 
-export function setPayrollSlips(newSlips) {
-  payrollSlips = newSlips;
-}
-
 export function resetChildCategoriesToDefault() {
   const obj = {};
   Object.keys(DEFAULT_CHILD_CATEGORIES).forEach(pid => {
@@ -133,4 +119,16 @@ export function resetChildCategoriesToDefault() {
 
 export function getGeminiApiKey() {
   return localStorage.getItem("geminiApiKey") || "";
+}
+
+{
+  id: 1735000000000,
+  yearMonth: "2026-08",       // 一覧のソート・表示用
+  payDate: "2026-08-21",      // 支給年月日
+  incomeItems: [{ label: "給料", amount: 234500 }, ...],      // 支給項目(可変長・全項目)
+  deductionItems: [{ label: "共済長期", amount: 25620 }, ...], // 控除項目(可変長・全項目)
+  incomeTotal: 349995,
+  deductionTotal: 95601,
+  netAmount: 254394,          // 差引支給額
+  transfers: [{ bank: "北見信用金庫本店", amount: 209394 }, ...], // 振込先(任意)
 }

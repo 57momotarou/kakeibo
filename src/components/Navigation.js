@@ -1,3 +1,5 @@
+import { getPeriodRange, getDefaultMonth } from "../utils/calendar.js";
+
 /**
  * components/Navigation.js
  * ビュースタック管理・タブバー・月ナビゲーション・スワイプジェスチャー
@@ -103,6 +105,7 @@ export function showCurrentView() {
   const topBarSettings = document.getElementById("topBarSettings");
   const settingsBarTitle = document.getElementById("settingsBarTitle");
   const openAddBtn     = document.getElementById("openAddBtn");
+  const openSettingsBtn = document.getElementById("openSettingsBtn");
 
   const isMain = ["home","transaction","calendar","graph","payroll","account"].includes(name);
   topBarNormal.classList.toggle("hidden", !isMain);
@@ -131,6 +134,11 @@ export function showCurrentView() {
   const calShortcutBtn = document.getElementById("calendarShortcutBtn");
   const calBackBtn     = document.getElementById("calendarBackBtn");
   const spacer         = document.getElementById("topBarSpacer");
+  const shareBtn       = document.getElementById("shareReportBtn");
+  const graphLeftBtn   = document.getElementById("graphLeftBtn");
+  const graphRightBtn  = document.getElementById("graphRightBtn");
+
+  document.body.classList.toggle("graph-topbar-mode", name === "graph");
 
   if (isMain) {
     const isTransaction = (name === "transaction");
@@ -146,9 +154,15 @@ export function showCurrentView() {
     // 給与明細は左に40pxのダミーを置き、右の設定ボタンと釣り合わせる
     spacer.style.display         = isPayroll || (!showNav && !isHome) ? "" : "none";
     spacer.classList.toggle("payroll-spacer", isPayroll);
-    const shareBtn = document.getElementById("shareReportBtn");
     if (shareBtn) shareBtn.style.display = isHome ? "" : "none";
-
+    if (graphLeftBtn) graphLeftBtn.style.display = showNav ? "" : "none";
+    if (graphRightBtn) graphRightBtn.style.display = showNav ? "" : "none";
+    if (openSettingsBtn) openSettingsBtn.style.display = showNav ? "none" : "";
+  } else {
+    if (shareBtn) shareBtn.style.display = "none";
+    if (graphLeftBtn) graphLeftBtn.style.display = "none";
+    if (graphRightBtn) graphRightBtn.style.display = "none";
+    if (openSettingsBtn) openSettingsBtn.style.display = "";
   }
 
   document.getElementById("tabBar").classList.toggle("hidden", !config.showTabs);
@@ -188,6 +202,8 @@ export function initNavigationEvents() {
   document.getElementById("openSettingsBtn").addEventListener("click", () => navigate("settings"));
   document.getElementById("calendarShortcutBtn").addEventListener("click", () => switchToTab("calendar"));
   document.getElementById("calendarBackBtn").addEventListener("click",    () => switchToTab("transaction"));
+  document.getElementById("graphLeftBtn").addEventListener("click",       () => navigate("settings"));
+  document.getElementById("graphRightBtn").addEventListener("click",      () => switchToTab("calendar"));
   document.getElementById("goCategory").addEventListener("click",   () => navigate("category"));
   document.getElementById("goTheme").addEventListener("click",      () => navigate("theme"));
   document.getElementById("goPeriod").addEventListener("click",     () => navigate("period"));
@@ -206,9 +222,32 @@ export function initNavigationEvents() {
 // ===================================
 // 月ナビゲーション
 // ===================================
+function updateMonthRangeLabel(monthSelector) {
+  const monthRangeEl = document.getElementById("monthRangeLabel");
+  if (!monthRangeEl) return;
+  const periodStartDay = Number(localStorage.getItem("periodStartDay")) || 1;
+  const { start, end } = getPeriodRange(monthSelector.value, periodStartDay);
+  const [startY, startM, startD] = start.split("-").map(Number);
+  const [endY, endM, endD] = end.split("-").map(Number);
+  monthRangeEl.textContent = startY === endY
+    ? `${startM}月${startD}日〜${endM}月${endD}日`
+    : `${startY}/${startM}/${startD}〜${endY}/${endM}/${endD}`;
+}
+
+function syncMonthNavState(monthSelector) {
+  const nextBtn = document.getElementById("nextMonthBtn");
+  if (!nextBtn) return;
+  const maxMonth = getDefaultMonth(Number(localStorage.getItem("periodStartDay")) || 1);
+  const disableNext = monthSelector.value >= maxMonth;
+  nextBtn.disabled = disableNext;
+  nextBtn.classList.toggle("is-disabled", disableNext);
+}
+
 export function updateMonthLabel(monthSelector) {
   const [year, month] = monthSelector.value.split("-").map(Number);
   document.getElementById("monthLabel").textContent = `${year}年${month}月`;
+  updateMonthRangeLabel(monthSelector);
+  syncMonthNavState(monthSelector);
 }
 
 export function initMonthNavEvents(monthSelector, onMonthChange) {
@@ -217,6 +256,7 @@ export function initMonthNavEvents(monthSelector, onMonthChange) {
 }
 
 export function changeMonth(delta, direction, monthSelector, onMonthChange) {
+  if (delta > 0 && document.getElementById("nextMonthBtn")?.disabled) return;
   const [year, month] = monthSelector.value.split("-").map(Number);
   const d = new Date(year, month - 1 + delta, 1);
   const newVal = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;

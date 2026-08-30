@@ -20,7 +20,7 @@ body {
 #pageWrapper {
   /* 画面全体を占め、TopBar・TabBarの下からスクロール */
   position: fixed;
-  top: calc(52px + env(safe-area-inset-top));
+  top: calc(var(--app-top-bar-height) + env(safe-area-inset-top));
   bottom: calc(60px + env(safe-area-inset-bottom));
   left: 0;
   right: 0;

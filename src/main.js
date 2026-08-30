@@ -45,7 +45,6 @@ import {
   renderResetView, initResetEvents,
 } from "./features/settings/OtherSettings.js";
 import { initScannerEvents, initImageScannerEvents } from "./features/scanner/Receipt.js";
-import { renderPayrollView, initPayrollEvents } from "./features/payroll/PayrollView.js";
 
 // ===================================
 // DOMContentLoaded
@@ -78,7 +77,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (viewName === "categoryDetail") renderCategoryDetailView();
     if (viewName === "theme")          renderColorPresets(themeColor);
     if (viewName === "graph")          renderGraph(monthSelector);
-    if (viewName === "payroll")        renderPayrollView();
     if (viewName === "period")         renderPeriodView(monthSelector);
     if (viewName === "account")        renderAccountView();
     if (viewName === "visibility")     renderVisibilityView();
@@ -137,11 +135,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // スキャナー
   initScannerEvents(refresh);
   initImageScannerEvents(refresh);
-
-  // 給与明細（任意機能）
-  initPayrollEvents(() => {
-    if (viewStack[viewStack.length - 1] === "payroll") renderPayrollView();
-  });
 
   // グラフトグル
   initGraphEvents(monthSelector);

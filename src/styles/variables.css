@@ -4,4 +4,5 @@
 :root {
   --theme:      #4caf50;
   --theme-dark: #388e3c;
+  --app-top-bar-height: 52px;
 }

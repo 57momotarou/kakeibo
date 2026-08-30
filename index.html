@@ -35,17 +35,22 @@
   <!-- ========== 上部バー（pageWrapper外・fixed） ========== -->
   <header class="top-bar" id="topBar">
     <div class="top-bar-normal" id="topBarNormal">
+      <button class="top-bar-btn graph-side-btn" id="graphLeftBtn" style="display:none" aria-label="設定を開く">👤</button>
       <button class="top-bar-btn" id="calendarShortcutBtn" style="display:none">🗓</button>
       <button class="top-bar-btn" id="calendarBackBtn" style="display:none">←</button>
       <!-- ホーム画面：共有ボタン（左右対称のため同幅） -->
       <button class="top-bar-btn" id="shareReportBtn" style="display:none;">📤</button>
       <div class="top-bar-month-nav" id="topBarMonthNav">
-        <button class="top-bar-btn month-nav-btn" id="prevMonthBtn">◀</button>
-        <span class="top-bar-title" id="monthLabel">2025年3月</span>
-        <button class="top-bar-btn month-nav-btn" id="nextMonthBtn">▶</button>
+        <button class="top-bar-btn month-nav-btn" id="prevMonthBtn" aria-label="前の月へ">‹</button>
+        <div class="top-bar-month-copy">
+          <div class="top-bar-month-title" id="monthLabel">2025年3月</div>
+          <div class="top-bar-month-range" id="monthRangeLabel">3月1日〜3月31日</div>
+        </div>
+        <button class="top-bar-btn month-nav-btn" id="nextMonthBtn" aria-label="次の月へ">›</button>
       </div>
       <span class="top-bar-title top-bar-home-title" id="topBarHomeTitle" style="display:none">ホーム</span>
       <div class="top-bar-spacer" id="topBarSpacer" style="display:none"></div>
+      <button class="top-bar-btn graph-side-btn" id="graphRightBtn" style="display:none" aria-label="カレンダーを開く">🗓️</button>
       <button class="top-bar-btn" id="openSettingsBtn">⚙️</button>
     </div>
     <div class="top-bar-settings hidden" id="topBarSettings">
