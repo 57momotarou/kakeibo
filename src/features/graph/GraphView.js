@@ -192,16 +192,13 @@ function renderSubToggle(type, month) {
   if (!wrap) {
     wrap = document.createElement("div");
     wrap.id = "subItemToggleWrap";
-    wrap.style.cssText = "display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:8px 16px 0;font-size:13px;color:#666;";
+    wrap.className = "graph-sub-toggle-wrap";
     const legendEl = document.getElementById("mainLegend");
     legendEl.parentNode.insertBefore(wrap, legendEl);
   }
   wrap.innerHTML = `
     <span>中項目表示</span>
-    <button id="subItemToggleBtn" style="
-      padding:3px 12px;border-radius:12px;border:1.5px solid #ccc;background:${showSubItems ? "#333" : "#fff"};
-      color:${showSubItems ? "#fff" : "#333"};font-size:12px;font-weight:bold;cursor:pointer;
-    ">${showSubItems ? "ON" : "OFF"}</button>
+    <button id="subItemToggleBtn" class="graph-sub-toggle-btn ${showSubItems ? "active" : ""}">${showSubItems ? "ON" : "OFF"}</button>
   `;
   document.getElementById("subItemToggleBtn").addEventListener("click", () => {
     showSubItems = !showSubItems;

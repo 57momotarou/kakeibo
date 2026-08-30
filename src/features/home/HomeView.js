@@ -4,7 +4,7 @@
  * - 予算カード行タップ → 月別達成度モーダル
  */
 
-import { records, budgets, childCategories } from "../../store.js";
+import { records, budgets, childCategories, accounts } from "../../store.js";
 import { getPeriodRange } from "../../utils/calendar.js";
 import { displayCategory } from "../../utils/category.js";
 
@@ -35,14 +35,46 @@ export function renderHome(monthSelector) {
   const monthEl = document.getElementById("homeBudgetMonth");
   if (!card || !rowsEl) return;
 
-  const budgetCats = Object.keys(budgets).filter(k => budgets[k] > 0);
-  if (budgetCats.length === 0) { card.style.display = "none"; return; }
-  card.style.display = "";
-  rowsEl.innerHTML   = "";
-
   const ym = monthSelector.value;
   const [y, m] = ym.split("-").map(Number);
+  const periodStartDay = Number(localStorage.getItem("periodStartDay")) || 1;
+  const { start, end } = getPeriodRange(ym, periodStartDay);
+  const periodRecords = records.filter(r => r.date >= start && r.date <= end);
+  const income = periodRecords.reduce((sum, r) => sum + (r.type === "income" ? Number(r.amount || 0) : 0), 0);
+  const expense = periodRecords.reduce((sum, r) => sum + (r.type === "expense" ? Number(r.amount || 0) : 0), 0);
+  const balance = income - expense;
+  const accountTotal = accounts.reduce((sum, a) => sum + Number(a.balance || 0), 0);
+
+  const periodLabel = document.getElementById("homePeriodLabel");
+  const incomeEl = document.getElementById("homeIncomeTotal");
+  const expenseEl = document.getElementById("homeExpenseTotal");
+  const balanceEl = document.getElementById("homeBalanceTotal");
+  const accountTotalEl = document.getElementById("homeAccountTotal");
+  const accountCountEl = document.getElementById("homeAccountCount");
+
+  if (periodLabel) {
+    const [, sm, sd] = start.split("-").map(Number);
+    const [, em, ed] = end.split("-").map(Number);
+    periodLabel.textContent = `${sm}月${sd}日〜${em}月${ed}日`;
+  }
+  if (incomeEl) incomeEl.textContent = `¥${income.toLocaleString()}`;
+  if (expenseEl) expenseEl.textContent = `¥${expense.toLocaleString()}`;
+  if (balanceEl) {
+    balanceEl.textContent = `${balance < 0 ? "-" : ""}¥${Math.abs(balance).toLocaleString()}`;
+    balanceEl.classList.toggle("is-negative", balance < 0);
+  }
+  if (accountTotalEl) accountTotalEl.textContent = `${accountTotal < 0 ? "-" : ""}¥${Math.abs(accountTotal).toLocaleString()}`;
+  if (accountCountEl) accountCountEl.textContent = `${accounts.length}口座`;
   if (monthEl) monthEl.textContent = `${y}年${m}月`;
+
+  const budgetCats = Object.keys(budgets).filter(k => budgets[k] > 0);
+  if (budgetCats.length === 0) {
+    card.style.display = "none";
+    rowsEl.innerHTML = "";
+    return;
+  }
+  card.style.display = "";
+  rowsEl.innerHTML = "";
 
   const spending = getMonthlySpending(monthSelector);
 

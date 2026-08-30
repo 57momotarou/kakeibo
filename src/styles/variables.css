@@ -1,8 +1,21 @@
 /* ===================================
-   CSS変数（テーマカラー）
+   CSS変数（テーマカラー / MoneyForward風UIトークン）
 =================================== */
 :root {
   --theme:      #4caf50;
   --theme-dark: #388e3c;
   --app-top-bar-height: 52px;
+
+  --mf-bg: #f3f5f7;
+  --mf-surface: #ffffff;
+  --mf-surface-soft: #f7f8fa;
+  --mf-border: #e6e9ed;
+  --mf-text: #24282d;
+  --mf-muted: #7a828b;
+  --mf-faint: #a8afb7;
+  --mf-positive: #2f80c8;
+  --mf-negative: #e15b64;
+  --mf-warning: #f3a33b;
+  --mf-radius: 14px;
+  --mf-shadow: 0 1px 2px rgba(26, 39, 52, 0.04), 0 4px 14px rgba(26, 39, 52, 0.04);
 }

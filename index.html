@@ -44,11 +44,11 @@
   <!-- ========== 上部バー（pageWrapper外・fixed） ========== -->
   <header class="top-bar" id="topBar">
     <div class="top-bar-normal" id="topBarNormal">
-      <button class="top-bar-btn graph-side-btn" id="graphLeftBtn" style="display:none" aria-label="設定を開く">👤</button>
-      <button class="top-bar-btn" id="calendarShortcutBtn" style="display:none">🗓</button>
-      <button class="top-bar-btn" id="calendarBackBtn" style="display:none">←</button>
+      <button class="top-bar-btn graph-side-btn" id="graphLeftBtn" style="display:none" aria-label="設定を開く"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.4"></circle><path d="M5.5 19c.7-3.4 3-5.2 6.5-5.2s5.8 1.8 6.5 5.2"></path></svg></button>
+      <button class="top-bar-btn" id="calendarShortcutBtn" style="display:none" aria-label="カレンダー"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14" rx="2"></rect><path d="M8 3.5v4M16 3.5v4M4 9.5h16"></path></svg></button>
+      <button class="top-bar-btn" id="calendarBackBtn" style="display:none" aria-label="戻る"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"></path></svg></button>
       <!-- ホーム画面：共有ボタン（左右対称のため同幅） -->
-      <button class="top-bar-btn" id="shareReportBtn" style="display:none;">📤</button>
+      <button class="top-bar-btn" id="shareReportBtn" style="display:none;" aria-label="共有"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4"></path><path d="m8 8 4-4 4 4"></path><path d="M6 12v7h12v-7"></path></svg></button>
       <div class="top-bar-month-nav" id="topBarMonthNav">
         <button class="top-bar-btn month-nav-btn" id="prevMonthBtn" aria-label="前の月へ">‹</button>
         <div class="top-bar-month-copy">
@@ -59,11 +59,11 @@
       </div>
       <span class="top-bar-title top-bar-home-title" id="topBarHomeTitle" style="display:none">ホーム</span>
       <div class="top-bar-spacer" id="topBarSpacer" style="display:none"></div>
-      <button class="top-bar-btn graph-side-btn" id="graphRightBtn" style="display:none" aria-label="カレンダーを開く">🗓️</button>
-      <button class="top-bar-btn" id="openSettingsBtn">⚙️</button>
+      <button class="top-bar-btn graph-side-btn" id="graphRightBtn" style="display:none" aria-label="カレンダーを開く"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14" rx="2"></rect><path d="M8 3.5v4M16 3.5v4M4 9.5h16"></path><path d="M8 13h3M13 13h3M8 16h3"></path></svg></button>
+      <button class="top-bar-btn" id="openSettingsBtn" aria-label="設定"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"></path></svg></button>
     </div>
     <div class="top-bar-settings hidden" id="topBarSettings">
-      <button class="top-bar-btn" id="backBtn">←</button>
+      <button class="top-bar-btn" id="backBtn" aria-label="戻る"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"></path></svg></button>
       <span class="top-bar-title" id="settingsBarTitle">設定</span>
       <button class="top-bar-edit-btn hidden" id="topBarEditBtn">編集</button>
     </div>
@@ -153,6 +153,43 @@
 
   <!-- ホーム -->
   <div id="homeView" class="view active">
+    <div class="home-dashboard">
+      <section class="mf-dashboard-card home-household-card">
+        <div class="mf-dashboard-head">
+          <div>
+            <span class="mf-dashboard-kicker">今月の家計簿</span>
+            <strong id="homePeriodLabel" class="mf-dashboard-title">—</strong>
+          </div>
+          <span class="mf-dashboard-badge">月次</span>
+        </div>
+        <div class="home-balance-main">
+          <span>収支</span>
+          <strong id="homeBalanceTotal">¥0</strong>
+        </div>
+        <div class="home-stat-grid">
+          <div class="home-stat-item">
+            <span>収入</span>
+            <strong id="homeIncomeTotal">¥0</strong>
+          </div>
+          <div class="home-stat-item">
+            <span>支出</span>
+            <strong id="homeExpenseTotal">¥0</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="mf-dashboard-card home-assets-card">
+        <div class="mf-dashboard-head">
+          <div>
+            <span class="mf-dashboard-kicker">口座</span>
+            <strong class="mf-dashboard-title">現在の残高</strong>
+          </div>
+          <span id="homeAccountCount" class="mf-dashboard-meta">0口座</span>
+        </div>
+        <div class="home-assets-total" id="homeAccountTotal">¥0</div>
+      </section>
+    </div>
+
     <div id="homeBudgetCard" class="home-budget-card" style="display:none">
       <div class="home-budget-header">
         <span class="home-budget-title">今月の予算</span>
@@ -460,15 +497,15 @@
   <div class="fab-menu" id="fabMenu">
     <div class="fab-sub-item" id="fabCameraItem">
       <span class="fab-sub-label">レシートを読み取る</span>
-      <button class="fab-sub-btn fab-camera" id="fabCameraBtn">📷</button>
+      <button class="fab-sub-btn fab-camera" id="fabCameraBtn" aria-label="カメラ"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7.5h3l1.4-2h5.2l1.4 2h3a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9.5a2 2 0 0 1 2-2Z"></path><circle cx="12" cy="13.5" r="3.5"></circle></svg></button>
     </div>
     <div class="fab-sub-item" id="fabImageItem">
       <span class="fab-sub-label">画像から読み取る</span>
-      <button class="fab-sub-btn fab-camera" id="fabImageBtn">🖼️</button>
+      <button class="fab-sub-btn fab-camera" id="fabImageBtn" aria-label="画像"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="9" cy="10" r="2"></circle><path d="m5 18 5-5 3 3 2-2 4 4"></path></svg></button>
     </div>
     <div class="fab-sub-item" id="fabManualItem">
       <span class="fab-sub-label">手動で入力</span>
-      <button class="fab-sub-btn fab-manual" id="fabManualBtn">✏️</button>
+      <button class="fab-sub-btn fab-manual" id="fabManualBtn" aria-label="手動入力"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 19 3.8-.8L19 8l-3-3L5.8 15.2z"></path><path d="m14.5 6.5 3 3"></path></svg></button>
     </div>
   </div>
   <button class="fab-add" id="openAddBtn">＋</button>
@@ -485,12 +522,22 @@
   </div><!-- /#pageWrapper -->
 
   <!-- ========== 下部タブ（pageWrapper外・fixed） ========== -->
-  <nav class="tab-bar" id="tabBar">
-    <button id="homeTab"        class="tab active">🏠<br><small>ホーム</small></button>
-    <button id="transactionTab" class="tab">💴<br><small>出入金</small></button>
-    <button id="graphTab"       class="tab">📊<br><small>グラフ</small></button>
-    <button id="payrollTab"     class="tab" style="display:none">📄<br><small>給与</small></button>
-    <button id="accountTab"     class="tab">🏦<br><small>口座</small></button>
+  <nav class="tab-bar" id="tabBar" aria-label="メインメニュー">
+    <button id="homeTab" class="tab active" aria-label="ホーム">
+      <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5v8a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5z"></path><path d="M9.5 20v-6h5v6"></path></svg><small>ホーム</small>
+    </button>
+    <button id="transactionTab" class="tab" aria-label="入出金">
+      <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14"></path><path d="M8 4v6M16 14v6"></path></svg><small>入出金</small>
+    </button>
+    <button id="graphTab" class="tab" aria-label="家計簿">
+      <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v8h8"></path><path d="M20 12a8 8 0 1 1-8-8"></path></svg><small>家計簿</small>
+    </button>
+    <button id="payrollTab" class="tab" style="display:none" aria-label="給与">
+      <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h9l3 3V20H6z"></path><path d="M15 3.5V7h3M9 11h6M9 14h6M9 17h4"></path></svg><small>給与</small>
+    </button>
+    <button id="accountTab" class="tab" aria-label="口座">
+      <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m4 9 8-4 8 4"></path><path d="M5.5 10.5h13M7 10.5v7M11 10.5v7M15 10.5v7M19 19H5"></path></svg><small>口座</small>
+    </button>
   </nav>
 
   <!-- ========== バックジェスチャー用背景レイヤー ========== -->

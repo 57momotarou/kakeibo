@@ -21,7 +21,7 @@ body {
   /* 画面全体を占め、TopBar・TabBarの下からスクロール */
   position: fixed;
   top: calc(var(--app-top-bar-height) + env(safe-area-inset-top));
-  bottom: calc(60px + env(safe-area-inset-bottom));
+  bottom: calc(64px + env(safe-area-inset-bottom));
   left: 0;
   right: 0;
   background: #f5f5f5;
@@ -252,3 +252,96 @@ input:focus, select:focus {
 .mf-amount { font-size: 14px; font-weight: bold; flex-shrink: 0; text-align: right; white-space: nowrap; }
 .mf-amount-expense { color: #333; }
 .mf-amount-income  { color: var(--theme); }
+
+/* ===================================
+   MoneyForward ME風 全体UIリフレッシュ
+   ※機能・DOM構造は維持し、見た目だけを統一
+=================================== */
+html, body {
+  color: var(--mf-text);
+  background: var(--mf-bg);
+  -webkit-font-smoothing: antialiased;
+}
+body {
+  letter-spacing: 0.005em;
+}
+#pageWrapper {
+  background: var(--mf-bg);
+  scrollbar-width: none;
+}
+#pageWrapper::-webkit-scrollbar { display: none; }
+.view.active { padding-bottom: 24px; }
+
+.field-label {
+  margin: 14px 2px 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mf-muted);
+}
+input, select {
+  min-height: 46px;
+  border: 1px solid var(--mf-border);
+  border-radius: 11px;
+  background: var(--mf-surface-soft);
+  color: var(--mf-text);
+  box-shadow: none;
+}
+input:focus, select:focus {
+  border-color: color-mix(in srgb, var(--theme) 70%, #ffffff);
+  background: #fff;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme) 12%, transparent);
+}
+
+.btn-primary,
+.btn-blue,
+.btn-danger {
+  border-radius: 11px;
+  font-weight: 700;
+}
+.btn-primary {
+  box-shadow: 0 4px 10px color-mix(in srgb, var(--theme) 18%, transparent);
+}
+.btn-blue { background: var(--mf-positive); }
+
+.toggle-switch { width: 48px; height: 27px; }
+.toggle-slider { background: #d3d7dc; }
+.toggle-slider::before { width: 21px; height: 21px; }
+.toggle-switch input:checked + .toggle-slider::before { transform: translateX(21px); }
+
+/* 入出金リスト */
+#list,
+.cal-transaction-list {
+  padding: 10px 12px 22px;
+}
+.list-date-header {
+  margin: 14px 4px 6px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--mf-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+.mf-record-row {
+  min-height: 60px;
+  padding: 10px 12px;
+  border: 1px solid var(--mf-border);
+  border-bottom-width: 0;
+  background: var(--mf-surface);
+}
+.list-date-header + .mf-record-row { border-radius: 13px 13px 0 0; }
+.mf-record-row:has(+ .list-date-header),
+.mf-record-row:last-child {
+  border-bottom-width: 1px;
+  border-radius: 0 0 13px 13px;
+}
+.mf-record-row:active { background: #f7f9fb; }
+.mf-cat-icon {
+  width: 36px;
+  height: 36px;
+  font-size: 15px;
+}
+.mf-title { font-size: 14px; font-weight: 600; color: var(--mf-text); }
+.mf-amount { font-size: 14px; font-weight: 700; }
+.mf-amount-expense { color: var(--mf-text); }
+.mf-amount-income { color: var(--mf-positive); }

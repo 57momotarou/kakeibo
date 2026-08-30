@@ -1457,3 +1457,520 @@ body.graph-topbar-mode .top-bar-month-range {
   .payroll-detail-total:last-child { border-bottom: none; }
   .payroll-editor-row-work { grid-template-columns: 1fr 70px 58px 28px; }
 }
+
+/* =====================================================================
+   MoneyForward ME風 UIリフレッシュ
+   余白・カード・グレー基調・細い区切り・青系の情報表現を統一
+===================================================================== */
+
+/* ---------- Top bar ---------- */
+body:not(.graph-topbar-mode) .top-bar {
+  background: rgba(255,255,255,0.96);
+  border-bottom: 1px solid var(--mf-border);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+body:not(.graph-topbar-mode) .top-bar-title,
+body:not(.graph-topbar-mode) .top-bar-month-title {
+  color: var(--mf-text);
+}
+body:not(.graph-topbar-mode) .top-bar-btn,
+body:not(.graph-topbar-mode) .top-bar-edit-btn {
+  background: #f4f5f7;
+  color: #4b525a;
+  border: 1px solid #eceef1;
+}
+body:not(.graph-topbar-mode) .top-bar-btn:active,
+body:not(.graph-topbar-mode) .top-bar-edit-btn:active { background: #e9ebee; }
+body:not(.graph-topbar-mode) .top-bar-settings { background: transparent; }
+
+.top-bar-btn svg,
+.tab-icon {
+  width: 23px;
+  height: 23px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* 先に指定した家計簿ヘッダーのレイアウトを維持しつつ質感を調整 */
+body.graph-topbar-mode { background: var(--mf-bg); }
+body.graph-topbar-mode .top-bar { background: var(--mf-bg); }
+body.graph-topbar-mode .top-bar-normal { padding-left: 12px; padding-right: 12px; }
+body.graph-topbar-mode .top-bar-btn {
+  background: #f8f8f9;
+  border-color: #e4e6e9;
+  box-shadow: 0 1px 2px rgba(20,30,40,.04), inset 0 1px 0 rgba(255,255,255,.9);
+}
+body.graph-topbar-mode .top-bar-month-nav {
+  background: #f7f7f8;
+  border-color: #e2e4e7;
+  box-shadow: 0 1px 2px rgba(20,30,40,.03), inset 0 1px 0 rgba(255,255,255,.95);
+}
+body.graph-topbar-mode .graph-side-btn svg { width: 25px; height: 25px; }
+body.graph-topbar-mode #graphLeftBtn::after {
+  width: 10px;
+  height: 10px;
+  top: 9px;
+  right: 9px;
+  border-color: #f8f8f9;
+}
+body.graph-topbar-mode .top-bar-month-title { font-size: 19px; letter-spacing: .01em; }
+body.graph-topbar-mode .top-bar-month-range { color: #6d737a; font-size: 12px; }
+
+/* ---------- Bottom navigation ---------- */
+.tab-bar {
+  height: calc(64px + env(safe-area-inset-bottom));
+  padding: 4px 8px env(safe-area-inset-bottom);
+  border-top: 1px solid var(--mf-border);
+  background: rgba(255,255,255,0.97);
+  box-shadow: 0 -5px 20px rgba(30,40,50,.035);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+.tab {
+  height: 56px !important;
+  padding: 5px 0 3px;
+  color: #9da4ac;
+  font-size: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border-radius: 10px;
+}
+.tab small {
+  display: block;
+  font-size: 10px;
+  line-height: 1.15;
+  font-weight: 600;
+}
+.tab .tab-icon { width: 23px; height: 23px; }
+.tab.active { color: var(--theme); font-weight: 700; }
+.tab:active { background: #f5f6f8; }
+
+/* ---------- FAB ---------- */
+.fab-add {
+  bottom: calc(78px + env(safe-area-inset-bottom));
+  right: 18px;
+  width: 54px !important;
+  height: 54px !important;
+  border: 4px solid rgba(255,255,255,.9);
+  box-shadow: 0 7px 20px rgba(32,45,58,.18);
+  font-size: 26px;
+}
+.fab-menu { bottom: calc(144px + env(safe-area-inset-bottom)); right: 18px; }
+.fab-sub-label {
+  border-radius: 9px;
+  box-shadow: 0 4px 12px rgba(20,30,40,.12);
+}
+
+/* ---------- Common cards / sheets ---------- */
+.modal,
+.payroll-sheet {
+  border-radius: 24px 24px 0 0;
+  box-shadow: 0 -8px 30px rgba(26,39,52,.12);
+}
+.modal-header,
+.edit-modal-header,
+.payroll-sheet-header {
+  min-height: 58px;
+  background: #fff;
+  border-color: var(--mf-border);
+}
+.modal-title,
+.payroll-sheet-header > strong { color: var(--mf-text); font-weight: 700; }
+.modal-close {
+  background: #f3f4f6;
+  color: #60666d;
+}
+.modal-body { background: #fff; }
+.scan-box {
+  border-radius: 18px;
+  box-shadow: 0 10px 35px rgba(20,30,40,.18);
+}
+
+.type-toggle {
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  background: #f0f2f4;
+}
+.type-toggle-btn {
+  height: 38px !important;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #868d95;
+}
+.type-toggle-btn.active[data-value="expense"] {
+  background: #fff;
+  border-color: transparent;
+  color: var(--mf-negative);
+  box-shadow: 0 1px 3px rgba(20,30,40,.10);
+}
+.type-toggle-btn.active[data-value="income"] {
+  background: #fff;
+  border-color: transparent;
+  color: var(--mf-positive);
+  box-shadow: 0 1px 3px rgba(20,30,40,.10);
+}
+
+/* ---------- Home dashboard ---------- */
+.home-dashboard { padding: 12px 12px 0; }
+.mf-dashboard-card {
+  margin-bottom: 12px;
+  padding: 16px;
+  border: 1px solid var(--mf-border);
+  border-radius: var(--mf-radius);
+  background: var(--mf-surface);
+  box-shadow: var(--mf-shadow);
+}
+.mf-dashboard-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.mf-dashboard-kicker {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--mf-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+.mf-dashboard-title {
+  display: block;
+  color: var(--mf-text);
+  font-size: 14px;
+  font-weight: 700;
+}
+.mf-dashboard-badge {
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: #eef5fb;
+  color: var(--mf-positive);
+  font-size: 10px;
+  font-weight: 700;
+}
+.mf-dashboard-meta { color: var(--mf-muted); font-size: 11px; }
+.home-balance-main {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 0 15px;
+}
+.home-balance-main > span { color: var(--mf-muted); font-size: 12px; }
+.home-balance-main > strong {
+  color: var(--mf-positive);
+  font-size: 30px;
+  line-height: 1;
+  letter-spacing: -.025em;
+}
+.home-balance-main > strong.is-negative { color: var(--mf-negative); }
+.home-stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  overflow: hidden;
+  border: 1px solid var(--mf-border);
+  border-radius: 11px;
+  background: var(--mf-surface-soft);
+}
+.home-stat-item { padding: 11px 12px; }
+.home-stat-item + .home-stat-item { border-left: 1px solid var(--mf-border); }
+.home-stat-item span { display: block; margin-bottom: 3px; color: var(--mf-muted); font-size: 10px; }
+.home-stat-item strong { color: var(--mf-text); font-size: 15px; font-weight: 700; }
+.home-stat-item:first-child strong { color: var(--mf-positive); }
+.home-stat-item:last-child strong { color: var(--mf-negative); }
+.home-assets-total {
+  margin-top: 14px;
+  color: var(--mf-text);
+  font-size: 25px;
+  font-weight: 750;
+  letter-spacing: -.02em;
+}
+.home-budget-card {
+  margin: 0 12px 12px;
+  padding: 16px;
+  border: 1px solid var(--mf-border);
+  border-radius: var(--mf-radius);
+  background: #fff;
+  box-shadow: var(--mf-shadow);
+}
+.home-budget-title { font-size: 14px; color: var(--mf-text); }
+.home-budget-row {
+  margin-bottom: 0;
+  padding: 12px 0;
+  border-top: 1px solid #f0f2f4;
+}
+.home-budget-row:first-child { border-top: 0; }
+.home-budget-bar-wrap { height: 5px; background: #edf0f2; }
+
+/* ---------- Settings / category ---------- */
+.settings-menu,
+.visibility-list,
+.parent-category-list,
+.child-category-list,
+.budget-list {
+  margin: 12px;
+  overflow: hidden;
+  border: 1px solid var(--mf-border);
+  border-radius: var(--mf-radius);
+  background: #fff;
+  box-shadow: var(--mf-shadow);
+}
+.settings-menu { border-top: 1px solid var(--mf-border); }
+.settings-menu-item,
+.visibility-item,
+.parent-category-item,
+.child-category-item,
+.budget-item {
+  min-height: 58px;
+  border-bottom: 1px solid #eef0f2;
+  background: #fff;
+}
+.settings-menu-item:last-child,
+.visibility-item:last-child,
+.parent-category-item:last-child,
+.child-category-item:last-child,
+.budget-item:last-child { border-bottom: 0; }
+.settings-menu-icon,
+.visibility-icon {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  background: #f1f4f7;
+  font-size: 18px;
+}
+.settings-menu-label,
+.visibility-label { color: var(--mf-text); font-size: 14px; font-weight: 600; }
+.settings-menu-arrow { color: #b4bac0; }
+.cat-view-desc,
+.theme-desc { color: var(--mf-muted); }
+.period-card,
+.api-key-card,
+.reset-card {
+  margin: 12px;
+  padding: 18px 16px;
+  border: 1px solid var(--mf-border);
+  border-radius: var(--mf-radius);
+  background: #fff;
+  box-shadow: var(--mf-shadow);
+}
+.period-preview,
+.api-key-help,
+.reset-list { border-color: var(--mf-border); background: var(--mf-surface-soft); }
+.theme-preview { border-color: var(--mf-border); border-radius: 12px; }
+.color-swatch { border-radius: 12px; }
+
+/* ---------- Household book / graph ---------- */
+#summary {
+  margin: 12px;
+  overflow: hidden;
+  border: 1px solid var(--mf-border);
+  border-radius: var(--mf-radius);
+  background: #fff;
+  box-shadow: var(--mf-shadow);
+}
+.summary-item { padding: 13px 6px; border-color: var(--mf-border); }
+.summary-label { color: var(--mf-muted); }
+.summary-value { color: var(--mf-text); font-size: 15px; }
+.income-item .summary-value { color: var(--mf-positive); }
+.expense-item .summary-value { color: var(--mf-negative); }
+.graph-toggle-wrap { margin: 0 12px 10px !important; }
+.graph-toggle {
+  padding: 4px;
+  border: 0;
+  border-radius: 12px;
+  background: #e9edf1;
+}
+.graph-toggle-btn {
+  height: 38px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #858c94;
+  margin: 0;
+}
+.graph-toggle-btn.active {
+  color: var(--mf-text);
+  border: 0;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(20,30,40,.11);
+}
+.chart-section {
+  margin: 0 12px 12px !important;
+  padding: 16px 14px 8px;
+  border: 1px solid var(--mf-border);
+  border-radius: var(--mf-radius);
+  background: #fff;
+  box-shadow: var(--mf-shadow);
+}
+.chart-wrap { margin-bottom: 8px; }
+.chart-total { color: var(--mf-text); font-size: 15px; }
+.graph-sub-toggle-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 6px 4px 10px;
+  color: var(--mf-muted);
+  font-size: 11px;
+}
+.graph-sub-toggle-btn {
+  width: auto !important;
+  height: 28px !important;
+  margin: 0;
+  padding: 0 11px;
+  border: 1px solid #d9dde1;
+  border-radius: 999px;
+  background: #fff;
+  color: #747b82;
+  font-size: 11px;
+  font-weight: 700;
+}
+.graph-sub-toggle-btn.active {
+  border-color: var(--theme);
+  background: var(--theme);
+  color: #fff;
+}
+.graph-parent-item {
+  min-height: 58px;
+  padding: 11px 4px;
+  border-color: #eef0f2;
+}
+.graph-parent-name { color: var(--mf-text); font-size: 14px; font-weight: 600; }
+.graph-parent-amount { color: var(--mf-text); }
+.graph-parent-pct { color: var(--mf-muted); }
+.graph-child-item { background: #fafbfc; border-color: #eef0f2; }
+
+/* ---------- Calendar ---------- */
+.cal-header {
+  margin: 12px 12px 0;
+  padding: 14px 0 10px;
+  border: 1px solid var(--mf-border);
+  border-bottom: 0;
+  border-radius: var(--mf-radius) var(--mf-radius) 0 0;
+  background: #fff;
+}
+.week-header {
+  margin: 0 12px;
+  padding: 4px 3px;
+  border-left: 1px solid var(--mf-border);
+  border-right: 1px solid var(--mf-border);
+  background: #fafbfc;
+}
+#calendar {
+  margin: 0 12px 12px;
+  overflow: hidden;
+  border: 1px solid var(--mf-border);
+  border-top: 0;
+  border-radius: 0 0 var(--mf-radius) var(--mf-radius);
+  background: #fff;
+}
+.day {
+  min-height: 66px;
+  border: 0;
+  border-top: 1px solid #f0f2f4;
+  border-right: 1px solid #f0f2f4;
+  background: #fff;
+}
+.day:nth-child(7n) { border-right: 0; }
+.expense-day { background: #fff9f9; }
+.income-day { background: #f8fbfe; }
+.both { background: #faf9fe; }
+.day.today { border: 1px solid color-mix(in srgb, var(--theme) 70%, white); background: #f8fbff; }
+.day .income { color: var(--mf-positive); }
+.day .expense { color: var(--mf-negative); }
+
+/* ---------- Account ---------- */
+#accountList {
+  margin: 12px;
+  overflow: hidden;
+  border: 1px solid var(--mf-border);
+  border-radius: var(--mf-radius);
+  background: #fff;
+  box-shadow: var(--mf-shadow);
+}
+.account-li {
+  min-height: 64px;
+  padding: 12px 14px;
+  border-color: #eef0f2;
+}
+.account-li:first-child { border-top: 0; }
+.account-li:last-child { border-bottom: 0; }
+.account-name { font-size: 14px; font-weight: 600; color: var(--mf-text); }
+.account-memo { color: var(--mf-muted); }
+.account-balance { color: var(--mf-positive); font-size: 16px; }
+#openAddAccountBtn {
+  margin: 0 12px !important;
+  width: calc(100% - 24px) !important;
+  background: #fff;
+  color: var(--theme);
+  border: 1px solid color-mix(in srgb, var(--theme) 40%, #dce1e6);
+  box-shadow: none;
+}
+
+/* ---------- Payroll ---------- */
+.payroll-toolbar {
+  margin: 12px;
+  padding: 16px;
+  border: 1px solid var(--mf-border);
+  border-radius: var(--mf-radius);
+  background: #fff;
+  box-shadow: var(--mf-shadow);
+}
+.payroll-view-title { font-size: 17px; color: var(--mf-text); }
+.payroll-view-subtitle { color: var(--mf-muted); }
+.payroll-year-select { border-color: var(--mf-border); background: var(--mf-surface-soft); }
+.payroll-summary {
+  margin: 0 12px 12px;
+  overflow: hidden;
+  border: 1px solid var(--mf-border);
+  border-radius: var(--mf-radius);
+  box-shadow: var(--mf-shadow);
+}
+.payroll-summary-label { color: var(--mf-muted); }
+.payroll-summary-deduction .payroll-summary-value { color: var(--mf-negative); }
+.payroll-summary-net .payroll-summary-value { color: var(--mf-positive); }
+.payroll-list { padding: 0 12px 16px; }
+.payroll-slip-card {
+  border-color: var(--mf-border);
+  border-radius: var(--mf-radius);
+  box-shadow: var(--mf-shadow);
+}
+.payroll-slip-month { color: var(--mf-text); }
+.payroll-slip-net { background: #f3f8fc; }
+.payroll-slip-net strong { color: var(--mf-positive); }
+.payroll-detail-section,
+.payroll-editor-section { border-color: var(--mf-border); border-radius: 12px; }
+
+/* ---------- Responsive polish ---------- */
+@media (min-width: 560px) {
+  .top-bar-normal,
+  .top-bar-settings,
+  .modal,
+  .payroll-sheet { max-width: 520px; }
+  .view.active { max-width: 520px; margin-left: auto; margin-right: auto; }
+  .tab-bar { left: 50%; right: auto; width: 520px; transform: translateX(-50%); border-left: 1px solid var(--mf-border); border-right: 1px solid var(--mf-border); }
+}
+
+/* モノクロSVGアイコン（TopBar / FAB） */
+.fab-sub-btn svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.settings-menu-icon,
+.visibility-icon { filter: saturate(.55); }
