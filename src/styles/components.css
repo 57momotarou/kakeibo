@@ -2074,3 +2074,50 @@ body.graph-topbar-mode .top-bar-month-range { color: #6d737a; font-size: 12px; }
 }
 .settings-menu-icon,
 .visibility-icon { filter: saturate(.55); }
+
+
+/* ===================================
+   iPhone下部ホームインジケータ対策
+   - タブ本体を低くして占有面積を縮小
+   - safe-area分はラベルの下に確保して重なりを防止
+=================================== */
+.tab-bar {
+  height: calc(54px + env(safe-area-inset-bottom));
+  min-height: calc(54px + env(safe-area-inset-bottom));
+  padding: 2px 6px max(env(safe-area-inset-bottom), 8px);
+  align-items: flex-start;
+}
+.tab {
+  height: 50px !important;
+  min-height: 50px;
+  padding: 3px 0 2px;
+  gap: 1px;
+}
+.tab .tab-icon {
+  width: 21px;
+  height: 21px;
+}
+.tab small {
+  font-size: 9.5px;
+  line-height: 1.05;
+}
+
+/* 下部タブの高さ変更に合わせて本文とFABも持ち上げる */
+#pageWrapper {
+  bottom: calc(54px + env(safe-area-inset-bottom));
+}
+.fab-add {
+  bottom: calc(66px + env(safe-area-inset-bottom));
+}
+.fab-menu {
+  bottom: calc(132px + env(safe-area-inset-bottom));
+}
+
+/* iPhoneでenv()が0として返るケースでもホームインジケータと被らせない */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  @media (max-width: 600px) {
+    .tab-bar {
+      padding-bottom: max(env(safe-area-inset-bottom), 8px);
+    }
+  }
+}

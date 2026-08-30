@@ -21,7 +21,7 @@ body {
   /* 画面全体を占め、TopBar・TabBarの下からスクロール */
   position: fixed;
   top: calc(var(--app-top-bar-height) + env(safe-area-inset-top));
-  bottom: calc(64px + env(safe-area-inset-bottom));
+  bottom: calc(54px + env(safe-area-inset-bottom));
   left: 0;
   right: 0;
   background: #f5f5f5;
