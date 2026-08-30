@@ -45,6 +45,7 @@ import {
   renderResetView, initResetEvents,
 } from "./features/settings/OtherSettings.js";
 import { initScannerEvents, initImageScannerEvents } from "./features/scanner/Receipt.js";
+import { renderPayrollView, initPayrollEvents } from "./features/payroll/PayrollView.js";
 
 // ===================================
 // DOMContentLoaded
@@ -77,6 +78,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (viewName === "categoryDetail") renderCategoryDetailView();
     if (viewName === "theme")          renderColorPresets(themeColor);
     if (viewName === "graph")          renderGraph(monthSelector);
+    if (viewName === "payroll")        renderPayrollView();
     if (viewName === "period")         renderPeriodView(monthSelector);
     if (viewName === "account")        renderAccountView();
     if (viewName === "visibility")     renderVisibilityView();
@@ -136,6 +138,11 @@ document.addEventListener("DOMContentLoaded", () => {
   initScannerEvents(refresh);
   initImageScannerEvents(refresh);
 
+  // 給与明細（任意機能）
+  initPayrollEvents(() => {
+    if (viewStack[viewStack.length - 1] === "payroll") renderPayrollView();
+  });
+
   // グラフトグル
   initGraphEvents(monthSelector);
 
@@ -168,15 +175,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // Service Worker登録
   // ===================================
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("./service-worker.js").then(reg => {
-      reg.addEventListener("updatefound", () => {
-        const nw = reg.installing;
-        nw.addEventListener("statechange", () => {
-          if (nw.state === "activated") window.location.reload();
-        });
-      });
+    // 更新時の強制reloadは、iOS PWAで再読み込みループになることがあるため行わない。
+    navigator.serviceWorker.register("./service-worker.js").catch(err => {
+      console.warn("Service Worker registration failed:", err);
     });
-    navigator.serviceWorker.addEventListener("controllerchange", () => window.location.reload());
   }
 
 }); // DOMContentLoaded end

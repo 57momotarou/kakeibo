@@ -5,6 +5,17 @@
 
 import { DEFAULT_CHILD_CATEGORIES } from "./constants/categories.js";
 
+function readJsonStorage(key, fallback) {
+  const raw = localStorage.getItem(key);
+  if (!raw) return fallback;
+  try {
+    return JSON.parse(raw);
+  } catch (err) {
+    console.warn(`Invalid localStorage JSON: ${key}`, err);
+    return fallback;
+  }
+}
+
 // ===================================
 // 小分類の初期化（localStorageから読み込み、なければデフォルト）
 // ===================================
@@ -14,7 +25,7 @@ const CATEGORY_VERSION = "2";
 function loadChildCategories() {
   const saved        = localStorage.getItem("childCategories");
   const savedVersion = localStorage.getItem("categoryVersion");
-  const obj          = saved ? JSON.parse(saved) : {};
+  const obj          = saved ? readJsonStorage("childCategories", {}) : {};
 
   // バージョンが変わっていたら全キーをチェックして不足分を補完
   let changed = !saved || savedVersion !== CATEGORY_VERSION;
@@ -45,14 +56,18 @@ function loadChildCategories() {
 // ===================================
 // State
 // ===================================
-export let records        = JSON.parse(localStorage.getItem("records"))     || [];
+export let records        = readJsonStorage("records", []);
 export let periodStartDay = Number(localStorage.getItem("periodStartDay"))  || 1;
 export let themeColor     = localStorage.getItem("themeColor")              || "#4caf50";
-export let budgets        = JSON.parse(localStorage.getItem("budgets"))     || {};
+export let budgets        = readJsonStorage("budgets", {});
+export let payrollSlips   = readJsonStorage("payrollSlips", []);
 // 初回起動時は「財布」をデフォルト口座として追加
 function loadAccounts() {
   const saved = localStorage.getItem("accounts");
-  if (saved) return JSON.parse(saved);
+  if (saved) {
+    const parsed = readJsonStorage("accounts", null);
+    if (Array.isArray(parsed)) return parsed;
+  }
   const defaults = [{ id: 1, name: "財布", balance: 0, memo: "" }];
   localStorage.setItem("accounts", JSON.stringify(defaults));
   return defaults;
@@ -61,8 +76,13 @@ export let accounts = loadAccounts();
 export let childCategories = loadChildCategories();
 
 // タブ表示設定
-const DEFAULT_TAB_VISIBILITY = { calendar: false, account: true };
-export let tabVisibility = JSON.parse(localStorage.getItem("tabVisibility")) || DEFAULT_TAB_VISIBILITY;
+// 給与明細は初期状態ではOFF。使いたい人だけ「表示 / 非表示」から有効化する。
+const DEFAULT_TAB_VISIBILITY = { calendar: false, account: true, payroll: false };
+function loadTabVisibility() {
+  const saved = readJsonStorage("tabVisibility", {});
+  return { ...DEFAULT_TAB_VISIBILITY, ...(saved && typeof saved === "object" ? saved : {}) };
+}
+export let tabVisibility = loadTabVisibility();
 
 // ===================================
 // 保存関数
@@ -87,6 +107,10 @@ export function saveAccounts() {
   localStorage.setItem("accounts", JSON.stringify(accounts));
 }
 
+export function savePayrollSlips() {
+  localStorage.setItem("payrollSlips", JSON.stringify(payrollSlips));
+}
+
 // ===================================
 // State更新関数
 // ===================================
@@ -108,6 +132,10 @@ export function setAccounts(newAccounts) {
   accounts = newAccounts;
 }
 
+export function setPayrollSlips(newSlips) {
+  payrollSlips = newSlips;
+}
+
 export function resetChildCategoriesToDefault() {
   const obj = {};
   Object.keys(DEFAULT_CHILD_CATEGORIES).forEach(pid => {
@@ -119,16 +147,4 @@ export function resetChildCategoriesToDefault() {
 
 export function getGeminiApiKey() {
   return localStorage.getItem("geminiApiKey") || "";
-}
-
-{
-  id: 1735000000000,
-  yearMonth: "2026-08",       // 一覧のソート・表示用
-  payDate: "2026-08-21",      // 支給年月日
-  incomeItems: [{ label: "給料", amount: 234500 }, ...],      // 支給項目(可変長・全項目)
-  deductionItems: [{ label: "共済長期", amount: 25620 }, ...], // 控除項目(可変長・全項目)
-  incomeTotal: 349995,
-  deductionTotal: 95601,
-  netAmount: 254394,          // 差引支給額
-  transfers: [{ bank: "北見信用金庫本店", amount: 209394 }, ...], // 振込先(任意)
 }

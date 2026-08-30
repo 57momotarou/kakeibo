@@ -31,6 +31,15 @@
   <div id="splashScreen">
     <span id="splashText">家計簿</span>
   </div>
+  <script>
+    // ES Moduleの読み込みに失敗してもスプラッシュだけが永久に残らないための安全策。
+    window.__splashSafetyTimer = setTimeout(function () {
+      var splash = document.getElementById("splashScreen");
+      if (!splash) return;
+      splash.classList.add("fade-out");
+      setTimeout(function () { splash.classList.add("hidden"); }, 700);
+    }, 2500);
+  </script>
 
   <!-- ========== 上部バー（pageWrapper外・fixed） ========== -->
   <header class="top-bar" id="topBar">
