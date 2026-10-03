@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>自分用家計簿</title>
+  <!--
+    CSSより先にインラインスクリプトを実行。
+    localStorageのテーマカラーをCSS変数とmeta theme-colorに即時反映することで、
+    スプラッシュ画面がデフォルトの緑で一瞬表示されるちらつきを防ぐ。
+  -->
+  <script>
+    (function() {
+      var c = localStorage.getItem("themeColor") || "#4caf50";
+      // CSS変数を即時上書き（variables.cssより先に実行されるため確実に効く）
+      document.documentElement.style.setProperty("--theme", c);
+      // ステータスバーの色も設定（metaタグはまだないのでdocument.writeで埋め込む）
+      document.write('<meta name="theme-color" content="' + c + '">');
+    })();
+  </script>
+  <!-- CSSを役割ごとに分割して読み込み -->
+  <link rel="stylesheet" href="./src/styles/variables.css">
+  <link rel="stylesheet" href="./src/styles/base.css">
+  <link rel="stylesheet" href="./src/styles/components.css">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icon.svg?v=purse-1">
+  <link rel="apple-touch-icon" sizes="180x180" href="icon.png?v=purse-1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+</head>
+<body>
+
+  <!-- ========== スプラッシュ画面 ========== -->
+  <div id="splashScreen">
+    <span id="splashText">家計簿</span>
+  </div>
+  <script>
+    // ES Moduleの読み込みに失敗してもスプラッシュだけが永久に残らないための安全策。
+    window.__splashSafetyTimer = setTimeout(function () {
+      var splash = document.getElementById("splashScreen");
+      if (!splash) return;
+      splash.classList.add("fade-out");
+      setTimeout(function () { splash.classList.add("hidden"); }, 700);
+    }, 2500);
+  </script>
+
+  <!-- ========== 上部バー（pageWrapper外・fixed） ========== -->
+  <header class="top-bar" id="topBar">
+    <div class="top-bar-normal" id="topBarNormal">
+      <button class="top-bar-btn graph-side-btn" id="graphLeftBtn" style="display:none" aria-label="設定を開く"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.4"></circle><path d="M5.5 19c.7-3.4 3-5.2 6.5-5.2s5.8 1.8 6.5 5.2"></path></svg></button>
+      <button class="top-bar-btn" id="calendarShortcutBtn" style="display:none" aria-label="カレンダー"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14" rx="2"></rect><path d="M8 3.5v4M16 3.5v4M4 9.5h16"></path></svg></button>
+      <button class="top-bar-btn" id="calendarBackBtn" style="display:none" aria-label="戻る"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"></path></svg></button>
+      <!-- ホーム画面：共有ボタン（左右対称のため同幅） -->
+      <button class="top-bar-btn" id="shareReportBtn" style="display:none;" aria-label="共有"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4"></path><path d="m8 8 4-4 4 4"></path><path d="M6 12v7h12v-7"></path></svg></button>
+      <div class="top-bar-month-nav" id="topBarMonthNav">
+        <button class="top-bar-btn month-nav-btn" id="prevMonthBtn" aria-label="前の月へ">‹</button>
+        <div class="top-bar-month-copy">
+          <div class="top-bar-month-title" id="monthLabel">2025年3月</div>
+          <div class="top-bar-month-range" id="monthRangeLabel">3月1日〜3月31日</div>
+        </div>
+        <button class="top-bar-btn month-nav-btn" id="nextMonthBtn" aria-label="次の月へ">›</button>
+      </div>
+      <span class="top-bar-title top-bar-home-title" id="topBarHomeTitle" style="display:none">ホーム</span>
+      <div class="top-bar-spacer" id="topBarSpacer" style="display:none"></div>
+      <button class="top-bar-btn graph-side-btn" id="graphRightBtn" style="display:none" aria-label="カレンダーを開く"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14" rx="2"></rect><path d="M8 3.5v4M16 3.5v4M4 9.5h16"></path><path d="M8 13h3M13 13h3M8 16h3"></path></svg></button>
+      <button class="top-bar-btn" id="openSettingsBtn" aria-label="設定"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"></path></svg></button>
+    </div>
+    <div class="top-bar-settings hidden" id="topBarSettings">
+      <button class="top-bar-btn" id="backBtn" aria-label="戻る"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"></path></svg></button>
+      <span class="top-bar-title" id="settingsBarTitle">設定</span>
+      <button class="top-bar-edit-btn hidden" id="topBarEditBtn">編集</button>
+    </div>
+  </header>
+
+  <!-- ========== ページラッパー ========== -->
+  <div id="pageWrapper">
+
+  <!-- ========== 収支入力ポップアップ ========== -->
+  <div id="addOverlay" class="overlay hidden"></div>
+  <div id="addModal" class="modal hidden">
+    <div class="modal-header">
+      <span class="modal-title">収支を追加</span>
+      <button class="modal-close" id="closeAddBtn">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="type-toggle" id="addTypeToggle">
+        <button class="type-toggle-btn active" data-value="expense">支出</button>
+        <button class="type-toggle-btn" data-value="income">収入</button>
+      </div>
+      <input type="hidden" id="addTypeHidden" value="expense">
+
+      <label class="field-label">日付</label>
+      <input type="date" id="date">
+
+      <label class="field-label">タイトル</label>
+      <input type="text" id="memo" placeholder="例：スーパーで買い物、月給など">
+
+      <label class="field-label">金額</label>
+      <input type="number" id="amount" placeholder="例：1500">
+
+      <label class="field-label">カテゴリ</label>
+      <div class="category-selector" id="addCategorySelector">
+        <div class="cat-select-row">
+          <select id="addParentCat" class="cat-select-parent"></select>
+          <select id="addChildCat"  class="cat-select-child"></select>
+        </div>
+      </div>
+
+      <label class="field-label">口座</label>
+      <select id="addAccount"></select>
+
+      <button id="addButton" class="btn-primary">追加する</button>
+    </div>
+  </div>
+
+  <!-- ========== 収支編集ポップアップ ========== -->
+  <div id="editOverlay" class="overlay hidden"></div>
+  <div id="editModal" class="modal hidden">
+    <div class="modal-header edit-modal-header">
+      <button class="modal-delete-btn" id="deleteRecordBtn">🗑️ 削除</button>
+      <span class="modal-title">収支を編集</span>
+      <button class="modal-close" id="closeEditBtn">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="type-toggle" id="editTypeToggle">
+        <button class="type-toggle-btn active" data-value="expense">支出</button>
+        <button class="type-toggle-btn" data-value="income">収入</button>
+      </div>
+      <input type="hidden" id="editType" value="expense">
+
+      <label class="field-label">日付</label>
+      <input type="date" id="editDate">
+
+      <label class="field-label">タイトル</label>
+      <input type="text" id="editMemo" placeholder="例：スーパーで買い物、月給など">
+
+      <label class="field-label">金額</label>
+      <input type="number" id="editAmount" placeholder="例：1500">
+      <p id="editTaxBreakdown" class="receipt-tax-note" aria-live="polite" hidden></p>
+
+      <label class="field-label">カテゴリ</label>
+      <div class="category-selector" id="editCategorySelector">
+        <div class="cat-select-row">
+          <select id="editParentCat" class="cat-select-parent"></select>
+          <select id="editChildCat"  class="cat-select-child"></select>
+        </div>
+      </div>
+
+      <label class="field-label">口座</label>
+      <select id="editAccount"></select>
+
+      <button id="saveEditButton" class="btn-primary">保存する</button>
+    </div>
+  </div>
+
+  <!-- ========== メイン画面群 ========== -->
+
+  <!-- ホーム -->
+  <div id="homeView" class="view active">
+    <div class="home-dashboard">
+      <section class="mf-dashboard-card home-household-card">
+        <div class="mf-dashboard-head">
+          <div>
+            <span class="mf-dashboard-kicker">今月の家計簿</span>
+            <strong id="homePeriodLabel" class="mf-dashboard-title">—</strong>
+          </div>
+          <span class="mf-dashboard-badge">月次</span>
+        </div>
+        <div class="home-balance-main">
+          <span>収支</span>
+          <strong id="homeBalanceTotal">¥0</strong>
+        </div>
+        <div class="home-stat-grid">
+          <div class="home-stat-item">
+            <span>収入</span>
+            <strong id="homeIncomeTotal">¥0</strong>
+          </div>
+          <div class="home-stat-item">
+            <span>支出</span>
+            <strong id="homeExpenseTotal">¥0</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="mf-dashboard-card home-assets-card">
+        <div class="mf-dashboard-head">
+          <div>
+            <span class="mf-dashboard-kicker">口座</span>
+            <strong class="mf-dashboard-title">現在の残高</strong>
+          </div>
+          <span id="homeAccountCount" class="mf-dashboard-meta">0口座</span>
+        </div>
+        <div class="home-assets-total" id="homeAccountTotal">¥0</div>
+      </section>
+    </div>
+
+    <div id="homeBudgetCard" class="home-budget-card" style="display:none">
+      <div class="home-budget-header">
+        <span class="home-budget-title">今月の予算</span>
+        <span class="home-budget-month" id="homeBudgetMonth"></span>
+      </div>
+      <div id="homeBudgetRows"></div>
+    </div>
+  </div>
+
+  <!-- 出入金 -->
+  <div id="transactionView" class="view">
+    <input type="month" id="monthSelector" style="display:none">
+    <ul id="list"></ul>
+  </div>
+
+  <!-- カレンダー -->
+  <div id="calendarView" class="view">
+    <div class="cal-header">
+      <div class="cal-header-year-month" id="calYearMonth"></div>
+      <div class="cal-header-range" id="calRange"></div>
+    </div>
+    <div class="week-header">
+      <div>日</div><div>月</div><div>火</div><div>水</div>
+      <div>木</div><div>金</div><div>土</div>
+    </div>
+    <div id="calendar"></div>
+    <div class="cal-transaction-list" id="calTransactionList"></div>
+  </div>
+
+  <!-- 設定トップ -->
+  <div id="settingsView" class="view">
+    <ul class="settings-menu">
+      <li class="settings-menu-item" id="goCategory">
+        <span class="settings-menu-icon">🏷️</span>
+        <span class="settings-menu-label">カテゴリ変更</span>
+        <span class="settings-menu-arrow">›</span>
+      </li>
+      <li class="settings-menu-item" id="goTheme">
+        <span class="settings-menu-icon">🎨</span>
+        <span class="settings-menu-label">テーマカラー</span>
+        <span class="settings-menu-arrow">›</span>
+      </li>
+      <li class="settings-menu-item" id="goPeriod">
+        <span class="settings-menu-icon">📆</span>
+        <span class="settings-menu-label">集計期間</span>
+        <span class="settings-menu-arrow">›</span>
+      </li>
+      <li class="settings-menu-item" id="goVisibility">
+        <span class="settings-menu-icon">👁️</span>
+        <span class="settings-menu-label">表示 / 非表示</span>
+        <span class="settings-menu-arrow">›</span>
+      </li>
+      <li class="settings-menu-item" id="goBudget">
+        <span class="settings-menu-icon">💰</span>
+        <span class="settings-menu-label">予算設定</span>
+        <span class="settings-menu-arrow">›</span>
+      </li>
+      <li class="settings-menu-item" id="goApiKey">
+        <span class="settings-menu-icon">🔑</span>
+        <span class="settings-menu-label">Gemini APIキー</span>
+        <span class="settings-menu-arrow">›</span>
+      </li>
+      <li class="settings-menu-item" id="goReset">
+        <span class="settings-menu-icon">🗑️</span>
+        <span class="settings-menu-label">データのリセット</span>
+        <span class="settings-menu-arrow">›</span>
+      </li>
+    </ul>
+  </div>
+
+  <!-- カテゴリ設定（大分類一覧） -->
+  <div id="categoryView" class="view">
+    <p class="cat-view-desc">大分類をタップすると小分類を編集できます</p>
+    <ul id="parentCategoryList" class="parent-category-list"></ul>
+  </div>
+
+  <!-- カテゴリ設定（小分類一覧） -->
+  <div id="categoryDetailView" class="view">
+    <ul id="childCategoryList" class="child-category-list"></ul>
+  </div>
+
+  <!-- 表示/非表示設定 -->
+  <div id="visibilityView" class="view">
+    <ul class="visibility-list">
+      <li class="visibility-item">
+        <span class="visibility-icon">🏦</span>
+        <span class="visibility-label">口座</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="toggleAccount">
+          <span class="toggle-slider"></span>
+        </label>
+      </li>
+      <li class="visibility-item">
+        <span class="visibility-icon">📄</span>
+        <span class="visibility-label">
+          給与明細管理
+          <small class="visibility-sub-label">オンにすると下部に「給与」タブを表示</small>
+        </span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="togglePayroll">
+          <span class="toggle-slider"></span>
+        </label>
+      </li>
+    </ul>
+  </div>
+
+  <!-- 予算設定 -->
+  <div id="budgetView" class="view">
+    <p style="font-size:13px;color:#666;margin:4px 16px 12px;line-height:1.7;">
+      カテゴリごとに月の支出予算を設定します。<br>
+      80%を超えるとオレンジ、予算を超えると赤で表示されます。
+    </p>
+    <ul id="budgetList" class="budget-list"></ul>
+  </div>
+
+  <!-- 集計期間設定 -->
+  <div id="periodView" class="view">
+    <div class="period-card">
+      <p class="period-desc">毎月の集計を開始する日を設定します。<br>例）25日に設定すると「2/25〜3/24」が3月分として集計されます。</p>
+      <label class="field-label">集計開始日</label>
+      <select id="periodStartDay"></select>
+      <div class="period-preview" id="periodPreview"></div>
+    </div>
+  </div>
+
+  <!-- テーマ設定 -->
+  <div id="themeView" class="view">
+    <p class="theme-desc">アプリのメインカラーを変更します</p>
+    <h4 class="theme-section-title">プリセット</h4>
+    <div class="color-presets" id="colorPresets"></div>
+    <h4 class="theme-section-title">カスタムカラー</h4>
+    <div class="custom-color-row">
+      <input type="color" id="customColorPicker" value="#4caf50">
+      <button id="applyCustomColor" class="btn-blue">このカラーを適用</button>
+    </div>
+    <div class="theme-preview">
+      <p class="theme-preview-label">現在のカラー</p>
+      <div id="themePreviewBar"></div>
+    </div>
+  </div>
+
+  <!-- Gemini APIキー設定 -->
+  <div id="apiKeyView" class="view">
+    <div class="api-key-card">
+      <p class="api-key-desc">
+        レシート・給与明細の画像解析に使用する Google Gemini API のキーを設定します。<br>
+        キーはこの端末に保存され、画像解析時の Gemini API 通信にのみ使用します。
+      </p>
+      <label class="field-label">APIキー</label>
+      <div class="api-key-input-wrap">
+        <input type="password" id="geminiApiKeyInput" placeholder="AIza..." autocomplete="off">
+        <button class="api-key-toggle" id="toggleApiKeyVisible" type="button">👁</button>
+      </div>
+      <button class="btn-primary" id="saveApiKeyBtn">保存する</button>
+      <button class="btn-danger" id="deleteApiKeyBtn">キーを削除する</button>
+      <div class="api-key-status" id="apiKeyStatus"></div>
+      <div class="api-key-help">
+        <p class="api-key-help-title">🔗 APIキーの取得方法</p>
+        <ol class="api-key-help-list">
+          <li><a href="https://aistudio.google.com/" target="_blank">Google AI Studio</a> にアクセス（Googleアカウントでログイン）</li>
+          <li>左メニューの「Get API key」→「APIキーを作成」</li>
+          <li>作成したキー（AIza...）をコピー</li>
+          <li>ここに貼り付けて保存</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <!-- データのリセット -->
+  <div id="resetView" class="view">
+    <div class="reset-card">
+      <p class="reset-desc">リセットしたい項目をオンにしてから「リセット実行」を押してください。<br>この操作は元に戻せません。</p>
+      <ul class="reset-list">
+        <li class="reset-item">
+          <span class="reset-item-icon">🔄</span>
+          <span class="reset-item-label">すべて</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="resetAll">
+            <span class="toggle-slider"></span>
+          </label>
+        </li>
+        <div class="reset-divider"></div>
+        <li class="reset-item reset-item-sub">
+          <span class="reset-item-icon">💴</span>
+          <span class="reset-item-label">出入金</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="resetTransactions">
+            <span class="toggle-slider"></span>
+          </label>
+        </li>
+        <li class="reset-item reset-item-sub">
+          <span class="reset-item-icon">🏦</span>
+          <span class="reset-item-label">口座</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="resetAccounts">
+            <span class="toggle-slider"></span>
+          </label>
+        </li>
+        <li class="reset-item reset-item-sub">
+          <span class="reset-item-icon">💰</span>
+          <span class="reset-item-label">予算</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="resetBudgets">
+            <span class="toggle-slider"></span>
+          </label>
+        </li>
+        <li class="reset-item reset-item-sub">
+          <span class="reset-item-icon">🏷️</span>
+          <span class="reset-item-label">カテゴリ（デフォルトに戻す）</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="resetCategories">
+            <span class="toggle-slider"></span>
+          </label>
+        </li>
+        <li class="reset-item reset-item-sub">
+          <span class="reset-item-icon">📄</span>
+          <span class="reset-item-label">給与明細</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="resetPayroll">
+            <span class="toggle-slider"></span>
+          </label>
+        </li>
+      </ul>
+      <button class="btn-danger reset-exec-btn" id="execResetBtn" disabled>リセット実行</button>
+    </div>
+  </div>
+
+
+  <!-- 給与明細（表示/非表示設定で任意に有効化） -->
+  <div id="payrollView" class="view">
+    <div class="payroll-toolbar">
+      <div class="payroll-toolbar-top">
+        <div>
+          <div class="payroll-view-title">給与明細</div>
+          <div class="payroll-view-subtitle">写真をGeminiで解析して保存</div>
+        </div>
+        <select id="payrollYearSelect" class="payroll-year-select" aria-label="表示する年"></select>
+      </div>
+      <button class="btn-primary payroll-import-btn" id="payrollImportBtn">🖼️ 写真から給与明細を追加</button>
+      <p id="payrollApiHint" class="payroll-api-hint" style="display:none">⚠️ 先に「設定 → Gemini APIキー」を登録してください。</p>
+    </div>
+    <div id="payrollSummary" class="payroll-summary"></div>
+    <div id="payrollList" class="payroll-list"></div>
+  </div>
+
+  <!-- グラフ -->
+  <div id="graphView" class="view">
+    <input type="month" id="graphMonthSelector" style="display:none">
+    <div id="summary">
+      <div class="summary-item income-item">
+        <span class="summary-label">収入</span>
+        <span class="summary-value">¥<span id="incomeTotal">0</span></span>
+      </div>
+      <div class="summary-item expense-item">
+        <span class="summary-label">支出</span>
+        <span class="summary-value">¥<span id="expenseTotal">0</span></span>
+      </div>
+      <div class="summary-item balance-item">
+        <span class="summary-label">差額</span>
+        <span class="summary-value">¥<span id="balance">0</span></span>
+      </div>
+    </div>
+    <div class="graph-toggle-wrap">
+      <div class="graph-toggle" id="graphToggle">
+        <button class="graph-toggle-btn active" data-value="expense">支出</button>
+        <button class="graph-toggle-btn" data-value="income">収入</button>
+      </div>
+    </div>
+    <div class="chart-section" id="graphChartSection">
+      <div class="chart-wrap">
+        <canvas id="mainChart" width="220" height="220"></canvas>
+        <div class="chart-total" id="mainChartTotal"></div>
+      </div>
+      <ul class="chart-legend" id="mainLegend"></ul>
+    </div>
+  </div>
+
+  <!-- 口座 -->
+  <div id="accountView" class="view">
+    <ul id="accountList"></ul>
+    <button class="btn-primary" id="openAddAccountBtn" style="margin-top:12px;margin-left:16px;margin-right:16px;width:calc(100% - 32px)">＋ 口座を追加</button>
+  </div>
+
+  <!-- 口座追加・編集モーダル -->
+  <div id="accountOverlay" class="overlay hidden"></div>
+  <div id="accountModal" class="modal hidden">
+    <div class="modal-header edit-modal-header">
+      <button class="modal-delete-btn hidden" id="deleteAccountBtn">🗑️ 削除</button>
+      <span class="modal-title" id="accountModalTitle">口座を追加</span>
+      <button class="modal-close" id="closeAccountBtn">✕</button>
+    </div>
+    <div class="modal-body">
+      <label class="field-label">口座名</label>
+      <input type="text" id="accountName" placeholder="例：北見信用金庫">
+      <label class="field-label">残高</label>
+      <input type="number" id="accountBalance" placeholder="例：100000">
+      <label class="field-label">メモ（任意）</label>
+      <input type="text" id="accountMemo" placeholder="例：普通預金・給与口座">
+      <button class="btn-primary" id="saveAccountBtn">保存する</button>
+    </div>
+  </div>
+
+  <!-- ========== FABメニュー ========== -->
+  <div id="fabOverlay" class="fab-overlay hidden"></div>
+  <div class="fab-menu" id="fabMenu">
+    <div class="fab-sub-item" id="fabCameraItem">
+      <span class="fab-sub-label">レシートを読み取る</span>
+      <button class="fab-sub-btn fab-camera" id="fabCameraBtn" aria-label="カメラ"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7.5h3l1.4-2h5.2l1.4 2h3a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9.5a2 2 0 0 1 2-2Z"></path><circle cx="12" cy="13.5" r="3.5"></circle></svg></button>
+    </div>
+    <div class="fab-sub-item" id="fabImageItem">
+      <span class="fab-sub-label">画像から読み取る</span>
+      <button class="fab-sub-btn fab-camera" id="fabImageBtn" aria-label="画像"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="9" cy="10" r="2"></circle><path d="m5 18 5-5 3 3 2-2 4 4"></path></svg></button>
+    </div>
+    <div class="fab-sub-item" id="fabManualItem">
+      <span class="fab-sub-label">手動で入力</span>
+      <button class="fab-sub-btn fab-manual" id="fabManualBtn" aria-label="手動入力"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 19 3.8-.8L19 8l-3-3L5.8 15.2z"></path><path d="m14.5 6.5 3 3"></path></svg></button>
+    </div>
+  </div>
+  <button class="fab-add" id="openAddBtn">＋</button>
+  <input type="file" id="receiptInput" accept="image/*" capture="environment" style="display:none">
+  <input type="file" id="imageInput" accept="image/*" style="display:none">
+  <input type="file" id="payrollImageInput" accept="image/*" style="display:none">
+  <div id="scanOverlay" class="scan-overlay hidden">
+    <div class="scan-box">
+      <div class="scan-spinner"></div>
+      <p class="scan-text">レシートを読み取り中…</p>
+    </div>
+  </div>
+
+  </div><!-- /#pageWrapper -->
+
+  <!-- ========== 下部タブ（pageWrapper外・fixed） ========== -->
+  <nav class="tab-bar" id="tabBar" aria-label="メインメニュー">
+    <button id="homeTab" class="tab active" aria-label="ホーム">
+      <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5v8a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5z"></path><path d="M9.5 20v-6h5v6"></path></svg><small>ホーム</small>
+    </button>
+    <button id="transactionTab" class="tab" aria-label="入出金">
+      <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14"></path><path d="M8 4v6M16 14v6"></path></svg><small>入出金</small>
+    </button>
+    <button id="graphTab" class="tab" aria-label="家計簿">
+      <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v8h8"></path><path d="M20 12a8 8 0 1 1-8-8"></path></svg><small>家計簿</small>
+    </button>
+    <button id="payrollTab" class="tab" style="display:none" aria-label="給与">
+      <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h9l3 3V20H6z"></path><path d="M15 3.5V7h3M9 11h6M9 14h6M9 17h4"></path></svg><small>給与</small>
+    </button>
+    <button id="accountTab" class="tab" aria-label="口座">
+      <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m4 9 8-4 8 4"></path><path d="M5.5 10.5h13M7 10.5v7M11 10.5v7M15 10.5v7M19 19H5"></path></svg><small>口座</small>
+    </button>
+  </nav>
+
+  <!-- ========== バックジェスチャー用背景レイヤー ========== -->
+  <div id="backLayer">
+    <div id="backLayerDim"></div>
+  </div>
+
+  <!-- JS は ES Modules で読み込む -->
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
