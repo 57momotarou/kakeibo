@@ -6,6 +6,7 @@
 import { records, childCategories } from "../../store.js";
 import { displayCategory, parseCategoryField, getParentIcon, getParentColor } from "../../utils/category.js";
 import { WEEKDAY_NAMES } from "../../utils/calendar.js";
+import { formatTaxBreakdown } from "../scanner/ReceiptData.js";
 
 /**
  * カテゴリの大分類アイコンHTML（円形背景つき）を生成
@@ -72,9 +73,17 @@ export function appendGroupsToEl(container, groups, onClickRecord) {
       // 左側テキスト
       const leftEl = document.createElement("div");
       leftEl.className = "mf-row-left";
-      leftEl.innerHTML = `
-        <span class="mf-title">${record.title || catLabel}</span>
-      `;
+      const title = document.createElement("span");
+      title.className = "mf-title";
+      title.textContent = record.title || catLabel;
+      leftEl.appendChild(title);
+      const breakdown = formatTaxBreakdown(record.taxDetails);
+      if (breakdown && isExpense) {
+        const note = document.createElement("span");
+        note.className = "receipt-tax-note";
+        note.textContent = breakdown;
+        leftEl.appendChild(note);
+      }
 
       // 金額
       const amountEl = document.createElement("span");

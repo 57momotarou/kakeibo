@@ -8,6 +8,18 @@ import { getAllChildNames, makeCategoryFieldFromChildName, parseCategoryField, g
 import { PARENT_CATEGORIES } from "../../constants/categories.js";
 import { showToast } from "../../components/Modal.js";
 import { updateParentSelect, updateChildSelect } from "../../components/CategorySelector.js";
+import { buildReceiptPrompt, RECEIPT_RESPONSE_SCHEMA, normalizeReceipt, formatTaxBreakdown, updateTaxDetails } from "./ReceiptData.js";
+
+function itemCategoryField(item) {
+  const category = item.category || "未分類";
+  let field = category.includes("/") || PARENT_CATEGORIES.some(p => p.id === category)
+    ? category : makeCategoryFieldFromChildName(category, childCategories);
+  const { parentId } = parseCategoryField(field, childCategories);
+  const parent = PARENT_CATEGORIES.find(p => p.id === parentId);
+  if (item.isIncome && parent?.type === "expense") field = "income/その他入金";
+  if (!item.isIncome && parent?.type === "income") field = "unclassified/未分類";
+  return field;
+}
 
 // ===================================
 // レシート読み取りイベント初期化
@@ -37,7 +49,7 @@ export function initScannerEvents(onAdded) {
         alert("商品を読み取れませんでした。手動で入力してください。");
         return;
       }
-      showItemSelector(parsed.items, parsed.discounts, parsed.date, parsed.category, onAdded);
+      showItemSelector(parsed.items, parsed.discounts, parsed.date, parsed.category, onAdded, parsed);
     } catch (err) {
       console.error(err);
       alert("読み取りエラー:\n" + err.message);
@@ -75,7 +87,7 @@ export function initImageScannerEvents(onAdded) {
         alert("収支情報を読み取れませんでした。手動で入力してください。");
         return;
       }
-      showItemSelector(parsed.items, parsed.discounts, parsed.date, parsed.category, onAdded);
+      showItemSelector(parsed.items, parsed.discounts, parsed.date, parsed.category, onAdded, parsed);
     } catch (err) {
       console.error(err);
       alert("読み取りエラー:\n" + err.message);
@@ -101,281 +113,46 @@ function fileToBase64(file) {
 // Gemini API呼び出し
 // ===================================
 async function callGeminiReceiptAPI(base64Image, mimeType, apiKey) {
-  const today = new Date().toISOString().slice(0, 10);
-  const allChildNames = getAllChildNames(childCategories);
-  const taxMode = localStorage.getItem("receiptTaxMode") || "inclusive";
-  const isInclusive = taxMode === "inclusive";
-
-  // ── 共通部分 ──
-  const commonHeader = "あなたはレシート解析AIです。添付画像のレシートを読み取り、以下のJSON形式のみで回答してください。余分なテキストや```は不要です.\n\n"
-    + "{\n"
-    + '  "date": "YYYY-MM-DD形式の購入日（不明な場合は' + today + '）",\n'
-    + '  "category": "以下のカテゴリから最も適切なもの1つ：' + allChildNames.join("・") + '",\n'
-    + '  "items": [\n'
-    + '    {\n'
-    + '      "title": "商品名（簡潔に20文字以内）",\n';
-
-  const commonDiscounts = '  ],\n'
-    + '  "discounts": [\n'
-    + '    { "title": "string", "amount": 0 }\n'
-    + '  ]\n'
-    + "}\n\n"
-    + "【割引の分類ルール】\n"
-    + "- discounts[].title：割引名（例：ポイント値引き・クーポン）\n"
-    + "- discounts[].amount：割引額（正の整数・円）\n"
-    + "- 「商品個別の値引き」：商品行の直下・隣などその商品専用の割引 → itemDiscount に金額を入れる\n"
-    + "- 「合計への値引き」：小計の下にまとめて書かれるポイント値引き・クーポン・まとめ割引など → discounts に入れる\n"
-    + "- itemDiscountがない商品は必ず 0 を返す\n"
-    + "- discountsが1件もない場合は空配列 [] を返す\n\n";
-
-  const commonFooter = "- レシートに「外税」「税抜」「＋税」等の記載があれば税抜価格と判断する\n"
-    + "- ポイント支払い・プリカ支払いはdiscountsに含めない（支払い手段のため）\n"
-    + "- 合計・小計・税額・税合計・お釣りはitemsにもdiscountsにも含めない\n"
-    + "- カタカナ略称は正式な日本語名に変換する";
-
-  // ── モード別プロンプト ──
-  let prompt;
-  if (isInclusive) {
-    // 税込モード：税抜→税込に換算して返す
-    prompt = commonHeader
-      + '      "amount": 0,\n'
-      + '      "itemDiscount": 0\n'
-      + '    }\n'
-      + commonDiscounts
-      + "【amountの計算ルール】\n"
-      + "- amountは必ず税込の整数（円）で返すこと\n"
-      + "- itemDiscount がある場合のamountは値引き前の税込金額\n"
-      + "- レシートに税込価格が明記されている場合 → そのまま使用\n"
-      + "- 税抜価格の場合は以下のルールで税率を判定する\n"
-      + "  ・商品名の前に「*」「＊」がある → 軽減税率8%対象\n"
-      + "  ・商品名の前に「★」「☆」がある → 標準税率10%対象\n"
-      + "  ・「※」「軽」「(軽)」等のマークがある → 軽減税率8%\n"
-      + "  ・マークがなく食料品・飲料（酒類除く）・新聞 → 8%\n"
-      + "  ・マークがなく外食・日用品・衣類・家電など → 10%\n"
-      + "- 税込金額の計算方法（優先順）\n"
-      + "  1. レシートに税率ごとの税額合計（例：「8%外税 ¥208」「10%外税 ¥26」）が記載されている場合\n"
-      + "     → 同じ税率の商品の税抜合計に税額合計を按分して各商品の税込金額を求める\n"
-      + "     → 具体的には：商品税込 = 税抜価格 + round(税抜価格 / 同税率の税抜合計 × 税率ごとの税額合計)\n"
-      + "     → ただし端数調整により合計が合わない場合は、最も金額の大きい商品で±1円調整してよい\n"
-      + "  2. 税額合計の記載がない場合 → 税抜 × 1.08 または × 1.10 を切り捨て\n"
-      + commonFooter;
-  } else {
-    // レシートどおりモード：税抜価格をそのまま返す＋消費税を taxes に格納
-    prompt = commonHeader
-      + '      "amount": 0,\n'
-      + '      "itemDiscount": 0,\n'
-      + '      "taxRate": 0\n'
-      + '    }\n'
-      + '  ],\n'
-      + '  "taxes": { "rate8": 0, "rate10": 0 },\n'
-      + '  "discounts": [\n'
-      + '    { "title": "string", "amount": 0 }\n'
-      + '  ]\n'
-      + "}\n\n"
-      + "【割引の分類ルール】\n"
-      + "- discounts[].title：割引名（例：ポイント値引き・クーポン）\n"
-      + "- discounts[].amount：割引額（正の整数・円）\n"
-      + "- 「商品個別の値引き」：商品行の直下・隣などその商品専用の割引 → itemDiscount に金額を入れる\n"
-      + "- 「合計への値引き」：小計の下にまとめて書かれるポイント値引き・クーポン・まとめ割引など → discounts に入れる\n"
-      + "- itemDiscountがない商品は必ず 0 を返す\n"
-      + "- discountsが1件もない場合は空配列 [] を返す\n\n"
-      + "【amountの計算ルール】\n"
-      + "- amountはレシートに記載の価格をそのまま整数（円）で返す（税込・税抜どちらでも記載どおり）\n"
-      + "- itemDiscount がある場合のamountは値引き前の価格\n"
-      + "- taxRate：税抜価格の場合は適用される消費税率（8 or 10）を入れる。税込価格の場合は 0\n"
-      + "  ・商品名の前に「*」「＊」→ 8、「★」「☆」→ 10\n"
-      + "  ・「※」「軽」「(軽)」等のマーク → 8\n"
-      + "  ・マークがなく食料品・飲料（酒類除く）・新聞 → 8\n"
-      + "  ・マークがなく外食・日用品・衣類・家電など → 10\n"
-      + "- レシートに税率ごとの税額合計（例：「8%外税 ¥208」「10%外税 ¥26」）が記載されている場合\n"
-      + "  → taxes フィールドにその情報を入れる\n"
-      + '- taxes.rate8：8%分の税額合計（整数・なければ0）\n'
-      + '- taxes.rate10：10%分の税額合計（整数・なければ0）\n'
-      + commonFooter;
-  }
-
-  const res = await fetch(
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + apiKey,
-    {
-      method:  "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{
-          parts: [
-            { text: prompt },
-            { inline_data: { mime_type: mimeType, data: base64Image } },
-          ],
-        }],
-        generationConfig: { temperature: 0 },
-      }),
-    }
-  );
-
-  if (!res.ok) {
-    const errBody = await res.json().catch(() => ({}));
-    throw new Error("Gemini API error: " + (errBody?.error?.message || res.status));
-  }
-
-  const data = await res.json();
-  let text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-  text = text.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
-  const parsed = JSON.parse(text);
-
-  if (!Array.isArray(parsed.items))     parsed.items     = [];
-  if (!Array.isArray(parsed.discounts)) parsed.discounts = [];
-
-  if (isInclusive) {
-    // 税込モード：値引き後の税込金額をamountにする
-    parsed.items = parsed.items
-      .filter(item => typeof item.amount === "number" && item.amount >= 1 && item.amount <= 1000000)
-      .map(item => {
-        const discount = (typeof item.itemDiscount === "number" && item.itemDiscount > 0)
-          ? item.itemDiscount : 0;
-        return {
-          title:        item.title,
-          amount:       Math.max(1, item.amount - discount),
-          itemDiscount: discount,
-          category:     parsed.category,
-          isIncome:     false,
-        };
-      });
-  } else {
-    // レシートどおりモード：税抜価格そのまま＋消費税品目を追加
-    const taxes = parsed.taxes || { rate8: 0, rate10: 0 };
-    parsed.items = parsed.items
-      .filter(item => typeof item.amount === "number" && item.amount >= 1 && item.amount <= 1000000)
-      .map(item => {
-        const discount = (typeof item.itemDiscount === "number" && item.itemDiscount > 0)
-          ? item.itemDiscount : 0;
-        return {
-          title:        item.title,
-          amount:       Math.max(1, item.amount - discount),
-          itemDiscount: discount,
-          taxRate:      item.taxRate || 0,
-          category:     parsed.category,
-          isIncome:     false,
-        };
-      });
-
-    // 消費税品目を追加（税額合計が取れた場合はそれを使い、なければ計算）
-    const tax8Total  = taxes.rate8  > 0 ? taxes.rate8
-      : parsed.items.filter(i => i.taxRate === 8).reduce((s, i) => s + Math.floor(i.amount * 0.08), 0);
-    const tax10Total = taxes.rate10 > 0 ? taxes.rate10
-      : parsed.items.filter(i => i.taxRate === 10).reduce((s, i) => s + Math.floor(i.amount * 0.10), 0);
-
-    if (tax8Total > 0) {
-      parsed.discounts.push({
-        title:        "消費税（8%）",
-        amount:       tax8Total,
-        itemDiscount: 0,
-        category:     "税・社会保障",
-        isIncome:     false,
-        isTax:        true,
-      });
-    }
-    if (tax10Total > 0) {
-      parsed.discounts.push({
-        title:        "消費税（10%）",
-        amount:       tax10Total,
-        itemDiscount: 0,
-        category:     "税・社会保障",
-        isIncome:     false,
-        isTax:        true,
-      });
-    }
-  }
-
-  // 合計割引（ポイント等）：その他入金として扱う
-  parsed.discounts = parsed.discounts
-    .filter(d => typeof d.amount === "number" && d.amount >= 1 && d.amount <= 1000000)
-    .map(d => d.isTax ? d : {
-      title:        d.title,
-      amount:       d.amount,
-      itemDiscount: 0,
-      category:     "その他入金",
-      isIncome:     true,
-    });
-
-  return parsed;
+  return callGeminiImageAPI(base64Image, mimeType, apiKey, false);
 }
 
-// ===================================
-// 汎用画像解析 Gemini API（家計簿メモ・手書き・スクショ等）
-// ===================================
-async function callGeminiImageAPI(base64Image, mimeType, apiKey) {
-  const today = new Date().toISOString().slice(0, 10);
-  const allChildNames = getAllChildNames(childCategories);
-
-  const prompt = "あなたは家計簿AIです。添付画像から収支情報を読み取り、以下のJSON形式のみで回答してください。余分なテキストや```は不要です.\n\n"
-    + "{\n"
-    + '  "date": "YYYY-MM-DD形式の日付（不明な場合は' + today + '）",\n'
-    + '  "category": "以下のカテゴリから最も適切なもの1つ：' + allChildNames.join("・") + '",\n'
-    + '  "items": [\n'
-    + '    { "title": "品目名（20文字以内）", "amount": 0, "itemDiscount": 0 }\n'
-    + '  ],\n'
-    + '  "discounts": [\n'
-    + '    { "title": "割引名", "amount": 0 }\n'
-    + '  ]\n'
-    + "}\n\n"
-    + "【読み取りルール】\n"
-    + "- レシート・手書きメモ・スクリーンショット・家計簿画像など収支情報を含む画像に対応\n"
-    + "- 金額は税込の整数（円）で返す\n"
-    + "- 支出か収入かは内容から判断し、収入は isIncome: true を items に追加\n"
-    + "- 合計・小計・税額はitemsに含めない\n"
-    + "- 値引き・ポイント値引きはdiscountsに入れる（amountは正の整数）\n"
-    + "- discountsが1件もない場合は空配列 [] を返す\n"
-    + "- itemDiscountがない商品は 0 を返す\n"
-    + "- カタカナ略称は正式な日本語名に変換する";
-
+// カメラ・ギャラリーで同じ転記ルールと税計算を使う。
+async function callGeminiImageAPI(base64Image, mimeType, apiKey, fromGallery = true) {
+  const prompt = buildReceiptPrompt(getAllChildNames(childCategories), fromGallery);
   const res = await fetch(
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + apiKey,
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + encodeURIComponent(apiKey),
     {
-      method:  "POST",
+      method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: mimeType, data: base64Image } }] }],
-        generationConfig: { temperature: 0 },
+        generationConfig: {
+          temperature: 0,
+          responseMimeType: "application/json",
+          responseSchema: RECEIPT_RESPONSE_SCHEMA,
+        },
       }),
     }
   );
-
   if (!res.ok) {
-    const errBody = await res.json().catch(() => ({}));
-    throw new Error("Gemini API error: " + (errBody?.error?.message || res.status));
+    const body = await res.json().catch(() => ({}));
+    throw new Error("Gemini API error: " + (body?.error?.message || res.status));
   }
-
   const data = await res.json();
-  let text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-  text = text.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
-  const parsed = JSON.parse(text);
-
-  if (!Array.isArray(parsed.items))     parsed.items     = [];
-  if (!Array.isArray(parsed.discounts)) parsed.discounts = [];
-
-  parsed.items = parsed.items
-    .filter(item => typeof item.amount === "number" && item.amount >= 1 && item.amount <= 1000000)
-    .map(item => {
-      const discount = (typeof item.itemDiscount === "number" && item.itemDiscount > 0) ? item.itemDiscount : 0;
-      return {
-        title:        item.title,
-        amount:       Math.max(1, item.amount - discount),
-        itemDiscount: discount,
-        category:     parsed.category,
-        isIncome:     !!item.isIncome,
-      };
-    });
-
-  parsed.discounts = parsed.discounts
-    .filter(d => typeof d.amount === "number" && d.amount >= 1 && d.amount <= 1000000)
-    .map(d => ({ title: d.title, amount: d.amount, itemDiscount: 0, category: "その他入金", isIncome: true }));
-
-  return parsed;
+  const text = (data.candidates?.[0]?.content?.parts || [])
+    .filter(part => !part.thought && typeof part.text === "string")
+    .map(part => part.text).join("").replace(/```(?:json)?\s*/gi, "").trim();
+  if (!text) throw new Error("解析結果が空でした。文字がはっきり見える画像を選び直してください。");
+  let parsed;
+  try { parsed = JSON.parse(text); }
+  catch { throw new Error("解析結果を読み取れませんでした。もう一度読み取ってください。"); }
+  return normalizeReceipt(parsed, localStorage.getItem("receiptTaxMode") || "inclusive");
 }
 
 // ===================================
 // 品目選択シート
 // ===================================
-function showItemSelector(items, discounts, date, defaultCategory, onAdded) {
+function showItemSelector(items, discounts, date, defaultCategory, onAdded, receipt = {}) {
   const existing = document.getElementById("itemSelectorOverlay");
   if (existing) existing.remove();
 
@@ -386,8 +163,9 @@ function showItemSelector(items, discounts, date, defaultCategory, onAdded) {
       amount:       item.amount,
       itemDiscount: item.itemDiscount || 0,
       category:     item.category || defaultCategory,
-      isIncome:     false,
+      isIncome:     !!item.isIncome,
       isTax:        false,
+      taxDetails:   item.taxDetails || null,
     })),
     ...(discounts || []).filter(d => d.isTax).map(d => ({
       title:        d.title,
@@ -396,6 +174,7 @@ function showItemSelector(items, discounts, date, defaultCategory, onAdded) {
       category:     d.category || "税・社会保障",
       isIncome:     false,
       isTax:        true,
+      taxRate:      d.taxRate,
     })),
     ...(discounts || []).filter(d => !d.isTax).map(d => ({
       title:        d.title,
@@ -409,10 +188,13 @@ function showItemSelector(items, discounts, date, defaultCategory, onAdded) {
 
   const overlay = document.createElement("div");
   overlay.id = "itemSelectorOverlay";
-  overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:350;display:flex;align-items:flex-end;";
+  overlay.className = "receipt-sheet-overlay";
 
   const sheet = document.createElement("div");
-  sheet.style.cssText = "background:#f5f5f5;width:100%;border-radius:20px 20px 0 0;max-height:80vh;display:flex;flex-direction:column;";
+  sheet.className = "receipt-sheet";
+  sheet.setAttribute("role", "dialog");
+  sheet.setAttribute("aria-modal", "true");
+  sheet.setAttribute("aria-label", "レシートの品目一覧");
 
   const header = document.createElement("div");
   header.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:16px 20px 12px;border-bottom:1px solid #e0e0e0;background:#fff;border-radius:20px 20px 0 0;flex-shrink:0;";
@@ -423,12 +205,27 @@ function showItemSelector(items, discounts, date, defaultCategory, onAdded) {
   sheet.appendChild(header);
 
   const listWrap = document.createElement("div");
-  listWrap.style.cssText = "overflow-y:auto;flex:1;";
+  listWrap.style.cssText = "overflow-y:auto;flex:1;min-height:0;overscroll-behavior:contain;";
 
   const totalRow = document.createElement("div");
   totalRow.style.cssText = "display:flex;justify-content:space-between;align-items:center;padding:10px 20px;background:#fff;border-bottom:1px solid #e8e8e8;font-size:13px;color:#666;";
   totalRow.innerHTML = '<span>合計金額</span><span id="selectedTotal" style="font-weight:bold;color:#222;">¥0</span>';
   listWrap.appendChild(totalRow);
+
+  const dateRow = document.createElement("label");
+  dateRow.className = "receipt-date-row";
+  dateRow.textContent = "購入・取引日";
+  const dateInput = document.createElement("input");
+  dateInput.type = "date";
+  dateInput.value = date;
+  dateInput.id = "receiptDate";
+  dateRow.appendChild(dateInput);
+  listWrap.appendChild(dateRow);
+
+  const reviewNote = document.createElement("p");
+  reviewNote.className = "receipt-review-note";
+  reviewNote.setAttribute("role", "status");
+  listWrap.appendChild(reviewNote);
 
   const ul = document.createElement("ul");
   ul.style.cssText = "list-style:none;padding:0;margin:0;";
@@ -442,26 +239,27 @@ function showItemSelector(items, discounts, date, defaultCategory, onAdded) {
     const label = document.createElement("div");
     label.style.cssText = "flex:1;min-width:0;";
 
-    const badge = item.isTax
-      ? '<span style="display:inline-block;font-size:10px;background:#fff3e0;color:#e65100;border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:middle;">消費税</span>'
-      : item.isIncome
-      ? '<span style="display:inline-block;font-size:10px;background:#e8f5e9;color:#2e7d32;border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:middle;">収入</span>'
-      : "";
-    const discountNote = (!item.isIncome && item.itemDiscount > 0)
-      ? '<span style="font-size:11px;color:#2e7d32;margin-left:6px;">（値引 -¥' + item.itemDiscount.toLocaleString() + ' 適用済）</span>'
-      : "";
-
-    // 「大分類 › 小分類」形式で表示
-    const catField2 = makeCategoryFieldFromChildName(item.category, childCategories);
+    const title = document.createElement("div");
+    title.style.cssText = "font-size:14px;font-weight:bold;color:#222;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
+    title.textContent = item.title;
+    if (item.isTax || item.isIncome) {
+      const badge = document.createElement("span");
+      badge.className = "receipt-item-badge";
+      badge.textContent = item.isTax ? "消費税" : "収入";
+      title.appendChild(badge);
+    }
+    label.appendChild(title);
+    const catField2 = itemCategoryField(item);
     const { parentId: catParentId, childName: catChildName } = parseCategoryField(catField2, childCategories);
-    const catLabel = catChildName
-      ? getParentName(catParentId) + ' › ' + catChildName
-      : getParentName(catParentId);
-
-    label.innerHTML =
-      '<div style="font-size:14px;font-weight:bold;color:#222;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'
-      + item.title + badge + '</div>'
-      + '<div style="font-size:12px;color:#999;margin-top:2px;">' + catLabel + discountNote + '</div>';
+    const category = document.createElement("div");
+    category.style.cssText = "font-size:12px;color:#999;margin-top:2px;";
+    category.textContent = catChildName ? getParentName(catParentId) + " › " + catChildName : getParentName(catParentId);
+    if (!item.isIncome && item.itemDiscount > 0) category.textContent += "（値引 -¥" + item.itemDiscount.toLocaleString() + " 適用済）";
+    label.appendChild(category);
+    const taxNote = document.createElement("div");
+    taxNote.className = "receipt-tax-note";
+    taxNote.textContent = formatTaxBreakdown(item.taxDetails);
+    if (taxNote.textContent) label.appendChild(taxNote);
 
     const amountColor  = item.isIncome ? "var(--theme,#4caf50)" : "#c62828";
     const amountPrefix = item.isIncome ? "+" : "";
@@ -472,21 +270,12 @@ function showItemSelector(items, discounts, date, defaultCategory, onAdded) {
     // 行全体タップで編集モーダルを開く
     li.addEventListener("click", () => showItemEditModal(idx, itemData, {
       onSaved: () => {
-        const newLi = buildItemRow(idx);
-        ul.replaceChild(newLi, liEls[idx]);
-        liEls[idx] = newLi;
+        renderItems();
         updateTotal();
       },
       onDeleted: () => {
         itemData.splice(idx, 1);
-        liEls.splice(idx, 1);
-        // ul全体を再描画
-        ul.innerHTML = "";
-        itemData.forEach((_, i) => {
-          const newLi = buildItemRow(i);
-          liEls[i] = newLi;
-          ul.appendChild(newLi);
-        });
+        renderItems();
         updateTotal();
       },
     }));
@@ -498,30 +287,16 @@ function showItemSelector(items, discounts, date, defaultCategory, onAdded) {
     return li;
   }
 
-  const expenseCount = items.length;
-  // discountsの中でisTax（消費税品目）とそれ以外（ポイント等）を分類
-  const taxItems      = (discounts || []).filter(d => d.isTax);
-  const incomeItems   = (discounts || []).filter(d => !d.isTax);
-
-  itemData.forEach((item, idx) => {
-    // 消費税セクションの区切り（レシートどおりモード）
-    if (idx === expenseCount && taxItems.length > 0) {
-      const divider = document.createElement("li");
-      divider.style.cssText = "padding:6px 20px;background:#f0f0f0;font-size:12px;color:#888;font-weight:bold;border-bottom:1px solid #e0e0e0;";
-      divider.textContent = "消費税（支出として記録）";
-      ul.appendChild(divider);
-    }
-    // 割引・ポイントセクションの区切り
-    if (idx === expenseCount + taxItems.length && incomeItems.length > 0) {
-      const divider = document.createElement("li");
-      divider.style.cssText = "padding:6px 20px;background:#f0f0f0;font-size:12px;color:#888;font-weight:bold;border-bottom:1px solid #e0e0e0;";
-      divider.textContent = "割引・ポイント還元（収入として記録）";
-      ul.appendChild(divider);
-    }
-    const li = buildItemRow(idx);
-    liEls.push(li);
-    ul.appendChild(li);
-  });
+  function renderItems() {
+    ul.replaceChildren();
+    liEls.length = 0;
+    itemData.forEach((item, idx) => {
+      const li = buildItemRow(idx);
+      liEls.push(li);
+      ul.appendChild(li);
+    });
+  }
+  renderItems();
 
   listWrap.appendChild(ul);
   sheet.appendChild(listWrap);
@@ -533,7 +308,14 @@ function showItemSelector(items, discounts, date, defaultCategory, onAdded) {
       else               expense += item.amount;
     });
     const net = expense - income;
-    const totalEl = document.getElementById("selectedTotal");
+    const messages = [...(receipt.warnings || [])];
+    if (receipt.total !== null && Number.isSafeInteger(receipt.total) && net !== receipt.total) {
+      const difference = net - receipt.total;
+      messages.unshift("レシート合計 ¥" + receipt.total.toLocaleString() + " と " + (difference > 0 ? "+" : "") + difference.toLocaleString() + "円の差があります。品目・税・値引きを確認してください。");
+    }
+    reviewNote.textContent = messages.join("\n");
+    reviewNote.hidden = messages.length === 0;
+    const totalEl = sheet.querySelector("#selectedTotal");
     if (totalEl) {
       totalEl.textContent = "¥" + net.toLocaleString() + "（" + itemData.length + "点）";
       totalEl.style.color = net < 0 ? "var(--theme,#4caf50)" : "#222";
@@ -541,33 +323,34 @@ function showItemSelector(items, discounts, date, defaultCategory, onAdded) {
   }
 
   const saveBtn = document.createElement("button");
-  saveBtn.style.cssText = "width:calc(100% - 32px);margin:12px 16px 32px;height:50px;background:var(--theme,#4caf50);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:bold;cursor:pointer;flex-shrink:0;";
+  saveBtn.style.cssText = "width:calc(100% - 32px);margin:12px 16px 16px;height:50px;background:var(--theme,#4caf50);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:bold;cursor:pointer;flex-shrink:0;";
   saveBtn.textContent = "保存する";
   sheet.appendChild(saveBtn);
 
   saveBtn.addEventListener("click", () => {
     if (itemData.length === 0) { alert("品目がありません"); return; }
+    if (!dateInput.value) { alert("日付を入力してください"); return; }
+    const savedDate = dateInput.value;
     itemData.forEach(item => {
       if (item.isIncome) {
         records.push({
-          date,
+          date: savedDate,
           amount:   item.amount,
           type:     "income",
-          category: "income/その他入金",
+          category: itemCategoryField(item),
           title:    item.title,
         });
       } else {
-        const catField = makeCategoryFieldFromChildName(item.category, childCategories);
-        records.push({ date, amount: item.amount, type: "expense", category: catField, title: item.title });
+        const catField = itemCategoryField(item);
+        records.push({ date: savedDate, amount: item.amount, type: "expense", category: catField, title: item.title, ...(item.taxDetails ? { taxDetails: item.taxDetails } : {}) });
       }
     });
-    // ↑ isTax品目も isIncome:false なので上のelse側で tax/所得税カテゴリとして保存される
     saveRecords();
     overlay.remove();
     const savedExpense = itemData.filter(i => !i.isIncome).length;
     const savedIncome  = itemData.filter(i =>  i.isIncome).length;
     const msg = savedIncome > 0
-      ? savedExpense + "件の支出・" + savedIncome + "件の割引を追加しました"
+      ? savedExpense + "件の支出・" + savedIncome + "件の収入を追加しました"
       : savedExpense + "件を追加しました";
     showToast(msg);
     onAdded();
@@ -591,12 +374,15 @@ function showItemEditModal(idx, itemData, { onSaved, onDeleted }) {
 
   const overlay = document.createElement("div");
   overlay.id = "itemEditModalOverlay";
-  overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:400;display:flex;align-items:flex-end;";
+  overlay.className = "receipt-sheet-overlay receipt-edit-overlay";
 
   const modal = document.createElement("div");
-  modal.style.cssText = "background:#fff;width:100%;border-radius:20px 20px 0 0;padding:0 0 32px;";
+  modal.className = "receipt-item-editor";
+  modal.setAttribute("role", "dialog");
+  modal.setAttribute("aria-modal", "true");
+  modal.setAttribute("aria-label", "品目を編集");
 
-  const catField = makeCategoryFieldFromChildName(item.category, childCategories);
+  const catField = itemCategoryField(item);
   const { parentId: currentParentId, childName: currentChildName } = parseCategoryField(catField, childCategories);
   const currentType = item.isIncome ? "income" : "expense";
 
@@ -606,11 +392,12 @@ function showItemEditModal(idx, itemData, { onSaved, onDeleted }) {
     + '<span class="modal-title">品目を編集</span>'
     + '<button id="closeItemEdit" class="modal-close">✕</button>'
     + '</div>'
-    + '<div style="padding:12px 20px;">'
+    + '<div class="modal-body">'
     + '<label class="field-label">商品名</label>'
-    + '<input id="editItemTitle" type="text" value="' + item.title + '">'
+    + '<input id="editItemTitle" type="text">'
     + '<label class="field-label">金額（円）</label>'
-    + '<input id="editItemAmount" type="number" value="' + item.amount + '">'
+    + '<input id="editItemAmount" type="number" min="0" step="1">'
+    + '<p id="editItemTaxBreakdown" class="receipt-tax-note"></p>'
     + '<label class="field-label">カテゴリ</label>'
     + '<div class="category-selector"><div class="cat-select-row">'
     + '<select id="editItemParentCat" class="cat-select-parent"></select>'
@@ -621,6 +408,17 @@ function showItemEditModal(idx, itemData, { onSaved, onDeleted }) {
 
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
+
+  modal.querySelector("#editItemTitle").value = item.title;
+  modal.querySelector("#editItemAmount").value = item.amount;
+  const taxNote = modal.querySelector("#editItemTaxBreakdown");
+  const updateNote = () => {
+    const input = modal.querySelector("#editItemAmount");
+    taxNote.textContent = input.value === "" ? "" : formatTaxBreakdown(updateTaxDetails(item.taxDetails, Number(input.value), item.isIncome));
+    taxNote.hidden = !taxNote.textContent;
+  };
+  modal.querySelector("#editItemAmount").addEventListener("input", updateNote);
+  updateNote();
 
   const parentSel = modal.querySelector("#editItemParentCat");
   const childSel  = modal.querySelector("#editItemChildCat");
@@ -646,7 +444,7 @@ function showItemEditModal(idx, itemData, { onSaved, onDeleted }) {
     const newChildName = childSel.value;
 
     if (!newTitle)                          { alert("商品名を入力してください"); return; }
-    if (isNaN(newAmount) || newAmount <= 0) { alert("正しい金額を入力してください"); return; }
+    if (modal.querySelector("#editItemAmount").value === "" || !Number.isSafeInteger(newAmount) || newAmount < 0) { alert("正しい金額を入力してください"); return; }
 
     itemData[idx].title    = newTitle;
     itemData[idx].amount   = newAmount;
@@ -655,6 +453,7 @@ function showItemEditModal(idx, itemData, { onSaved, onDeleted }) {
     const parent = PARENT_CATEGORIES.find(p => p.id === newParentId);
     if (parent) itemData[idx].isIncome = (parent.type === "income");
 
+    itemData[idx].taxDetails = updateTaxDetails(item.taxDetails, newAmount, itemData[idx].isIncome);
     overlay.remove();
     onSaved();
   });

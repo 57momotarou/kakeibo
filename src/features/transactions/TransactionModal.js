@@ -7,8 +7,18 @@ import { records, saveRecords, childCategories, accounts } from "../../store.js"
 import { showModal, hideModal } from "../../components/Modal.js";
 import { updateParentSelect, updateChildSelect } from "../../components/CategorySelector.js";
 import { parseCategoryField, makeCategoryField, getParentName, displayCategory } from "../../utils/category.js";
+import { formatTaxBreakdown, updateTaxDetails } from "../scanner/ReceiptData.js";
 
 let editingRecord = null;
+
+function updateEditTaxNote() {
+  const note = document.getElementById("editTaxBreakdown");
+  if (!note) return;
+  const amountInput = document.getElementById("editAmount");
+  const income = document.getElementById("editType").value === "income";
+  note.textContent = amountInput.value === "" ? "" : formatTaxBreakdown(updateTaxDetails(editingRecord?.taxDetails, Number(amountInput.value), income));
+  note.hidden = !note.textContent;
+}
 
 // ===================================
 // 口座セレクトを更新
@@ -127,6 +137,7 @@ export function openEditModal(record, onEdited) {
   updateChildSelect(document.getElementById("editChildCat"), parentId, childName);
 
   updateAccountSelect("editAccount", record.accountId || "");
+  updateEditTaxNote();
   showModal(editModal, editOverlay);
 }
 
@@ -141,6 +152,7 @@ export function initEditModal(onEdited) {
   const closeEdit = () => { hideModal(editModal, editOverlay); editingRecord = null; };
   closeEditBtn.addEventListener("click",  closeEdit);
   editOverlay.addEventListener("click",   closeEdit);
+  document.getElementById("editAmount").addEventListener("input", updateEditTaxNote);
 
   editTypeToggle.addEventListener("click", e => {
     const btn = e.target.closest(".type-toggle-btn");
@@ -149,6 +161,7 @@ export function initEditModal(onEdited) {
     editTypeToggle.querySelectorAll(".type-toggle-btn").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
     editTypeInput.value = val;
+    updateEditTaxNote();
     const defaultParent = val === "income" ? "income" : "food";
     updateParentSelect(document.getElementById("editParentCat"), val, defaultParent);
     updateChildSelect(document.getElementById("editChildCat"), defaultParent, "");
@@ -176,6 +189,9 @@ export function initEditModal(onEdited) {
     const parentId  = document.getElementById("editParentCat").value;
     const childName = document.getElementById("editChildCat").value;
     const editAccountSel = document.getElementById("editAccount");
+    const taxDetails = updateTaxDetails(editingRecord.taxDetails, Number(editAmountInput.value), editTypeInput.value === "income");
+    if (taxDetails) editingRecord.taxDetails = taxDetails;
+    else delete editingRecord.taxDetails;
     editingRecord.date      = editDateInput.value;
     editingRecord.amount    = Number(editAmountInput.value);
     editingRecord.type      = editTypeInput.value;

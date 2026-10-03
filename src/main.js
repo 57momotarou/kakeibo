@@ -15,7 +15,7 @@ import { getDefaultMonth } from "./utils/calendar.js";
 import { initSplash } from "./components/Splash.js";
 import { applyThemeColor, renderColorPresets, initThemeEvents } from "./components/Theme.js";
 import { initCategorySelectors } from "./components/CategorySelector.js";
-import { showToast } from "./components/Modal.js";
+import { showToast, initModalViewport } from "./components/Modal.js";
 import {
   initViewElements,
   initNavigationEvents,
@@ -51,6 +51,8 @@ import { renderPayrollView, initPayrollEvents } from "./features/payroll/Payroll
 // DOMContentLoaded
 // ===================================
 document.addEventListener("DOMContentLoaded", () => {
+
+  initModalViewport();
 
   // --- スプラッシュ ---
   initSplash(themeColor);

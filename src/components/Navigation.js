@@ -308,6 +308,7 @@ export function initSwipeGesture(addModal, editModal, monthSelector, onMonthChan
     if (!addModal.classList.contains("hidden")) return true;
     if (!editModal.classList.contains("hidden")) return true;
     if (document.getElementById("reportSheetOverlay")) return true;
+    if (document.getElementById("itemSelectorOverlay") || document.getElementById("itemEditModalOverlay")) return true;
     if (document.querySelector(".scan-overlay:not(.hidden), .fab-overlay:not(.hidden), .overlay:not(.hidden)")) return true;
     return false;
   }
