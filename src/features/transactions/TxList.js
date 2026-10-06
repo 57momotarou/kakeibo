@@ -7,6 +7,7 @@ import { records, childCategories } from "../../store.js";
 import { displayCategory, parseCategoryField, getParentIcon, getParentColor } from "../../utils/category.js";
 import { WEEKDAY_NAMES } from "../../utils/calendar.js";
 import { formatTaxBreakdown } from "../scanner/ReceiptData.js";
+import { filterTransactions } from "./TransactionSearch.js";
 
 /**
  * カテゴリの大分類アイコンHTML（円形背景つき）を生成
@@ -107,14 +108,24 @@ export function renderTxList(onClickRecord) {
   const list = document.getElementById("list");
   list.innerHTML = "";
 
-  if (records.length === 0) {
+  const query = document.getElementById("txSearchInput").value;
+  const matches = filterTransactions(records, query);
+  const searching = query.trim().length > 0;
+  document.getElementById("txSearchClear").classList.toggle("hidden", !query);
+  const summary = document.getElementById("txSearchSummary");
+  summary.classList.toggle("hidden", !searching);
+  const expense = matches.filter(r => r.type === "expense").reduce((sum, r) => sum + Number(r.amount || 0), 0);
+  const income = matches.filter(r => r.type === "income").reduce((sum, r) => sum + Number(r.amount || 0), 0);
+  summary.textContent = `${matches.length}件（全期間） · 支出 ¥${expense.toLocaleString()} · 収入 ¥${income.toLocaleString()}`;
+
+  if (matches.length === 0) {
     const empty = document.createElement("p");
     empty.style.cssText = "text-align:center;color:#aaa;font-size:14px;margin-top:60px;";
-    empty.textContent = "記録がありません";
+    empty.textContent = searching ? "一致する記録がありません" : "記録がありません";
     list.appendChild(empty);
     return;
   }
 
-  const groups = groupByDate(records);
+  const groups = groupByDate(matches);
   appendGroupsToEl(list, groups, onClickRecord);
 }

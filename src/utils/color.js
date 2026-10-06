@@ -29,3 +29,11 @@ export function darkenColor(hex, amount) {
   const b = Math.max(0, (num & 0xff) - amount);
   return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, "0")}`;
 }
+
+// 淡いテーマにも読める文字色を組み合わせる。
+export function themeForeground(hex) {
+  const channels = hex.slice(1).match(/../g).map(c => parseInt(c, 16) / 255);
+  const linear = channels.map(c => c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+  const luminance = linear[0] * 0.2126 + linear[1] * 0.7152 + linear[2] * 0.0722;
+  return 1.05 / (luminance + 0.05) >= 4.5 ? "#ffffff" : "#17384d";
+}

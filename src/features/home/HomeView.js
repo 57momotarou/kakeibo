@@ -7,6 +7,8 @@
 import { records, budgets, childCategories, accounts } from "../../store.js";
 import { getPeriodRange } from "../../utils/calendar.js";
 import { displayCategory } from "../../utils/category.js";
+import { renderPaydayHome } from "../payday/PaydayView.js";
+import { escapeHtml } from "../../utils/html.js";
 
 // ===================================
 // 月別支出を取得
@@ -30,6 +32,7 @@ function getMonthlySpending(monthSelector) {
 // ホーム画面描画
 // ===================================
 export function renderHome(monthSelector) {
+  renderPaydayHome();
   const card    = document.getElementById("homeBudgetCard");
   const rowsEl  = document.getElementById("homeBudgetRows");
   const monthEl = document.getElementById("homeBudgetMonth");
@@ -91,7 +94,7 @@ export function renderHome(monthSelector) {
     row.style.cursor = "pointer";
     row.innerHTML = `
       <div class="home-budget-row-top">
-        <span class="home-budget-cat">${catName}</span>
+        <span class="home-budget-cat">${escapeHtml(catName)}</span>
         <span class="home-budget-amt ${over ? "over-text" : ""}">
           ¥${spent.toLocaleString()} <span class="home-budget-limit">/ ¥${budget.toLocaleString()}</span>
         </span>
@@ -136,7 +139,7 @@ function showBudgetDetailModal(catName, budget, currentYm) {
   const header = document.createElement("div");
   header.style.cssText = `display:flex;align-items:center;justify-content:space-between;padding:16px 20px 12px;background:#fff;border-radius:20px 20px 0 0;border-bottom:1px solid #e0e0e0;flex-shrink:0;`;
   header.innerHTML = `
-    <span style="font-size:16px;font-weight:bold;">${catName} の月別達成度</span>
+    <span style="font-size:16px;font-weight:bold;">${escapeHtml(catName)} の月別達成度</span>
     <button id="closeBudgetDetail" style="width:32px;height:32px;border-radius:50%;border:none;background:#f0f0f0;font-size:14px;cursor:pointer;">✕</button>
   `;
   sheet.appendChild(header);

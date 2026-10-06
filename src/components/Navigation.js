@@ -23,6 +23,8 @@ export const VIEW_CONFIG = {
   theme:          { el: null, title: "テーマカラー",     showTabs: true  },
   period:         { el: null, title: "集計期間",         showTabs: true  },
   budget:         { el: null, title: "予算設定",         showTabs: true  },
+  payday:         { el: null, title: "給料日までの金額", showTabs: true  },
+  backup:         { el: null, title: "バックアップ・復元", showTabs: true },
   apiKey:         { el: null, title: "Gemini APIキー",   showTabs: true  },
   reset:          { el: null, title: "データのリセット", showTabs: true  },
   visibility:     { el: null, title: "表示 / 非表示",    showTabs: true  },
@@ -49,6 +51,8 @@ export function initViewElements() {
   VIEW_CONFIG.theme.el          = document.getElementById("themeView");
   VIEW_CONFIG.period.el         = document.getElementById("periodView");
   VIEW_CONFIG.budget.el         = document.getElementById("budgetView");
+  VIEW_CONFIG.payday.el         = document.getElementById("paydayView");
+  VIEW_CONFIG.backup.el         = document.getElementById("backupView");
   VIEW_CONFIG.apiKey.el         = document.getElementById("apiKeyView");
   VIEW_CONFIG.reset.el          = document.getElementById("resetView");
   VIEW_CONFIG.visibility.el     = document.getElementById("visibilityView");
@@ -209,6 +213,8 @@ export function initNavigationEvents() {
   document.getElementById("goPeriod").addEventListener("click",     () => navigate("period"));
   document.getElementById("goVisibility").addEventListener("click", () => navigate("visibility"));
   document.getElementById("goBudget").addEventListener("click",     () => navigate("budget"));
+  document.getElementById("goPayday").addEventListener("click",     () => navigate("payday"));
+  document.getElementById("goBackup").addEventListener("click",     () => navigate("backup"));
   document.getElementById("goApiKey").addEventListener("click",     () => navigate("apiKey"));
   document.getElementById("goReset").addEventListener("click",      () => navigate("reset"));
 

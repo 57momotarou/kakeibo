@@ -3,7 +3,7 @@
  * スプラッシュ画面の表示・フェードアウト
  */
 
-import { isLightColor } from "../utils/color.js";
+import { themeForeground } from "../utils/color.js";
 
 export function initSplash(savedColor) {
   const splash = document.getElementById("splashScreen");
@@ -16,7 +16,7 @@ export function initSplash(savedColor) {
   }
 
   splash.style.background = savedColor;
-  splash.classList.toggle("dark-text", isLightColor(savedColor));
+  splash.classList.toggle("dark-text", themeForeground(savedColor) !== "#ffffff");
 
   const hideSplash = () => splash.classList.add("hidden");
 

@@ -58,6 +58,7 @@ export const DEFAULT_CHILD_CATEGORIES = {
 // テーマカラープリセット
 // ===================================
 export const PRESET_COLORS = [
+  { label: "水色",       color: "#83c7f4" },
   { label: "グリーン",   color: "#4caf50" },
   { label: "ブルー",     color: "#2196f3" },
   { label: "パープル",   color: "#9c27b0" },
@@ -72,6 +73,6 @@ export const PRESET_COLORS = [
 // グラフ用カラーパレット
 // ===================================
 export const CHART_COLORS = [
-  "#4caf50","#2196f3","#ff9800","#e91e63","#9c27b0",
+  "#83c7f4","#2196f3","#ff9800","#e91e63","#9c27b0",
   "#00bcd4","#ff5722","#607d8b","#795548","#8bc34a",
 ];

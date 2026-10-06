@@ -5,6 +5,19 @@
 
 import { DEFAULT_CHILD_CATEGORIES } from "./constants/categories.js";
 
+export const DEFAULT_THEME_COLOR = "#83c7f4";
+export const THEME_DEFAULT_VERSION = "sky-blue-1";
+
+function loadThemeColor() {
+  const saved = localStorage.getItem("themeColor");
+  const firstBlueUpdate = localStorage.getItem("themeDefaultVersion") !== THEME_DEFAULT_VERSION;
+  const color = firstBlueUpdate && (!saved || saved.toLowerCase() === "#4caf50")
+    ? DEFAULT_THEME_COLOR : saved || DEFAULT_THEME_COLOR;
+  localStorage.setItem("themeColor", color);
+  localStorage.setItem("themeDefaultVersion", THEME_DEFAULT_VERSION);
+  return color;
+}
+
 function readJsonStorage(key, fallback) {
   const raw = localStorage.getItem(key);
   if (!raw) return fallback;
@@ -27,6 +40,9 @@ function loadChildCategories() {
   const savedVersion = localStorage.getItem("categoryVersion");
   const obj          = saved ? readJsonStorage("childCategories", {}) : {};
 
+  // 同じカテゴリ版なら、利用者が削除した小分類や復元した一覧をそのまま使う。
+  if (saved && savedVersion === CATEGORY_VERSION) return obj;
+
   // バージョンが変わっていたら全キーをチェックして不足分を補完
   let changed = !saved || savedVersion !== CATEGORY_VERSION;
 
@@ -34,7 +50,7 @@ function loadChildCategories() {
     if (!obj[pid]) {
       obj[pid] = DEFAULT_CHILD_CATEGORIES[pid].map(name => ({ name }));
       changed = true;
-    } else {
+    } else if (savedVersion !== CATEGORY_VERSION) {
       // デフォルトにあって既存データにない小分類を末尾に追加
       const existingNames = obj[pid].map(c => c.name);
       DEFAULT_CHILD_CATEGORIES[pid].forEach(name => {
@@ -58,9 +74,10 @@ function loadChildCategories() {
 // ===================================
 export let records        = readJsonStorage("records", []);
 export let periodStartDay = Number(localStorage.getItem("periodStartDay"))  || 1;
-export let themeColor     = localStorage.getItem("themeColor")              || "#4caf50";
+export let themeColor     = loadThemeColor();
 export let budgets        = readJsonStorage("budgets", {});
 export let payrollSlips   = readJsonStorage("payrollSlips", []);
+export let paydaySettings = readJsonStorage("paydaySettings", null);
 // 初回起動時は「財布」をデフォルト口座として追加
 function loadAccounts() {
   const saved = localStorage.getItem("accounts");
@@ -134,6 +151,24 @@ export function setAccounts(newAccounts) {
 
 export function setPayrollSlips(newSlips) {
   payrollSlips = newSlips;
+}
+
+export function setPaydaySettings(settings) {
+  localStorage.setItem("paydaySettings", JSON.stringify(settings));
+  paydaySettings = settings;
+}
+
+// バックアップの復元後、ES Modules の参照も保存データに揃える。
+export function reloadStoreFromStorage() {
+  records = readJsonStorage("records", []);
+  accounts = loadAccounts();
+  budgets = readJsonStorage("budgets", {});
+  payrollSlips = readJsonStorage("payrollSlips", []);
+  childCategories = loadChildCategories();
+  tabVisibility = loadTabVisibility();
+  periodStartDay = Number(localStorage.getItem("periodStartDay")) || 1;
+  themeColor = loadThemeColor();
+  paydaySettings = readJsonStorage("paydaySettings", null);
 }
 
 export function resetChildCategoriesToDefault() {

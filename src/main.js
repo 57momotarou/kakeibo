@@ -26,6 +26,7 @@ import {
   setOnShowView,
   navigate,
   switchToTab,
+  applyTabVisibility,
   viewStack,
 } from "./components/Navigation.js";
 import { initFabEvents, applyFabVisibility } from "./components/FabMenu.js";
@@ -33,6 +34,7 @@ import { initFabEvents, applyFabVisibility } from "./components/FabMenu.js";
 // --- Features ---
 import { renderHome }                    from "./features/home/HomeView.js";
 import { renderTxList }                  from "./features/transactions/TxList.js";
+import { initTransactionSearch } from "./features/transactions/TransactionSearch.js";
 import { openAddModal, initAddModal, openEditModal, initEditModal } from "./features/transactions/TransactionModal.js";
 import { renderCalendar }                from "./features/calendar/CalendarView.js";
 import { renderGraph, initGraphEvents }  from "./features/graph/GraphView.js";
@@ -46,6 +48,8 @@ import {
 } from "./features/settings/OtherSettings.js";
 import { initScannerEvents, initImageScannerEvents } from "./features/scanner/Receipt.js";
 import { renderPayrollView, initPayrollEvents } from "./features/payroll/PayrollView.js";
+import { renderPaydayView, initPaydayEvents } from "./features/payday/PaydayView.js";
+import { renderBackupView, initBackupEvents } from "./features/backup/BackupView.js";
 
 // ===================================
 // DOMContentLoaded
@@ -85,6 +89,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (viewName === "account")        renderAccountView();
     if (viewName === "visibility")     renderVisibilityView();
     if (viewName === "budget")         renderBudgetView(monthSelector);
+    if (viewName === "payday")         renderPaydayView();
+    if (viewName === "backup")         renderBackupView();
     if (viewName === "apiKey")         renderApiKeyView();
     if (viewName === "reset")          renderResetView();
   }
@@ -150,6 +156,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 口座
   initAccountEvents();
+
+  initTransactionSearch(() => renderTxList(record => openEditModal(record, refresh)));
+  initPaydayEvents(refresh, () => navigate("payday"));
+  initBackupEvents(() => {
+    applyThemeColor(themeColor);
+    monthSelector.value = getDefaultMonth(periodStartDay);
+    updateMonthLabel(monthSelector);
+    applyTabVisibility();
+    applyFabVisibility();
+    refresh();
+  });
 
   // 表示設定
   initVisibilityEvents();

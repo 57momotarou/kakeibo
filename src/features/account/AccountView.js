@@ -7,9 +7,9 @@ import { accounts, saveAccounts, setAccounts, records, childCategories } from ".
 import { showModal, hideModal } from "../../components/Modal.js";
 import { displayCategory } from "../../utils/category.js";
 import { WEEKDAY_NAMES } from "../../utils/calendar.js";
+import { escapeHtml } from "../../utils/html.js";
 
 let editingAccount = null;
-let nextAccountId  = Math.max(0, ...accounts.map(a => a.id || 0)) + 1;
 
 // ===================================
 // 口座一覧描画
@@ -25,8 +25,8 @@ export function renderAccountView() {
     const info = document.createElement("div");
     info.className = "account-info";
     info.innerHTML =
-      `<span class="account-name">${account.name}</span>` +
-      (account.memo ? `<span class="account-memo">${account.memo}</span>` : "");
+      `<span class="account-name">${escapeHtml(account.name)}</span>` +
+      (account.memo ? `<span class="account-memo">${escapeHtml(account.memo)}</span>` : "");
 
     const balWrap = document.createElement("div");
     balWrap.className = "account-balance-wrap";
@@ -80,7 +80,7 @@ function showAccountDetail(account) {
   header.style.cssText = "display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:16px 16px 12px;background:#fff;border-radius:20px 20px 0 0;border-bottom:1px solid #e0e0e0;flex-shrink:0;";
   header.innerHTML =
     '<div></div>' +
-    '<span style="font-size:16px;font-weight:bold;text-align:center;">' + account.name + '</span>' +
+    '<span style="font-size:16px;font-weight:bold;text-align:center;">' + escapeHtml(account.name) + '</span>' +
     '<div style="display:flex;justify-content:flex-end;gap:8px;">' +
       '<button id="editAccountSheetBtn" style="width:36px;height:36px;border-radius:50%;border:none;background:#f0f0f0;font-size:18px;cursor:pointer;">⚙️</button>' +
       '<button id="closeAccountDetail" style="width:36px;height:36px;border-radius:50%;border:none;background:#f0f0f0;font-size:14px;cursor:pointer;">✕</button>' +
@@ -98,7 +98,7 @@ function showAccountDetail(account) {
     '<div style="margin-bottom:12px;">' +
       '<div style="font-size:11px;color:#888;margin-bottom:4px;">残高</div>' +
       '<div style="font-size:26px;font-weight:bold;color:' + themeColor + ';">¥' + account.balance.toLocaleString() + '</div>' +
-      (account.memo ? '<div style="font-size:12px;color:#aaa;margin-top:3px;">' + account.memo + '</div>' : '') +
+      (account.memo ? '<div style="font-size:12px;color:#aaa;margin-top:3px;">' + escapeHtml(account.memo) + '</div>' : '') +
     '</div>' +
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;border-top:1px solid #f0f0f0;padding-top:12px;">' +
       '<div style="background:#f5f5f5;border-radius:8px;padding:10px 12px;">' +
@@ -148,8 +148,8 @@ function showAccountDetail(account) {
         const catLabel  = displayCategory(record.category, childCategories);
         row.innerHTML =
           '<div style="flex:1;min-width:0;">' +
-            '<div style="font-size:14px;font-weight:bold;color:#222;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (record.title || catLabel) + '</div>' +
-            '<div style="font-size:11px;color:#aaa;margin-top:2px;">' + catLabel + '</div>' +
+            '<div style="font-size:14px;font-weight:bold;color:#222;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(record.title || catLabel) + '</div>' +
+            '<div style="font-size:11px;color:#aaa;margin-top:2px;">' + escapeHtml(catLabel) + '</div>' +
           '</div>' +
           '<span style="font-size:14px;font-weight:bold;white-space:nowrap;color:' + (isExpense ? "#333" : themeColor) + ';">' +
             (isExpense ? "-" : "+") + '¥' + record.amount.toLocaleString() +
@@ -210,7 +210,8 @@ export function initAccountEvents() {
       editingAccount.balance = balance;
       editingAccount.memo    = memo;
     } else {
-      accounts.push({ id: nextAccountId++, name, balance, memo });
+      const nextId = Math.max(0, ...accounts.map(a => Number(a.id) || 0)) + 1;
+      accounts.push({ id: nextId, name, balance, memo });
     }
     saveAccounts();
     renderAccountView();

@@ -6,11 +6,13 @@
   <!--
     CSSより先にインラインスクリプトを実行。
     localStorageのテーマカラーをCSS変数とmeta theme-colorに即時反映することで、
-    スプラッシュ画面がデフォルトの緑で一瞬表示されるちらつきを防ぐ。
+    保存済みのテーマと初期の水色を、画面の読み込み前に反映する。
   -->
   <script>
     (function() {
-      var c = localStorage.getItem("themeColor") || "#4caf50";
+      var saved = localStorage.getItem("themeColor");
+      var initialBlue = localStorage.getItem("themeDefaultVersion") !== "sky-blue-1";
+      var c = initialBlue && (!saved || saved.toLowerCase() === "#4caf50") ? "#83c7f4" : saved || "#83c7f4";
       // CSS変数を即時上書き（variables.cssより先に実行されるため確実に効く）
       document.documentElement.style.setProperty("--theme", c);
       // ステータスバーの色も設定（metaタグはまだないのでdocument.writeで埋め込む）
@@ -22,8 +24,8 @@
   <link rel="stylesheet" href="./src/styles/base.css">
   <link rel="stylesheet" href="./src/styles/components.css">
   <link rel="manifest" href="manifest.json">
-  <link rel="icon" type="image/svg+xml" href="icon.svg?v=purse-1">
-  <link rel="apple-touch-icon" sizes="180x180" href="icon.png?v=purse-1">
+  <link rel="icon" type="image/png" href="icon-192.png?v=blue-purse-3">
+  <link rel="apple-touch-icon" sizes="180x180" href="icon.png?v=blue-purse-3">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 </head>
 <body>
@@ -192,6 +194,20 @@
       </section>
     </div>
 
+    <section class="payday-home-card" aria-label="給料日まで使える金額">
+      <div class="payday-card-head">
+        <strong>給料日まで使える金額</strong>
+        <button type="button" id="homePaydaySettings" class="text-action">設定する</button>
+      </div>
+      <p id="paydayHomeEmpty" class="feature-help">給料日と今使える残高を設定すると、あといくら使えるかがわかります。</p>
+      <div id="paydayHomeResult" class="hidden">
+        <p id="paydayHomeDate" class="payday-date"></p>
+        <strong id="paydayAvailable" class="payday-amount">¥0</strong>
+        <div id="paydayDaily" class="payday-daily"></div>
+        <p id="paydayHomeStatus" class="feature-help"></p>
+      </div>
+    </section>
+
     <div id="homeBudgetCard" class="home-budget-card" style="display:none">
       <div class="home-budget-header">
         <span class="home-budget-title">今月の予算</span>
@@ -204,6 +220,15 @@
   <!-- 出入金 -->
   <div id="transactionView" class="view">
     <input type="month" id="monthSelector" style="display:none">
+    <div class="tx-search-toolbar">
+      <div class="tx-search-box">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"></circle><path d="m15.5 15.5 5 5"></path></svg>
+        <label class="visually-hidden" for="txSearchInput">商品名・タイトル検索</label>
+        <input type="search" id="txSearchInput" placeholder="商品名・タイトルで検索" autocomplete="off" enterkeyhint="search">
+        <button type="button" id="txSearchClear" class="hidden" aria-label="検索をクリア">✕</button>
+      </div>
+      <p id="txSearchSummary" class="tx-search-summary hidden" aria-live="polite"></p>
+    </div>
     <ul id="list"></ul>
   </div>
 
@@ -252,6 +277,16 @@
       <li class="settings-menu-item" id="goApiKey">
         <span class="settings-menu-icon">🔑</span>
         <span class="settings-menu-label">Gemini APIキー</span>
+        <span class="settings-menu-arrow">›</span>
+      </li>
+      <li class="settings-menu-item" id="goPayday">
+        <span class="settings-menu-icon">🗓️</span>
+        <span class="settings-menu-label">給料日まで使える金額</span>
+        <span class="settings-menu-arrow">›</span>
+      </li>
+      <li class="settings-menu-item" id="goBackup">
+        <span class="settings-menu-icon">💾</span>
+        <span class="settings-menu-label">バックアップ・復元</span>
         <span class="settings-menu-arrow">›</span>
       </li>
       <li class="settings-menu-item" id="goReset">
@@ -317,6 +352,56 @@
     </div>
   </div>
 
+  <!-- 給料日まで使える金額 -->
+  <div id="paydayView" class="view">
+    <form id="paydayForm" class="feature-card">
+      <p class="feature-help">給料日までの余裕をホームに表示します。残高は、生活費として使える現金と口座のお金を合計して入力してください。</p>
+      <label class="field-label" for="paydayDay">毎月の給料日</label>
+      <select id="paydayDay" required></select>
+      <p class="feature-help">その日がない月は月末になります。</p>
+      <label class="field-label" for="paydayNextDate">次の給料日を変更（任意）</label>
+      <input type="date" id="paydayNextDate">
+      <p class="feature-help">土日・祝日などで振込日が変わる時に指定できます。</p>
+      <div id="paydayDatePreview" class="feature-preview"></div>
+      <label class="field-label" for="paydayBalance">今使える残高（円）</label>
+      <input type="number" id="paydayBalance" inputmode="numeric" step="1" placeholder="例：50000" required>
+      <label class="field-label" for="paydayProtected">残しておくお金（円）</label>
+      <input type="number" id="paydayProtected" inputmode="numeric" min="0" step="1" placeholder="例：10000">
+      <label class="field-label" for="paydayPlanned">追加の支払い予定・未登録分（円）</label>
+      <input type="number" id="paydayPlanned" inputmode="numeric" min="0" step="1" placeholder="例：5000">
+      <p class="feature-help">支出として登録した分は、この金額から減らしてください。</p>
+      <p class="feature-help">保存後の収支で残高を更新します。給料日前の未来の日付で登録した支出も差し引きます。未入金の収入は含めません。</p>
+      <p id="paydaySavedNote" class="feature-help"></p>
+      <p id="paydayError" class="feature-status is-error" role="alert"></p>
+      <button type="submit" class="btn-primary">保存する</button>
+    </form>
+  </div>
+
+  <!-- バックアップ・復元 -->
+  <div id="backupView" class="view">
+    <section class="feature-card">
+      <h3 class="feature-title">バックアップを保存</h3>
+      <p class="feature-help">収支・口座・予算・カテゴリ・給与明細・給料日・表示設定を、1つのファイルに保存します。</p>
+      <button type="button" id="downloadBackupBtn" class="btn-primary">バックアップを保存</button>
+      <button type="button" id="shareBackupBtn" class="btn-secondary">共有・ファイルに保存</button>
+      <p class="feature-help">Gemini APIキーは含まれません。別の端末では読み取り設定から入力してください。</p>
+    </section>
+    <section class="feature-card">
+      <h3 class="feature-title">バックアップから復元</h3>
+      <label class="backup-file-label" for="backupFileInput">バックアップファイルを選択</label>
+      <input type="file" id="backupFileInput" accept=".json,application/json">
+      <div id="backupRestorePreview" class="feature-preview hidden">
+        <strong id="backupPreviewName" class="backup-file-name"></strong>
+        <p id="backupPreviewDate" class="feature-help"></p>
+        <p id="backupPreviewCounts"></p>
+        <p class="feature-help">現在のデータと設定を、このバックアップの内容に置き換えます。</p>
+        <button type="button" id="restoreBackupBtn" class="btn-primary" disabled>このバックアップを復元する</button>
+      </div>
+      <button type="button" id="undoRestoreBtn" class="btn-secondary hidden">復元前のデータに戻す</button>
+      <p id="backupStatus" class="feature-status" role="status" aria-live="polite"></p>
+    </section>
+  </div>
+
   <!-- テーマ設定 -->
   <div id="themeView" class="view">
     <p class="theme-desc">アプリのメインカラーを変更します</p>
@@ -324,7 +409,7 @@
     <div class="color-presets" id="colorPresets"></div>
     <h4 class="theme-section-title">カスタムカラー</h4>
     <div class="custom-color-row">
-      <input type="color" id="customColorPicker" value="#4caf50">
+      <input type="color" id="customColorPicker" value="#83c7f4">
       <button id="applyCustomColor" class="btn-blue">このカラーを適用</button>
     </div>
     <div class="theme-preview">

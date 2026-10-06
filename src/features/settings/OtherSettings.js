@@ -18,6 +18,7 @@ import { getPeriodRange } from "../../utils/calendar.js";
 import { displayCategory } from "../../utils/category.js";
 import { applyTabVisibility, updateMonthLabel } from "../../components/Navigation.js";
 import { showToast } from "../../components/Modal.js";
+import { escapeHtml } from "../../utils/html.js";
 
 // ===================================
 // 集計期間設定
@@ -125,11 +126,11 @@ export function renderBudgetView(monthSelector) {
       <div class="budget-item-top">
         <div>
           <span class="budget-item-parent">${parentName}</span>
-          <span class="budget-item-name">${childName}</span>
+          <span class="budget-item-name">${escapeHtml(childName)}</span>
         </div>
         <div class="budget-item-input-wrap">
           <span>¥</span>
-          <input type="number" class="budget-input" data-cat="${childName}"
+          <input type="number" class="budget-input" data-cat="${escapeHtml(childName)}"
             value="${budget > 0 ? budget : ""}" placeholder="未設定">
         </div>
       </div>

@@ -4,6 +4,7 @@
  */
 
 import { records, budgets, childCategories } from "../../store.js";
+import { escapeHtml } from "../../utils/html.js";
 import { getPeriodRange } from "../../utils/calendar.js";
 import { parseCategoryField, getParentName } from "../../utils/category.js";
 
@@ -343,7 +344,7 @@ function showReportSheet(ym) {
       catHtml +=
         '<div style="margin-bottom:10px;">' +
           '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">' +
-            '<span style="color:#333;">' + (i + 1) + '. ' + name + '</span>' +
+            '<span style="color:#333;">' + (i + 1) + '. ' + escapeHtml(name) + '</span>' +
             '<span style="color:#555;font-weight:bold;">¥' + amount.toLocaleString() + ' <span style="font-weight:normal;color:#aaa;">(' + pct + '%)</span></span>' +
           '</div>' +
           '<div style="height:5px;background:#eee;border-radius:3px;overflow:hidden;">' +
@@ -368,7 +369,7 @@ function showReportSheet(ym) {
       budHtml +=
         '<div style="margin-bottom:10px;">' +
           '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">' +
-            '<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + dotColor + ';margin-right:6px;vertical-align:middle;"></span>' + catName + '</span>' +
+            '<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + dotColor + ';margin-right:6px;vertical-align:middle;"></span>' + escapeHtml(catName) + '</span>' +
             '<span style="color:' + (over ? "#e53935" : "#555") + ';font-weight:bold;">' + pct + '%</span>' +
           '</div>' +
           '<div style="height:5px;background:#eee;border-radius:3px;overflow:hidden;">' +
